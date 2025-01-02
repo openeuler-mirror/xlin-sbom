@@ -1,0 +1,20 @@
+[
+    {
+        "keywords": [".oe"],
+        "name": "OpenEuler Community",
+        "url": "https://mirrors.aliyun.com/openeuler/",
+        "type":"rpm"
+    },
+    {
+        "keywords": [".an"],
+        "name": "Anolis Community",
+        "url": "https://mirrors.aliyun.com/anolis/",
+        "type":"rpm"
+    },
+    {
+        "keywords": [".el"],
+        "name": "Red Hat Enterprise Linux",
+        "url": "https://mirrors.aliyun.com/centos-vault/",
+        "type":"rpm"
+    }
+]

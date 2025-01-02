@@ -1,37 +1,83 @@
-# xlin-sbom
+# XiLing SBOM Tool 析灵SBOM工具
+对ISO镜像或单个软件包进行扫描并生成SBOM（Software Bill of Materials）清单。
 
-#### 介绍
-Allowing rapid and accurate scanning of Linux system ISO image files and RPM software packages to identify and generate a Software Bill of Materials (SBOM), ensuring the security of the software supply chain.
+## 系统要求
+- 操作系统： 凝思安全操作系统V6.0系列 及 Linux发行版
 
-#### 软件架构
-软件架构说明
+## 硬件要求
+- x86_64 CPU
+- 4GB以上内存
+- 10GB以上可用磁盘空间（需预留足够空间供ISO镜像挂载）
 
+## 运行依赖
+- fuseiso
+- python (>=3.7)
+- glibc (>=2.28)
 
-#### 安装教程
+## 安装
+### 安装.rpm包
+#### 通过yum安装并自动处理依赖
+```
+$ sudo yum install RPM_PACKAGE
+```
+例如：
+```
+$ sudo yum install ./linx-xiling-1.0-1.x86_64.rpm
+```
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+#### 通过dnf安装并自动处理依赖
+```
+$ sudo dnf install RPM_PACKAGE
+```
+例如：
+```
+$ sudo dnf install ./linx-xiling-1.0-1.x86_64.rpm
+```
 
-#### 使用说明
+#### 通过rpm安装
+```
+$ sudo rpm -ivh RPM_PACKAGE
+```
+例如：
+```
+$ sudo rpm -ivh ./linx-xiling-1.0-1.x86_64.rpm
+```
+请注意，使用rpm进行安装无法自动处理依赖关系，因此需要手动安装依赖。
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+## 使用说明
+### 运行命令
+指定一个Linux系统的ISO镜像文件或单个软件包进行扫描，获取其凝思格式SBOM和SPDX格式SBOM：
+```
+$ linx-xiling [-h] (--iso ISO | --package PACKAGE) --output OUTPUT [--category CATEGORY]
+```
 
-#### 参与贡献
+#### 必需参数
+| 参数                            | 说明                  |
+|---------------------------------|----------------------|
+| --iso ISO, -i ISO               | ISO镜像文件的路径 。   |
+| --package PACKAGE, -p PACKAGE   | 软件包的路径。         |
+| --output OUTPUT, -o OUTPUT      | SBOM清单输出目录。     |
 
-1.  Fork 本仓库
-2.  新建 Feat_xxx 分支
-3.  提交代码
-4.  新建 Pull Request
+#### 可选参数
+| 参数                               | 说明                  |
+|------------------------------------|----------------------|
+| --help, -h                         | 显示帮助消息并退出。    |
+| --category CATEGORY, -c CATEGORY   | 软件包类型CSV文件的路径，用于区分软件包为自研（self_developed）、第三方开源修改（modified）还是第三方开源（third_party），预期 'package' 和 'category' 列。若未提供则自动对软件包类别进行判断。  |
 
+### 源码运行命令
+安装必要依赖：
+```
+$ pip install -r requirements.txt
+```
 
-#### 特技
+运行工具：
+```
+$ python3 linx-xiling.py [-h] (--iso ISO | --package PACKAGE) --output OUTPUT [--category CATEGORY]
+```
 
-1.  使用 Readme\_XXX.md 来支持不同的语言，例如 Readme\_en.md, Readme\_zh.md
-2.  Gitee 官方博客 [blog.gitee.com](https://blog.gitee.com)
-3.  你可以 [https://gitee.com/explore](https://gitee.com/explore) 这个地址来了解 Gitee 上的优秀开源项目
-4.  [GVP](https://gitee.com/gvp) 全称是 Gitee 最有价值开源项目，是综合评定出的优秀开源项目
-5.  Gitee 官方提供的使用手册 [https://gitee.com/help](https://gitee.com/help)
-6.  Gitee 封面人物是一档用来展示 Gitee 会员风采的栏目 [https://gitee.com/gitee-stars/](https://gitee.com/gitee-stars/)
+### 注意事项
+#### 如何通过 Docker 运行该工具？
+以下命令通过 ```--privileged``` 选项授予容器额外的权限，并通过 ```--cap-add SYS_ADMIN``` 和 ```--device /dev/fuse``` 启用对 FUSE 的访问，从而确保在容器内可以挂载 ISO 镜像：
+```
+$ docker run -it --privileged --cap-add SYS_ADMIN --device /dev/fuse IMAGE [ARG...]
+```

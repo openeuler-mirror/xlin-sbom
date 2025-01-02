@@ -1,0 +1,3812 @@
+[
+    {
+        "spdx_name": "0BSD",
+        "alt_names": [
+            "BSD Zero Clause License",
+            "0BSD"
+        ]
+    },
+    {
+        "spdx_name": "389-exception",
+        "alt_names": [
+            "389 Directory Server Exception",
+            "389-exception"
+        ]
+    },
+    {
+        "spdx_name": "AAL",
+        "alt_names": [
+            "Attribution Assurance License",
+            "AAL"
+        ]
+    },
+    {
+        "spdx_name": "Abstyles",
+        "alt_names": [
+            "Abstyles License",
+            "Abstyles"
+        ]
+    },
+    {
+        "spdx_name": "Adobe-2006",
+        "alt_names": [
+            "Adobe Systems Incorporated Source Code License Agreement",
+            "Adobe-2006"
+        ]
+    },
+    {
+        "spdx_name": "Adobe-Glyph",
+        "alt_names": [
+            "Adobe Glyph List License",
+            "Adobe-Glyph"
+        ]
+    },
+    {
+        "spdx_name": "ADSL",
+        "alt_names": [
+            "Amazon Digital Services License",
+            "ADSL"
+        ]
+    },
+    {
+        "spdx_name": "AFL-1.1",
+        "alt_names": [
+            "Academic Free License v1.1",
+            "AFL-1.1",
+            "AFL"
+        ]
+    },
+    {
+        "spdx_name": "AFL-1.2",
+        "alt_names": [
+            "Academic Free License v1.2",
+            "AFL-1.2"
+        ]
+    },
+    {
+        "spdx_name": "AFL-2.0",
+        "alt_names": [
+            "Academic Free License v2.0",
+            "AFL-2.0"
+        ]
+    },
+    {
+        "spdx_name": "AFL-2.1",
+        "alt_names": [
+            "Academic Free License v2.1",
+            "AFL-2.1"
+        ]
+    },
+    {
+        "spdx_name": "AFL-3.0",
+        "alt_names": [
+            "Academic Free License v3.0",
+            "AFL-3.0",
+            "AFLv3.0"
+        ]
+    },
+    {
+        "spdx_name": "Afmparse",
+        "alt_names": [
+            "Afmparse License",
+            "Afmparse"
+        ]
+    },
+    {
+        "spdx_name": "AGPL-1.0-only",
+        "alt_names": [
+            "Affero General Public License v1.0 only",
+            "AGPL-1.0-only"
+        ]
+    },
+    {
+        "spdx_name": "AGPL-1.0-or-later",
+        "alt_names": [
+            "Affero General Public License v1.0 or later",
+            "AGPL-1.0-or-later"
+        ]
+    },
+    {
+        "spdx_name": "AGPL-3.0-only",
+        "alt_names": [
+            "GNU Affero General Public License v3.0 only",
+            "AGPL-3.0-only",
+            "AGPLv3"
+        ]
+    },
+    {
+        "spdx_name": "AGPL-3.0-or-later",
+        "alt_names": [
+            "GNU Affero General Public License v3.0 or later",
+            "AGPL-3.0-or-later",
+            "AGPLv3+"
+        ]
+    },
+    {
+        "spdx_name": "Aladdin",
+        "alt_names": [
+            "Aladdin Free Public License",
+            "Aladdin"
+        ]
+    },
+    {
+        "spdx_name": "Amazon Web Services",
+        "alt_names": [
+            "AWS  Customer Agreement",
+            "Amazon Web Services"
+        ]
+    },
+    {
+        "spdx_name": "AMDPLPA",
+        "alt_names": [
+            "AMD's plpa_map.c License",
+            "AMDPLPA"
+        ]
+    },
+    {
+        "spdx_name": "AML",
+        "alt_names": [
+            "Apple MIT License",
+            "AML"
+        ]
+    },
+    {
+        "spdx_name": "AMPAS",
+        "alt_names": [
+            "Academy of Motion Picture Arts and Sciences BSD",
+            "AMPAS"
+        ]
+    },
+    {
+        "spdx_name": "ANTLR-PD",
+        "alt_names": [
+            "ANTLR Software Rights Notice",
+            "ANTLR-PD"
+        ]
+    },
+    {
+        "spdx_name": "ANTLR-PD-fallback",
+        "alt_names": [
+            "ANTLR Software Rights Notice with license fallback",
+            "ANTLR-PD-fallback"
+        ]
+    },
+    {
+        "spdx_name": "Apache-1.0",
+        "alt_names": [
+            "Apache License 1.0",
+            "Apache-1.0",
+            "ASL 1.0"
+        ]
+    },
+    {
+        "spdx_name": "Apache-1.1",
+        "alt_names": [
+            "Apache License 1.1",
+            "Apache-1.1",
+            "ASL 1.1"
+        ]
+    },
+    {
+        "spdx_name": "Apache-2.0",
+        "alt_names": [
+            "Apache License 2.0",
+            "Apache-2.0",
+            "ASL 2.0",
+            "Apache 2.0",
+            "http://www.apache.org/licenses/LICENSE-2.0",
+            "Apache v2.0",
+            "Apache-2"
+        ]
+    },
+    {
+        "spdx_name": "APAFML",
+        "alt_names": [
+            "Adobe Postscript AFM License",
+            "APAFML"
+        ]
+    },
+    {
+        "spdx_name": "APL-1.0",
+        "alt_names": [
+            "Adaptive Public License 1.0",
+            "APL-1.0"
+        ]
+    },
+    {
+        "spdx_name": "App-s2p",
+        "alt_names": [
+            "App::s2p License",
+            "App-s2p"
+        ]
+    },
+    {
+        "spdx_name": "APSL-1.0",
+        "alt_names": [
+            "Apple Public Source License 1.0",
+            "APSL-1.0"
+        ]
+    },
+    {
+        "spdx_name": "APSL-1.1",
+        "alt_names": [
+            "Apple Public Source License 1.1",
+            "APSL-1.1"
+        ]
+    },
+    {
+        "spdx_name": "APSL-1.2",
+        "alt_names": [
+            "Apple Public Source License 1.2",
+            "APSL-1.2"
+        ]
+    },
+    {
+        "spdx_name": "APSL-2.0",
+        "alt_names": [
+            "Apple Public Source License 2.0",
+            "APSL-2.0"
+        ]
+    },
+    {
+        "spdx_name": "Arphic-1999",
+        "alt_names": [
+            "Arphic Public License",
+            "Arphic-1999",
+            "Arphic"
+        ]
+    },
+    {
+        "spdx_name": "Artistic-1.0",
+        "alt_names": [
+            "Artistic License 1.0",
+            "Artistic-1.0",
+            "Artistic",
+            "Artistic 1.0"
+        ]
+    },
+    {
+        "spdx_name": "Artistic-1.0-cl8",
+        "alt_names": [
+            "Artistic License 1.0 w/clause 8",
+            "Artistic-1.0-cl8"
+        ]
+    },
+    {
+        "spdx_name": "Artistic-1.0-Perl",
+        "alt_names": [
+            "Artistic License 1.0 (Perl)",
+            "Artistic-1.0-Perl"
+        ]
+    },
+    {
+        "spdx_name": "Artistic-2.0",
+        "alt_names": [
+            "Artistic License 2.0",
+            "Artistic Licence 2.0",
+            "Artistic-2.0",
+            "Artistic 2.0"
+        ]
+    },
+    {
+        "spdx_name": "Autoconf-exception-2.0",
+        "alt_names": [
+            "Autoconf exception 2.0",
+            "Autoconf-exception-2.0"
+        ]
+    },
+    {
+        "spdx_name": "Autoconf-exception-3.0",
+        "alt_names": [
+            "Autoconf exception 3.0",
+            "Autoconf-exception-3.0"
+        ]
+    },
+    {
+        "spdx_name": "Baekmuk",
+        "alt_names": [
+            "Baekmuk License",
+            "Baekmuk"
+        ]
+    },
+    {
+        "spdx_name": "Bahyph",
+        "alt_names": [
+            "Bahyph License",
+            "Bahyph"
+        ]
+    },
+    {
+        "spdx_name": "Barr",
+        "alt_names": [
+            "Barr License",
+            "Barr"
+        ]
+    },
+    {
+        "spdx_name": "Beerware",
+        "alt_names": [
+            "Beerware License",
+            "Beerware"
+        ]
+    },
+    {
+        "spdx_name": "Bison-exception-2.2",
+        "alt_names": [
+            "Bison exception 2.2",
+            "Bison-exception-2.2"
+        ]
+    },
+    {
+        "spdx_name": "Bitstream-Vera",
+        "alt_names": [
+            "Bitstream Vera Font License",
+            "Bitstream-Vera",
+            "Bitstream Vera"
+        ]
+    },
+    {
+        "spdx_name": "BitTorrent-1.0",
+        "alt_names": [
+            "BitTorrent Open Source License v1.0",
+            "BitTorrent-1.0"
+        ]
+    },
+    {
+        "spdx_name": "BitTorrent-1.1",
+        "alt_names": [
+            "BitTorrent Open Source License v1.1",
+            "BitTorrent-1.1"
+        ]
+    },
+    {
+        "spdx_name": "blessing",
+        "alt_names": [
+            "SQLite Blessing",
+            "blessing"
+        ]
+    },
+    {
+        "spdx_name": "BlueOak-1.0.0",
+        "alt_names": [
+            "Blue Oak Model License 1.0.0",
+            "BlueOak-1.0.0"
+        ]
+    },
+    {
+        "spdx_name": "Bootloader-exception",
+        "alt_names": [
+            "Bootloader Distribution Exception",
+            "Bootloader-exception"
+        ]
+    },
+    {
+        "spdx_name": "Borceux",
+        "alt_names": [
+            "Borceux license",
+            "Borceux"
+        ]
+    },
+    {
+        "spdx_name": "BRL",
+        "alt_names": [
+            "Beer Recipe License",
+            "BRL"
+        ]
+    },
+    {
+        "spdx_name": "BSD-1-Clause",
+        "alt_names": [
+            "BSD 1-Clause License",
+            "BSD-1-Clause",
+            "BSD",
+            "BSD-licenced"
+        ]
+    },
+    {
+        "spdx_name": "BSD-2-Clause",
+        "alt_names": [
+            "BSD 2-Clause \"Simplified\" License",
+            "BSD-2-Clause"
+        ]
+    },
+    {
+        "spdx_name": "BSD-2-Clause-FreeBSD",
+        "alt_names": [
+            "BSD 2-Clause FreeBSD License",
+            "BSD-2-Clause-FreeBSD"
+        ]
+    },
+    {
+        "spdx_name": "BSD-2-Clause-Patent",
+        "alt_names": [
+            "BSD-2-Clause Plus Patent License",
+            "BSD-2-Clause-Patent"
+        ]
+    },
+    {
+        "spdx_name": "BSD-2-Clause-Views",
+        "alt_names": [
+            "BSD 2-Clause with views sentence",
+            "BSD-2-Clause-Views"
+        ]
+    },
+    {
+        "spdx_name": "BSD-3-Clause",
+        "alt_names": [
+            "BSD 3-Clause \"New\" or \"Revised\" License",
+            "BSD-3-Clause",
+            "BSD-licenced (3 clause)",
+            "BSD 3-Clause"
+        ]
+    },
+    {
+        "spdx_name": "BSD-3-Clause-Attribution",
+        "alt_names": [
+            "BSD with attribution",
+            "BSD-3-Clause-Attribution"
+        ]
+    },
+    {
+        "spdx_name": "BSD-3-Clause-Clear",
+        "alt_names": [
+            "BSD 3-Clause Clear License",
+            "BSD-3-Clause-Clear"
+        ]
+    },
+    {
+        "spdx_name": "BSD-3-Clause-LBNL",
+        "alt_names": [
+            "Lawrence Berkeley National Labs BSD variant license",
+            "BSD-3-Clause-LBNL"
+        ]
+    },
+    {
+        "spdx_name": "BSD-3-Clause-Modification",
+        "alt_names": [
+            "BSD 3-Clause Modification",
+            "BSD-3-Clause-Modification"
+        ]
+    },
+    {
+        "spdx_name": "BSD-3-Clause-No-Military-License",
+        "alt_names": [
+            "BSD 3-Clause No Military License",
+            "BSD-3-Clause-No-Military-License"
+        ]
+    },
+    {
+        "spdx_name": "BSD-3-Clause-No-Nuclear-License",
+        "alt_names": [
+            "BSD 3-Clause No Nuclear License",
+            "BSD-3-Clause-No-Nuclear-License"
+        ]
+    },
+    {
+        "spdx_name": "BSD-3-Clause-No-Nuclear-License-2014",
+        "alt_names": [
+            "BSD 3-Clause No Nuclear License 2014",
+            "BSD-3-Clause-No-Nuclear-License-2014"
+        ]
+    },
+    {
+        "spdx_name": "BSD-3-Clause-No-Nuclear-Warranty",
+        "alt_names": [
+            "BSD 3-Clause No Nuclear Warranty",
+            "BSD-3-Clause-No-Nuclear-Warranty"
+        ]
+    },
+    {
+        "spdx_name": "BSD-3-Clause-Open-MPI",
+        "alt_names": [
+            "BSD 3-Clause Open MPI variant",
+            "BSD-3-Clause-Open-MPI"
+        ]
+    },
+    {
+        "spdx_name": "BSD-4-Clause",
+        "alt_names": [
+            "BSD 4-Clause \"Original\" or \"Old\" License",
+            "BSD-4-Clause"
+        ]
+    },
+    {
+        "spdx_name": "BSD-4-Clause-Shortened",
+        "alt_names": [
+            "BSD 4 Clause Shortened",
+            "BSD-4-Clause-Shortened"
+        ]
+    },
+    {
+        "spdx_name": "BSD-4-Clause-UC",
+        "alt_names": [
+            "BSD-4-Clause (University of California-Specific)",
+            "BSD-4-Clause-UC"
+        ]
+    },
+    {
+        "spdx_name": "BSD-Protection",
+        "alt_names": [
+            "BSD Protection License",
+            "BSD-Protection"
+        ]
+    },
+    {
+        "spdx_name": "BSD-Source-Code",
+        "alt_names": [
+            "BSD Source Code Attribution",
+            "BSD-Source-Code"
+        ]
+    },
+    {
+        "spdx_name": "BSL-1.0",
+        "alt_names": [
+            "Boost Software License 1.0",
+            "BSL-1.0",
+            "Boost"
+        ]
+    },
+    {
+        "spdx_name": "BUSL-1.1",
+        "alt_names": [
+            "Business Source License 1.1",
+            "BUSL-1.1"
+        ]
+    },
+    {
+        "spdx_name": "bzip2-1.0.5",
+        "alt_names": [
+            "bzip2 and libbzip2 License v1.0.5",
+            "bzip2-1.0.5"
+        ]
+    },
+    {
+        "spdx_name": "bzip2-1.0.6",
+        "alt_names": [
+            "bzip2 and libbzip2 License v1.0.6",
+            "bzip2-1.0.6"
+        ]
+    },
+    {
+        "spdx_name": "C-UDA-1.0",
+        "alt_names": [
+            "Computational Use of Data Agreement v1.0",
+            "C-UDA-1.0"
+        ]
+    },
+    {
+        "spdx_name": "CAL-1.0",
+        "alt_names": [
+            "Cryptographic Autonomy License 1.0",
+            "CAL-1.0"
+        ]
+    },
+    {
+        "spdx_name": "CAL-1.0-Combined-Work-Exception",
+        "alt_names": [
+            "Cryptographic Autonomy License 1.0 (Combined Work Exception)",
+            "CAL-1.0-Combined-Work-Exception"
+        ]
+    },
+    {
+        "spdx_name": "Caldera",
+        "alt_names": [
+            "Caldera License",
+            "Caldera"
+        ]
+    },
+    {
+        "spdx_name": "CATOSL-1.1",
+        "alt_names": [
+            "Computer Associates Trusted Open Source License 1.1",
+            "CATOSL-1.1"
+        ]
+    },
+    {
+        "spdx_name": "CC BY-NC 2.0",
+        "alt_names": [
+            "Creative Commons Attribution-NonCommercial 2.0 Generic",
+            "CC BY-NC 2.0"
+        ]
+    },
+    {
+        "spdx_name": "CC BY-NC 4.0",
+        "alt_names": [
+            "Creative Commons Attribution-NonCommercial 4.0 International",
+            "CC BY-NC 4.0"
+        ]
+    },
+    {
+        "spdx_name": "CC BY-NC-SA 4.0",
+        "alt_names": [
+            "Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International",
+            "CC BY-NC-SA 4.0"
+        ]
+    },
+    {
+        "spdx_name": "CC BY-ND 4.0",
+        "alt_names": [
+            "Creative Commons Attribution-NoDerivatives 4.0 International",
+            "CC BY-ND 4.0"
+        ]
+    },
+    {
+        "spdx_name": "CC BY-SA 4.0",
+        "alt_names": [
+            "Creative Commons Attribution-ShareAlike 4.0 International",
+            "CC BY-SA 4.0",
+            "CC-BY-SA"
+        ]
+    },
+    {
+        "spdx_name": "CC-BY-1.0",
+        "alt_names": [
+            "Creative Commons Attribution 1.0 Generic",
+            "CC-BY-1.0",
+            "CC-BY"
+        ]
+    },
+    {
+        "spdx_name": "CC-BY-2.0",
+        "alt_names": [
+            "Creative Commons Attribution 2.0 Generic",
+            "CC-BY-2.0"
+        ]
+    },
+    {
+        "spdx_name": "CC-BY-2.5",
+        "alt_names": [
+            "Creative Commons Attribution 2.5 Generic",
+            "CC-BY-2.5"
+        ]
+    },
+    {
+        "spdx_name": "CC-BY-2.5-AU",
+        "alt_names": [
+            "Creative Commons Attribution 2.5 Australia",
+            "CC-BY-2.5-AU"
+        ]
+    },
+    {
+        "spdx_name": "CC-BY-3.0",
+        "alt_names": [
+            "Creative Commons Attribution 3.0 Unported",
+            "CC-BY-3.0"
+        ]
+    },
+    {
+        "spdx_name": "CC-BY-3.0-AT",
+        "alt_names": [
+            "Creative Commons Attribution 3.0 Austria",
+            "CC-BY-3.0-AT"
+        ]
+    },
+    {
+        "spdx_name": "CC-BY-3.0-DE",
+        "alt_names": [
+            "Creative Commons Attribution 3.0 Germany",
+            "CC-BY-3.0-DE"
+        ]
+    },
+    {
+        "spdx_name": "CC-BY-3.0-NL",
+        "alt_names": [
+            "Creative Commons Attribution 3.0 Netherlands",
+            "CC-BY-3.0-NL"
+        ]
+    },
+    {
+        "spdx_name": "CC-BY-3.0-US",
+        "alt_names": [
+            "Creative Commons Attribution 3.0 United States",
+            "CC-BY-3.0-US"
+        ]
+    },
+    {
+        "spdx_name": "CC-BY-4.0",
+        "alt_names": [
+            "Creative Commons Attribution 4.0 International",
+            "CC-BY-4.0"
+        ]
+    },
+    {
+        "spdx_name": "CC-BY-NC-1.0",
+        "alt_names": [
+            "Creative Commons Attribution Non Commercial 1.0 Generic",
+            "CC-BY-NC-1.0"
+        ]
+    },
+    {
+        "spdx_name": "CC-BY-NC-2.0",
+        "alt_names": [
+            "Creative Commons Attribution Non Commercial 2.0 Generic",
+            "CC-BY-NC-2.0"
+        ]
+    },
+    {
+        "spdx_name": "CC-BY-NC-2.5",
+        "alt_names": [
+            "Creative Commons Attribution Non Commercial 2.5 Generic",
+            "CC-BY-NC-2.5"
+        ]
+    },
+    {
+        "spdx_name": "CC-BY-NC-3.0",
+        "alt_names": [
+            "Creative Commons Attribution Non Commercial 3.0 Unported",
+            "CC-BY-NC-3.0"
+        ]
+    },
+    {
+        "spdx_name": "CC-BY-NC-3.0-DE",
+        "alt_names": [
+            "Creative Commons Attribution Non Commercial 3.0 Germany",
+            "CC-BY-NC-3.0-DE"
+        ]
+    },
+    {
+        "spdx_name": "CC-BY-NC-4.0",
+        "alt_names": [
+            "Creative Commons Attribution Non Commercial 4.0 International",
+            "CC-BY-NC-4.0"
+        ]
+    },
+    {
+        "spdx_name": "CC-BY-NC-ND-1.0",
+        "alt_names": [
+            "Creative Commons Attribution Non Commercial No Derivatives 1.0 Generic",
+            "CC-BY-NC-ND-1.0"
+        ]
+    },
+    {
+        "spdx_name": "CC-BY-NC-ND-2.0",
+        "alt_names": [
+            "Creative Commons Attribution Non Commercial No Derivatives 2.0 Generic",
+            "CC-BY-NC-ND-2.0"
+        ]
+    },
+    {
+        "spdx_name": "CC-BY-NC-ND-2.5",
+        "alt_names": [
+            "Creative Commons Attribution Non Commercial No Derivatives 2.5 Generic",
+            "CC-BY-NC-ND-2.5"
+        ]
+    },
+    {
+        "spdx_name": "CC-BY-NC-ND-3.0",
+        "alt_names": [
+            "Creative Commons Attribution Non Commercial No Derivatives 3.0 Unported",
+            "CC-BY-NC-ND-3.0"
+        ]
+    },
+    {
+        "spdx_name": "CC-BY-NC-ND-3.0-DE",
+        "alt_names": [
+            "Creative Commons Attribution Non Commercial No Derivatives 3.0 Germany",
+            "CC-BY-NC-ND-3.0-DE"
+        ]
+    },
+    {
+        "spdx_name": "CC-BY-NC-ND-3.0-IGO",
+        "alt_names": [
+            "Creative Commons Attribution Non Commercial No Derivatives 3.0 IGO",
+            "CC-BY-NC-ND-3.0-IGO"
+        ]
+    },
+    {
+        "spdx_name": "CC-BY-NC-ND-4.0",
+        "alt_names": [
+            "Creative Commons Attribution Non Commercial No Derivatives 4.0 International",
+            "CC-BY-NC-ND-4.0"
+        ]
+    },
+    {
+        "spdx_name": "CC-BY-NC-SA-1.0",
+        "alt_names": [
+            "Creative Commons Attribution Non Commercial Share Alike 1.0 Generic",
+            "CC-BY-NC-SA-1.0"
+        ]
+    },
+    {
+        "spdx_name": "CC-BY-NC-SA-2.0",
+        "alt_names": [
+            "Creative Commons Attribution Non Commercial Share Alike 2.0 Generic",
+            "CC-BY-NC-SA-2.0"
+        ]
+    },
+    {
+        "spdx_name": "CC-BY-NC-SA-2.0-FR",
+        "alt_names": [
+            "Creative Commons Attribution-NonCommercial-ShareAlike 2.0 France",
+            "CC-BY-NC-SA-2.0-FR"
+        ]
+    },
+    {
+        "spdx_name": "CC-BY-NC-SA-2.0-UK",
+        "alt_names": [
+            "Creative Commons Attribution Non Commercial Share Alike 2.0 England and Wales",
+            "CC-BY-NC-SA-2.0-UK"
+        ]
+    },
+    {
+        "spdx_name": "CC-BY-NC-SA-2.5",
+        "alt_names": [
+            "Creative Commons Attribution Non Commercial Share Alike 2.5 Generic",
+            "CC-BY-NC-SA-2.5"
+        ]
+    },
+    {
+        "spdx_name": "CC-BY-NC-SA-3.0",
+        "alt_names": [
+            "Creative Commons Attribution Non Commercial Share Alike 3.0 Unported",
+            "CC-BY-NC-SA-3.0"
+        ]
+    },
+    {
+        "spdx_name": "CC-BY-NC-SA-3.0-DE",
+        "alt_names": [
+            "Creative Commons Attribution Non Commercial Share Alike 3.0 Germany",
+            "CC-BY-NC-SA-3.0-DE"
+        ]
+    },
+    {
+        "spdx_name": "CC-BY-NC-SA-3.0-IGO",
+        "alt_names": [
+            "Creative Commons Attribution Non Commercial Share Alike 3.0 IGO",
+            "CC-BY-NC-SA-3.0-IGO"
+        ]
+    },
+    {
+        "spdx_name": "CC-BY-NC-SA-4.0",
+        "alt_names": [
+            "Creative Commons Attribution Non Commercial Share Alike 4.0 International",
+            "CC-BY-NC-SA-4.0"
+        ]
+    },
+    {
+        "spdx_name": "CC-BY-ND-1.0",
+        "alt_names": [
+            "Creative Commons Attribution No Derivatives 1.0 Generic",
+            "CC-BY-ND-1.0"
+        ]
+    },
+    {
+        "spdx_name": "CC-BY-ND-2.0",
+        "alt_names": [
+            "Creative Commons Attribution No Derivatives 2.0 Generic",
+            "CC-BY-ND-2.0"
+        ]
+    },
+    {
+        "spdx_name": "CC-BY-ND-2.5",
+        "alt_names": [
+            "Creative Commons Attribution No Derivatives 2.5 Generic",
+            "CC-BY-ND-2.5"
+        ]
+    },
+    {
+        "spdx_name": "CC-BY-ND-3.0",
+        "alt_names": [
+            "Creative Commons Attribution No Derivatives 3.0 Unported",
+            "CC-BY-ND-3.0"
+        ]
+    },
+    {
+        "spdx_name": "CC-BY-ND-3.0-DE",
+        "alt_names": [
+            "Creative Commons Attribution No Derivatives 3.0 Germany",
+            "CC-BY-ND-3.0-DE"
+        ]
+    },
+    {
+        "spdx_name": "CC-BY-ND-4.0",
+        "alt_names": [
+            "Creative Commons Attribution No Derivatives 4.0 International",
+            "CC-BY-ND-4.0"
+        ]
+    },
+    {
+        "spdx_name": "CC-BY-SA-1.0",
+        "alt_names": [
+            "Creative Commons Attribution Share Alike 1.0 Generic",
+            "CC-BY-SA-1.0"
+        ]
+    },
+    {
+        "spdx_name": "CC-BY-SA-2.0",
+        "alt_names": [
+            "Creative Commons Attribution Share Alike 2.0 Generic",
+            "CC-BY-SA-2.0"
+        ]
+    },
+    {
+        "spdx_name": "CC-BY-SA-2.0-UK",
+        "alt_names": [
+            "Creative Commons Attribution Share Alike 2.0 England and Wales",
+            "CC-BY-SA-2.0-UK"
+        ]
+    },
+    {
+        "spdx_name": "CC-BY-SA-2.1-JP",
+        "alt_names": [
+            "Creative Commons Attribution Share Alike 2.1 Japan",
+            "CC-BY-SA-2.1-JP"
+        ]
+    },
+    {
+        "spdx_name": "CC-BY-SA-2.5",
+        "alt_names": [
+            "Creative Commons Attribution Share Alike 2.5 Generic",
+            "CC-BY-SA-2.5"
+        ]
+    },
+    {
+        "spdx_name": "CC-BY-SA-3.0",
+        "alt_names": [
+            "Creative Commons Attribution Share Alike 3.0 Unported",
+            "CC-BY-SA-3.0"
+        ]
+    },
+    {
+        "spdx_name": "CC-BY-SA-3.0-AT",
+        "alt_names": [
+            "Creative Commons Attribution Share Alike 3.0 Austria",
+            "CC-BY-SA-3.0-AT"
+        ]
+    },
+    {
+        "spdx_name": "CC-BY-SA-3.0-DE",
+        "alt_names": [
+            "Creative Commons Attribution Share Alike 3.0 Germany",
+            "CC-BY-SA-3.0-DE"
+        ]
+    },
+    {
+        "spdx_name": "CC-BY-SA-4.0",
+        "alt_names": [
+            "Creative Commons Attribution Share Alike 4.0 International",
+            "CC-BY-SA-4.0"
+        ]
+    },
+    {
+        "spdx_name": "CC-NC-ND",
+        "alt_names": [
+            "Creative Commons Attribution NonCommercial NoDerivs",
+            "CC-NC-ND"
+        ]
+    },
+    {
+        "spdx_name": "CC-NC-SA",
+        "alt_names": [
+            "Creative Commons Attribution NonCommercial ShareAlike",
+            "CC-NC-SA"
+        ]
+    },
+    {
+        "spdx_name": "CC-PDDC",
+        "alt_names": [
+            "Creative Commons Public Domain Dedication and Certification",
+            "CC-PDDC"
+        ]
+    },
+    {
+        "spdx_name": "CC-SA",
+        "alt_names": [
+            "Creative Commons Attribution Share Alike",
+            "CC-SA"
+        ]
+    },
+    {
+        "spdx_name": "CC0-1.0",
+        "alt_names": [
+            "Creative Commons Zero v1.0 Universal",
+            "CC0-1.0",
+            "CC0"
+        ]
+    },
+    {
+        "spdx_name": "CDDL-1.0",
+        "alt_names": [
+            "Common Development and Distribution License 1.0",
+            "CDDL-1.0",
+            "CDDL"
+        ]
+    },
+    {
+        "spdx_name": "CDDL-1.1",
+        "alt_names": [
+            "Common Development and Distribution License 1.1",
+            "CDDL-1.1"
+        ]
+    },
+    {
+        "spdx_name": "CDL-1.0",
+        "alt_names": [
+            "Common Documentation License 1.0",
+            "CDL-1.0"
+        ]
+    },
+    {
+        "spdx_name": "CDLA-Permissive-1.0",
+        "alt_names": [
+            "Community Data License Agreement Permissive 1.0",
+            "CDLA-Permissive-1.0"
+        ]
+    },
+    {
+        "spdx_name": "CDLA-Permissive-2.0",
+        "alt_names": [
+            "Community Data License Agreement Permissive 2.0",
+            "CDLA-Permissive-2.0"
+        ]
+    },
+    {
+        "spdx_name": "CDLA-Sharing-1.0",
+        "alt_names": [
+            "Community Data License Agreement Sharing 1.0",
+            "CDLA-Sharing-1.0"
+        ]
+    },
+    {
+        "spdx_name": "CECILL-1.0",
+        "alt_names": [
+            "CeCILL Free Software License Agreement v1.0",
+            "CECILL-1.0"
+        ]
+    },
+    {
+        "spdx_name": "CECILL-1.1",
+        "alt_names": [
+            "CeCILL Free Software License Agreement v1.1",
+            "CECILL-1.1"
+        ]
+    },
+    {
+        "spdx_name": "CECILL-2.0",
+        "alt_names": [
+            "CeCILL Free Software License Agreement v2.0",
+            "CECILL-2.0"
+        ]
+    },
+    {
+        "spdx_name": "CECILL-2.1",
+        "alt_names": [
+            "CeCILL Free Software License Agreement v2.1",
+            "CECILL-2.1"
+        ]
+    },
+    {
+        "spdx_name": "CECILL-B",
+        "alt_names": [
+            "CeCILL-B Free Software License Agreement",
+            "CECILL-B"
+        ]
+    },
+    {
+        "spdx_name": "CECILL-C",
+        "alt_names": [
+            "CeCILL-C Free Software License Agreement",
+            "CECILL-C"
+        ]
+    },
+    {
+        "spdx_name": "CEPL-1.0",
+        "alt_names": [
+            "Code Energy Public License",
+            "CEPL-1.0"
+        ]
+    },
+    {
+        "spdx_name": "CERN-OHL-1.1",
+        "alt_names": [
+            "CERN Open Hardware Licence v1.1",
+            "CERN-OHL-1.1"
+        ]
+    },
+    {
+        "spdx_name": "CERN-OHL-1.2",
+        "alt_names": [
+            "CERN Open Hardware Licence v1.2",
+            "CERN-OHL-1.2"
+        ]
+    },
+    {
+        "spdx_name": "CERN-OHL-P-2.0",
+        "alt_names": [
+            "CERN Open Hardware Licence Version 2 - Permissive",
+            "CERN-OHL-P-2.0"
+        ]
+    },
+    {
+        "spdx_name": "CERN-OHL-S-2.0",
+        "alt_names": [
+            "CERN Open Hardware Licence Version 2 - Strongly Reciprocal",
+            "CERN-OHL-S-2.0"
+        ]
+    },
+    {
+        "spdx_name": "CERN-OHL-W-2.0",
+        "alt_names": [
+            "CERN Open Hardware Licence Version 2 - Weakly Reciprocal",
+            "CERN-OHL-W-2.0"
+        ]
+    },
+    {
+        "spdx_name": "ClArtistic",
+        "alt_names": [
+            "Clarified Artistic License",
+            "ClArtistic"
+        ]
+    },
+    {
+        "spdx_name": "Classpath-exception-2.0",
+        "alt_names": [
+            "Classpath exception 2.0",
+            "Classpath-exception-2.0"
+        ]
+    },
+    {
+        "spdx_name": "CLISP-exception-2.0",
+        "alt_names": [
+            "CLISP exception 2.0",
+            "CLISP-exception-2.0"
+        ]
+    },
+    {
+        "spdx_name": "CNRI-Jython",
+        "alt_names": [
+            "CNRI Jython License",
+            "CNRI-Jython"
+        ]
+    },
+    {
+        "spdx_name": "CNRI-Python",
+        "alt_names": [
+            "CNRI Python License",
+            "CNRI-Python"
+        ]
+    },
+    {
+        "spdx_name": "CNRI-Python-GPL-Compatible",
+        "alt_names": [
+            "CNRI Python Open Source GPL Compatible License Agreement",
+            "CNRI-Python-GPL-Compatible"
+        ]
+    },
+    {
+        "spdx_name": "COIL-0.3",
+        "alt_names": [
+            "Copyfree Open Innovation License 0.3",
+            "COIL-0.3"
+        ]
+    },
+    {
+        "spdx_name": "COIL-1.0",
+        "alt_names": [
+            "Copyfree Open Innovation License",
+            "COIL-1.0"
+        ]
+    },
+    {
+        "spdx_name": "Community-Spec-1.0",
+        "alt_names": [
+            "Community Specification License 1.0",
+            "Community-Spec-1.0"
+        ]
+    },
+    {
+        "spdx_name": "Condor-1.1",
+        "alt_names": [
+            "Condor Public License v1.1",
+            "Condor-1.1"
+        ]
+    },
+    {
+        "spdx_name": "copyleft-next-0.3.0",
+        "alt_names": [
+            "copyleft-next 0.3.0",
+            "copyleft-next-0.3.0"
+        ]
+    },
+    {
+        "spdx_name": "copyleft-next-0.3.1",
+        "alt_names": [
+            "copyleft-next 0.3.1",
+            "copyleft-next-0.3.1"
+        ]
+    },
+    {
+        "spdx_name": "CPAL-1.0",
+        "alt_names": [
+            "Common Public Attribution License 1.0",
+            "CPAL-1.0"
+        ]
+    },
+    {
+        "spdx_name": "CPL-1.0",
+        "alt_names": [
+            "Common Public License 1.0",
+            "CPL-1.0",
+            "CPL"
+        ]
+    },
+    {
+        "spdx_name": "CPOL-1.02",
+        "alt_names": [
+            "Code Project Open License 1.02",
+            "CPOL-1.02"
+        ]
+    },
+    {
+        "spdx_name": "Crossword",
+        "alt_names": [
+            "Crossword License",
+            "Crossword"
+        ]
+    },
+    {
+        "spdx_name": "CrystalStacker",
+        "alt_names": [
+            "CrystalStacker License",
+            "CrystalStacker"
+        ]
+    },
+    {
+        "spdx_name": "CUA-OPL-1.0",
+        "alt_names": [
+            "CUA Office Public License v1.0",
+            "CUA-OPL-1.0"
+        ]
+    },
+    {
+        "spdx_name": "Cube",
+        "alt_names": [
+            "Cube License",
+            "Cube"
+        ]
+    },
+    {
+        "spdx_name": "curl",
+        "alt_names": [
+            "curl License",
+            "curl"
+        ]
+    },
+    {
+        "spdx_name": "D-FSL-1.0",
+        "alt_names": [
+            "Deutsche Freie Software Lizenz",
+            "D-FSL-1.0"
+        ]
+    },
+    {
+        "spdx_name": "diffmark",
+        "alt_names": [
+            "diffmark license",
+            "diffmark"
+        ]
+    },
+    {
+        "spdx_name": "DigiRule-FOSS-exception",
+        "alt_names": [
+            "DigiRule FOSS License Exception",
+            "DigiRule-FOSS-exception"
+        ]
+    },
+    {
+        "spdx_name": "DL-DE-BY-2.0",
+        "alt_names": [
+            "Data licence Germany â attribution â version 2.0",
+            "DL-DE-BY-2.0"
+        ]
+    },
+    {
+        "spdx_name": "DOC",
+        "alt_names": [
+            "DOC License",
+            "DOC"
+        ]
+    },
+    {
+        "spdx_name": "Dotseqn",
+        "alt_names": [
+            "Dotseqn License",
+            "Dotseqn"
+        ]
+    },
+    {
+        "spdx_name": "DRL-1.0",
+        "alt_names": [
+            "Detection Rule License 1.0",
+            "DRL-1.0"
+        ]
+    },
+    {
+        "spdx_name": "DSDP",
+        "alt_names": [
+            "DSDP License",
+            "DSDP"
+        ]
+    },
+    {
+        "spdx_name": "dvipdfm",
+        "alt_names": [
+            "dvipdfm License",
+            "dvipdfm"
+        ]
+    },
+    {
+        "spdx_name": "ECL-1.0",
+        "alt_names": [
+            "Educational Community License v1.0",
+            "ECL-1.0"
+        ]
+    },
+    {
+        "spdx_name": "ECL-2.0",
+        "alt_names": [
+            "Educational Community License v2.0",
+            "ECL-2.0"
+        ]
+    },
+    {
+        "spdx_name": "eCos-exception-2.0",
+        "alt_names": [
+            "eCos exception 2.0",
+            "eCos-exception-2.0"
+        ]
+    },
+    {
+        "spdx_name": "EFL-1.0",
+        "alt_names": [
+            "Eiffel Forum License v1.0",
+            "EFL-1.0"
+        ]
+    },
+    {
+        "spdx_name": "EFL-2.0",
+        "alt_names": [
+            "Eiffel Forum License v2.0",
+            "EFL-2.0"
+        ]
+    },
+    {
+        "spdx_name": "eGenix",
+        "alt_names": [
+            "eGenix.com Public License 1.1.0",
+            "eGenix"
+        ]
+    },
+    {
+        "spdx_name": "Elastic-2.0",
+        "alt_names": [
+            "Elastic License 2.0",
+            "Elastic-2.0"
+        ]
+    },
+    {
+        "spdx_name": "ELv2",
+        "alt_names": [
+            "Elastic License 2.0",
+            "ELv2"
+        ]
+    },
+    {
+        "spdx_name": "Entessa",
+        "alt_names": [
+            "Entessa Public License v1.0",
+            "Entessa"
+        ]
+    },
+    {
+        "spdx_name": "EPICS",
+        "alt_names": [
+            "EPICS Open License",
+            "EPICS"
+        ]
+    },
+    {
+        "spdx_name": "EPL-1.0",
+        "alt_names": [
+            "Eclipse Public License 1.0",
+            "EPL-1.0",
+            "EPL"
+        ]
+    },
+    {
+        "spdx_name": "EPL-2.0",
+        "alt_names": [
+            "Eclipse Public License 2.0",
+            "EPL-2.0"
+        ]
+    },
+    {
+        "spdx_name": "ErlPL-1.1",
+        "alt_names": [
+            "Erlang Public License v1.1",
+            "ErlPL-1.1"
+        ]
+    },
+    {
+        "spdx_name": "etalab-2.0",
+        "alt_names": [
+            "Etalab Open License 2.0",
+            "etalab-2.0"
+        ]
+    },
+    {
+        "spdx_name": "EUDatagrid",
+        "alt_names": [
+            "EU DataGrid Software License",
+            "EUDatagrid"
+        ]
+    },
+    {
+        "spdx_name": "EUPL-1.0",
+        "alt_names": [
+            "European Union Public License 1.0",
+            "EUPL-1.0"
+        ]
+    },
+    {
+        "spdx_name": "EUPL-1.1",
+        "alt_names": [
+            "European Union Public License 1.1",
+            "EUPL-1.1"
+        ]
+    },
+    {
+        "spdx_name": "EUPL-1.2",
+        "alt_names": [
+            "European Union Public License 1.2",
+            "EUPL-1.2"
+        ]
+    },
+    {
+        "spdx_name": "Eurosym",
+        "alt_names": [
+            "Eurosym License",
+            "Eurosym"
+        ]
+    },
+    {
+        "spdx_name": "Fair",
+        "alt_names": [
+            "Fair License",
+            "Fair"
+        ]
+    },
+    {
+        "spdx_name": "Fair-Source-0.9",
+        "alt_names": [
+            "Fair Source License 0.9",
+            "Fair-Source-0.9"
+        ]
+    },
+    {
+        "spdx_name": "FAL",
+        "alt_names": [
+            "Free Art License",
+            "FAL"
+        ]
+    },
+    {
+        "spdx_name": "Fawkes-Runtime-exception",
+        "alt_names": [
+            "Fawkes Runtime Exception",
+            "Fawkes-Runtime-exception"
+        ]
+    },
+    {
+        "spdx_name": "FDK-AAC",
+        "alt_names": [
+            "Fraunhofer FDK AAC Codec Library",
+            "FDK-AAC"
+        ]
+    },
+    {
+        "spdx_name": "FLTK-exception",
+        "alt_names": [
+            "FLTK exception",
+            "FLTK-exception"
+        ]
+    },
+    {
+        "spdx_name": "Font-exception-2.0",
+        "alt_names": [
+            "Font exception 2.0",
+            "Font-exception-2.0"
+        ]
+    },
+    {
+        "spdx_name": "Frameworx-1.0",
+        "alt_names": [
+            "Frameworx Open License 1.0",
+            "Frameworx-1.0"
+        ]
+    },
+    {
+        "spdx_name": "FreeBSD-DOC",
+        "alt_names": [
+            "FreeBSD Documentation License",
+            "FreeBSD-DOC"
+        ]
+    },
+    {
+        "spdx_name": "FreeImage",
+        "alt_names": [
+            "FreeImage Public License v1.0",
+            "FreeImage"
+        ]
+    },
+    {
+        "spdx_name": "freertos-exception-2.0",
+        "alt_names": [
+            "FreeRTOS Exception 2.0",
+            "freertos-exception-2.0"
+        ]
+    },
+    {
+        "spdx_name": "FSFAP",
+        "alt_names": [
+            "FSF All Permissive License",
+            "FSFAP"
+        ]
+    },
+    {
+        "spdx_name": "FSFUL",
+        "alt_names": [
+            "FSF Unlimited License",
+            "FSFUL"
+        ]
+    },
+    {
+        "spdx_name": "FSFULLR",
+        "alt_names": [
+            "FSF Unlimited License (with License Retention)",
+            "FSFULLR"
+        ]
+    },
+    {
+        "spdx_name": "FTL",
+        "alt_names": [
+            "Freetype Project License",
+            "FTL"
+        ]
+    },
+    {
+        "spdx_name": "GCC-exception-2.0",
+        "alt_names": [
+            "GCC Runtime Library exception 2.0",
+            "GCC-exception-2.0"
+        ]
+    },
+    {
+        "spdx_name": "GCC-exception-3.1",
+        "alt_names": [
+            "GCC Runtime Library exception 3.1",
+            "GCC-exception-3.1"
+        ]
+    },
+    {
+        "spdx_name": "GD",
+        "alt_names": [
+            "GD License",
+            "GD"
+        ]
+    },
+    {
+        "spdx_name": "GFDL-1.1-invariants-only",
+        "alt_names": [
+            "GNU Free Documentation License v1.1 only - invariants",
+            "GFDL-1.1-invariants-only"
+        ]
+    },
+    {
+        "spdx_name": "GFDL-1.1-invariants-or-later",
+        "alt_names": [
+            "GNU Free Documentation License v1.1 or later - invariants",
+            "GFDL-1.1-invariants-or-later"
+        ]
+    },
+    {
+        "spdx_name": "GFDL-1.1-no-invariants-only",
+        "alt_names": [
+            "GNU Free Documentation License v1.1 only - no invariants",
+            "GFDL-1.1-no-invariants-only"
+        ]
+    },
+    {
+        "spdx_name": "GFDL-1.1-no-invariants-or-later",
+        "alt_names": [
+            "GNU Free Documentation License v1.1 or later - no invariants",
+            "GFDL-1.1-no-invariants-or-later"
+        ]
+    },
+    {
+        "spdx_name": "GFDL-1.1-only",
+        "alt_names": [
+            "GNU Free Documentation License v1.1 only",
+            "GFDL-1.1-only",
+            "GFDL"
+        ]
+    },
+    {
+        "spdx_name": "GFDL-1.1-or-later",
+        "alt_names": [
+            "GNU Free Documentation License v1.1 or later",
+            "GFDL-1.1-or-later"
+        ]
+    },
+    {
+        "spdx_name": "GFDL-1.2-invariants-only",
+        "alt_names": [
+            "GNU Free Documentation License v1.2 only - invariants",
+            "GFDL-1.2-invariants-only"
+        ]
+    },
+    {
+        "spdx_name": "GFDL-1.2-invariants-or-later",
+        "alt_names": [
+            "GNU Free Documentation License v1.2 or later - invariants",
+            "GFDL-1.2-invariants-or-later"
+        ]
+    },
+    {
+        "spdx_name": "GFDL-1.2-no-invariants-only",
+        "alt_names": [
+            "GNU Free Documentation License v1.2 only - no invariants",
+            "GFDL-1.2-no-invariants-only"
+        ]
+    },
+    {
+        "spdx_name": "GFDL-1.2-no-invariants-or-later",
+        "alt_names": [
+            "GNU Free Documentation License v1.2 or later - no invariants",
+            "GFDL-1.2-no-invariants-or-later"
+        ]
+    },
+    {
+        "spdx_name": "GFDL-1.2-only",
+        "alt_names": [
+            "GNU Free Documentation License v1.2 only",
+            "GFDL-1.2-only"
+        ]
+    },
+    {
+        "spdx_name": "GFDL-1.2-or-later",
+        "alt_names": [
+            "GNU Free Documentation License v1.2 or later",
+            "GFDL-1.2-or-later"
+        ]
+    },
+    {
+        "spdx_name": "GFDL-1.3-invariants-only",
+        "alt_names": [
+            "GNU Free Documentation License v1.3 only - invariants",
+            "GFDL-1.3-invariants-only"
+        ]
+    },
+    {
+        "spdx_name": "GFDL-1.3-invariants-or-later",
+        "alt_names": [
+            "GNU Free Documentation License v1.3 or later - invariants",
+            "GFDL-1.3-invariants-or-later"
+        ]
+    },
+    {
+        "spdx_name": "GFDL-1.3-no-invariants-only",
+        "alt_names": [
+            "GNU Free Documentation License v1.3 only - no invariants",
+            "GFDL-1.3-no-invariants-only"
+        ]
+    },
+    {
+        "spdx_name": "GFDL-1.3-no-invariants-or-later",
+        "alt_names": [
+            "GNU Free Documentation License v1.3 or later - no invariants",
+            "GFDL-1.3-no-invariants-or-later"
+        ]
+    },
+    {
+        "spdx_name": "GFDL-1.3-only",
+        "alt_names": [
+            "GNU Free Documentation License v1.3 only",
+            "GFDL-1.3-only",
+            "GFDL-1.3"
+        ]
+    },
+    {
+        "spdx_name": "GFDL-1.3-or-later",
+        "alt_names": [
+            "GNU Free Documentation License v1.3 or later",
+            "GFDL-1.3-or-later"
+        ]
+    },
+    {
+        "spdx_name": "GG1",
+        "alt_names": [
+            "GG License 1.0",
+            "GG1"
+        ]
+    },
+    {
+        "spdx_name": "Giftware",
+        "alt_names": [
+            "Giftware License",
+            "Giftware"
+        ]
+    },
+    {
+        "spdx_name": "GL2PS",
+        "alt_names": [
+            "GL2PS License",
+            "GL2PS"
+        ]
+    },
+    {
+        "spdx_name": "Glide",
+        "alt_names": [
+            "3dfx Glide License",
+            "Glide"
+        ]
+    },
+    {
+        "spdx_name": "Glulxe",
+        "alt_names": [
+            "Glulxe License",
+            "Glulxe"
+        ]
+    },
+    {
+        "spdx_name": "GLWTPL",
+        "alt_names": [
+            "Good Luck With That Public License",
+            "GLWTPL"
+        ]
+    },
+    {
+        "spdx_name": "gnu-javamail-exception",
+        "alt_names": [
+            "GNU JavaMail exception",
+            "gnu-javamail-exception"
+        ]
+    },
+    {
+        "spdx_name": "gnuplot",
+        "alt_names": [
+            "gnuplot License",
+            "gnuplot"
+        ]
+    },
+    {
+        "spdx_name": "GPL-1.0-only",
+        "alt_names": [
+            "GNU General Public License v1.0 only",
+            "GPL-1.0-only",
+            "GPL"
+        ]
+    },
+    {
+        "spdx_name": "GPL-1.0-or-later",
+        "alt_names": [
+            "GNU General Public License v1.0 or later",
+            "GPL-1.0-or-later",
+            "GPL+",
+            "GPLv1+"
+        ]
+    },
+    {
+        "spdx_name": "GPL-2.0-only",
+        "alt_names": [
+            "GNU General Public License v2.0 only",
+            "GPL-2.0-only",
+            "GPLv2",
+            "GPL-2.0",
+            "GPL2",
+            "GPL-2"
+        ]
+    },
+    {
+        "spdx_name": "GPL-2.0-or-later",
+        "alt_names": [
+            "GNU General Public License v2.0 or later",
+            "GPL-2.0-or-later",
+            "GPLv2+",
+            "GPL-2.0+",
+            "GPL-2+"
+        ]
+    },
+    {
+        "spdx_name": "GPL-3.0-linking-exception",
+        "alt_names": [
+            "GPL-3.0 Linking Exception",
+            "GPL-3.0-linking-exception"
+        ]
+    },
+    {
+        "spdx_name": "GPL-3.0-linking-source-exception",
+        "alt_names": [
+            "GPL-3.0 Linking Exception (with Corresponding Source)",
+            "GPL-3.0-linking-source-exception"
+        ]
+    },
+    {
+        "spdx_name": "GPL-3.0-only",
+        "alt_names": [
+            "GNU General Public License v3.0 only",
+            "GPL-3.0-only",
+            "GPLv3",
+            "GPL-3.0",
+            "GPL3"
+        ]
+    },
+    {
+        "spdx_name": "GPL-3.0-or-later",
+        "alt_names": [
+            "GNU General Public License v3.0 or later",
+            "GPL-3.0-or-later",
+            "GPLv3+",
+            "GPL-3.0+"
+        ]
+    },
+    {
+        "spdx_name": "GPL-CC-1.0",
+        "alt_names": [
+            "GPL Cooperation Commitment 1.0",
+            "GPL-CC-1.0"
+        ]
+    },
+    {
+        "spdx_name": "gSOAP-1.3b",
+        "alt_names": [
+            "gSOAP Public License v1.3b",
+            "gSOAP-1.3b"
+        ]
+    },
+    {
+        "spdx_name": "HaskellReport",
+        "alt_names": [
+            "Haskell Language Report License",
+            "HaskellReport"
+        ]
+    },
+    {
+        "spdx_name": "Hippocratic-2.1",
+        "alt_names": [
+            "Hippocratic License 2.1",
+            "Hippocratic-2.1"
+        ]
+    },
+    {
+        "spdx_name": "HPND",
+        "alt_names": [
+            "Historical Permission Notice and Disclaimer",
+            "HPND"
+        ]
+    },
+    {
+        "spdx_name": "HPND-sell-variant",
+        "alt_names": [
+            "Historical Permission Notice and Disclaimer - sell variant",
+            "HPND-sell-variant"
+        ]
+    },
+    {
+        "spdx_name": "HTMLTIDY",
+        "alt_names": [
+            "HTML Tidy License",
+            "HTMLTIDY"
+        ]
+    },
+    {
+        "spdx_name": "i2p-gpl-java-exception",
+        "alt_names": [
+            "i2p GPL+Java Exception",
+            "i2p-gpl-java-exception"
+        ]
+    },
+    {
+        "spdx_name": "IBM-pibs",
+        "alt_names": [
+            "IBM PowerPC Initialization and Boot Software",
+            "IBM-pibs"
+        ]
+    },
+    {
+        "spdx_name": "ICU",
+        "alt_names": [
+            "ICU License",
+            "ICU"
+        ]
+    },
+    {
+        "spdx_name": "IJG",
+        "alt_names": [
+            "Independent JPEG Group License",
+            "IJG"
+        ]
+    },
+    {
+        "spdx_name": "ImageMagick",
+        "alt_names": [
+            "ImageMagick License",
+            "ImageMagick"
+        ]
+    },
+    {
+        "spdx_name": "iMatix",
+        "alt_names": [
+            "iMatix Standard Function Library Agreement",
+            "iMatix"
+        ]
+    },
+    {
+        "spdx_name": "Imlib2",
+        "alt_names": [
+            "Imlib2 License",
+            "Imlib2"
+        ]
+    },
+    {
+        "spdx_name": "Info-ZIP",
+        "alt_names": [
+            "Info-ZIP License",
+            "Info-ZIP"
+        ]
+    },
+    {
+        "spdx_name": "Intel",
+        "alt_names": [
+            "Intel Open Source License",
+            "Intel"
+        ]
+    },
+    {
+        "spdx_name": "Intel-ACPI",
+        "alt_names": [
+            "Intel ACPI Software License Agreement",
+            "Intel-ACPI"
+        ]
+    },
+    {
+        "spdx_name": "Interbase-1.0",
+        "alt_names": [
+            "Interbase Public License v1.0",
+            "Interbase-1.0",
+            "Interbase"
+        ]
+    },
+    {
+        "spdx_name": "IPA",
+        "alt_names": [
+            "IPA Font License",
+            "IPA"
+        ]
+    },
+    {
+        "spdx_name": "IPL-1.0",
+        "alt_names": [
+            "IBM Public License v1.0",
+            "IPL-1.0"
+        ]
+    },
+    {
+        "spdx_name": "ISC",
+        "alt_names": [
+            "ISC License",
+            "ISC"
+        ]
+    },
+    {
+        "spdx_name": "Jam",
+        "alt_names": [
+            "Jam License",
+            "Jam"
+        ]
+    },
+    {
+        "spdx_name": "JasPer-2.0",
+        "alt_names": [
+            "JasPer License",
+            "JasPer-2.0"
+        ]
+    },
+    {
+        "spdx_name": "JDL-1.1.X",
+        "alt_names": [
+            "JAVA DISTRIBUTION LICENSE",
+            "JDL-1.1.X"
+        ]
+    },
+    {
+        "spdx_name": "JPNIC",
+        "alt_names": [
+            "Japan Network Information Center License",
+            "JPNIC"
+        ]
+    },
+    {
+        "spdx_name": "JSON",
+        "alt_names": [
+            "JSON License",
+            "JSON"
+        ]
+    },
+    {
+        "spdx_name": "KiCad-libraries-exception",
+        "alt_names": [
+            "KiCad Libraries Exception",
+            "KiCad-libraries-exception"
+        ]
+    },
+    {
+        "spdx_name": "LAL-1.2",
+        "alt_names": [
+            "Licence Art Libre 1.2",
+            "LAL-1.2"
+        ]
+    },
+    {
+        "spdx_name": "LAL-1.3",
+        "alt_names": [
+            "Licence Art Libre 1.3",
+            "LAL-1.3"
+        ]
+    },
+    {
+        "spdx_name": "Latex2e",
+        "alt_names": [
+            "Latex2e License",
+            "Latex2e"
+        ]
+    },
+    {
+        "spdx_name": "Leptonica",
+        "alt_names": [
+            "Leptonica License",
+            "Leptonica"
+        ]
+    },
+    {
+        "spdx_name": "LGPL-2.0-only",
+        "alt_names": [
+            "GNU Library General Public License v2 only",
+            "LGPL-2.0-only",
+            "LGPLv2",
+            "LGPL-2.0"
+        ]
+    },
+    {
+        "spdx_name": "LGPL-2.0-or-later",
+        "alt_names": [
+            "GNU Library General Public License v2 or later",
+            "LGPL-2.0-or-later",
+            "LGPLv2+",
+            "LGPL-2.0+"
+        ]
+    },
+    {
+        "spdx_name": "LGPL-2.1-only",
+        "alt_names": [
+            "GNU Lesser General Public License v2.1 only",
+            "LGPL-2.1-only",
+            "LGPL-2.1",
+            "LGPLv2.1"
+        ]
+    },
+    {
+        "spdx_name": "LGPL-2.1-or-later",
+        "alt_names": [
+            "GNU Lesser General Public License v2.1 or later",
+            "LGPL-2.1-or-later",
+            "LGPL-2.1+",
+            "LGPLv2.1+",
+            "LGPL 2.1+"
+        ]
+    },
+    {
+        "spdx_name": "LGPL-3.0-linking-exception",
+        "alt_names": [
+            "LGPL-3.0 Linking Exception",
+            "LGPL-3.0-linking-exception"
+        ]
+    },
+    {
+        "spdx_name": "LGPL-3.0-only",
+        "alt_names": [
+            "GNU Lesser General Public License v3.0 only",
+            "LGPL-3.0-only",
+            "LGPLv3",
+            "LGPL-3.0"
+        ]
+    },
+    {
+        "spdx_name": "LGPL-3.0-or-later",
+        "alt_names": [
+            "GNU Lesser General Public License v3.0 or later",
+            "LGPL-3.0-or-later",
+            "LGPLv3+",
+            "LGPL-3.0+"
+        ]
+    },
+    {
+        "spdx_name": "LGPLLR",
+        "alt_names": [
+            "Lesser General Public License For Linguistic Resources",
+            "LGPLLR"
+        ]
+    },
+    {
+        "spdx_name": "Libpng",
+        "alt_names": [
+            "libpng License",
+            "Libpng"
+        ]
+    },
+    {
+        "spdx_name": "libpng-2.0",
+        "alt_names": [
+            "PNG Reference Library version 2",
+            "libpng-2.0"
+        ]
+    },
+    {
+        "spdx_name": "libselinux-1.0",
+        "alt_names": [
+            "libselinux public domain notice",
+            "libselinux-1.0"
+        ]
+    },
+    {
+        "spdx_name": "libtiff",
+        "alt_names": [
+            "libtiff License",
+            "libtiff"
+        ]
+    },
+    {
+        "spdx_name": "Libtool-exception",
+        "alt_names": [
+            "Libtool Exception",
+            "Libtool-exception"
+        ]
+    },
+    {
+        "spdx_name": "LiLiQ-P-1.1",
+        "alt_names": [
+            "Licence Libre du Québec – Permissive version 1.1",
+            "LiLiQ-P-1.1"
+        ]
+    },
+    {
+        "spdx_name": "LiLiQ-R-1.1",
+        "alt_names": [
+            "Licence Libre du Québec – Réciprocité version 1.1",
+            "LiLiQ-R-1.1"
+        ]
+    },
+    {
+        "spdx_name": "LiLiQ-Rplus-1.1",
+        "alt_names": [
+            "Licence Libre du Québec – Réciprocité forte version 1.1",
+            "LiLiQ-Rplus-1.1"
+        ]
+    },
+    {
+        "spdx_name": "Linux-man-pages-copyleft",
+        "alt_names": [
+            "Linux man-pages Copyleft",
+            "Linux-man-pages-copyleft"
+        ]
+    },
+    {
+        "spdx_name": "Linux-OpenIB",
+        "alt_names": [
+            "Linux Kernel Variant of OpenIB.org license",
+            "Linux-OpenIB"
+        ]
+    },
+    {
+        "spdx_name": "Linux-syscall-note",
+        "alt_names": [
+            "Linux Syscall Note",
+            "Linux-syscall-note"
+        ]
+    },
+    {
+        "spdx_name": "LLGPL",
+        "alt_names": [
+            "Lisp Lesser General Public License",
+            "LLGPL"
+        ]
+    },
+    {
+        "spdx_name": "LLVM-exception",
+        "alt_names": [
+            "LLVM Exception",
+            "LLVM-exception"
+        ]
+    },
+    {
+        "spdx_name": "LPL-1.0",
+        "alt_names": [
+            "Lucent Public License Version 1.0",
+            "LPL-1.0"
+        ]
+    },
+    {
+        "spdx_name": "LPL-1.02",
+        "alt_names": [
+            "Lucent Public License v1.02",
+            "LPL-1.02"
+        ]
+    },
+    {
+        "spdx_name": "LPPL-1.0",
+        "alt_names": [
+            "LaTeX Project Public License v1.0",
+            "LPPL-1.0",
+            "LPPL"
+        ]
+    },
+    {
+        "spdx_name": "LPPL-1.1",
+        "alt_names": [
+            "LaTeX Project Public License v1.1",
+            "LPPL-1.1"
+        ]
+    },
+    {
+        "spdx_name": "LPPL-1.2",
+        "alt_names": [
+            "LaTeX Project Public License v1.2",
+            "LPPL-1.2",
+            "LPPL 1.2"
+        ]
+    },
+    {
+        "spdx_name": "LPPL-1.3a",
+        "alt_names": [
+            "LaTeX Project Public License v1.3a",
+            "LPPL-1.3a"
+        ]
+    },
+    {
+        "spdx_name": "LPPL-1.3c",
+        "alt_names": [
+            "LaTeX Project Public License v1.3c",
+            "LPPL-1.3c"
+        ]
+    },
+    {
+        "spdx_name": "LZMA-exception",
+        "alt_names": [
+            "LZMA exception",
+            "LZMA-exception"
+        ]
+    },
+    {
+        "spdx_name": "MakeIndex",
+        "alt_names": [
+            "MakeIndex License",
+            "MakeIndex"
+        ]
+    },
+    {
+        "spdx_name": "May 5, 2015",
+        "alt_names": [
+            "Google Play Developer Distribution Agreement",
+            "May 5, 2015"
+        ]
+    },
+    {
+        "spdx_name": "mif-exception",
+        "alt_names": [
+            "Macros and Inline Functions Exception",
+            "mif-exception"
+        ]
+    },
+    {
+        "spdx_name": "MirOS",
+        "alt_names": [
+            "The MirOS Licence",
+            "MirOS"
+        ]
+    },
+    {
+        "spdx_name": "MIT",
+        "alt_names": [
+            "MIT License",
+            "MIT"
+        ]
+    },
+    {
+        "spdx_name": "MIT-0",
+        "alt_names": [
+            "MIT No Attribution",
+            "MIT-0"
+        ]
+    },
+    {
+        "spdx_name": "MIT-advertising",
+        "alt_names": [
+            "Enlightenment License (e16)",
+            "MIT-advertising"
+        ]
+    },
+    {
+        "spdx_name": "MIT-CMU",
+        "alt_names": [
+            "CMU License",
+            "MIT-CMU"
+        ]
+    },
+    {
+        "spdx_name": "MIT-enna",
+        "alt_names": [
+            "enna License",
+            "MIT-enna"
+        ]
+    },
+    {
+        "spdx_name": "MIT-feh",
+        "alt_names": [
+            "feh License",
+            "MIT-feh"
+        ]
+    },
+    {
+        "spdx_name": "MIT-Modern-Variant",
+        "alt_names": [
+            "MIT License Modern Variant",
+            "MIT-Modern-Variant"
+        ]
+    },
+    {
+        "spdx_name": "MIT-open-group",
+        "alt_names": [
+            "MIT Open Group variant",
+            "MIT-open-group"
+        ]
+    },
+    {
+        "spdx_name": "MITNFA",
+        "alt_names": [
+            "MIT +no-false-attribs license",
+            "MITNFA"
+        ]
+    },
+    {
+        "spdx_name": "Motosoto",
+        "alt_names": [
+            "Motosoto License",
+            "Motosoto"
+        ]
+    },
+    {
+        "spdx_name": "mpich2",
+        "alt_names": [
+            "mpich2 License",
+            "mpich2"
+        ]
+    },
+    {
+        "spdx_name": "MPL-1.0",
+        "alt_names": [
+            "Mozilla Public License 1.0",
+            "MPL-1.0"
+        ]
+    },
+    {
+        "spdx_name": "MPL-1.1",
+        "alt_names": [
+            "Mozilla Public License 1.1",
+            "MPL-1.1",
+            "MPLv1.1"
+        ]
+    },
+    {
+        "spdx_name": "MPL-2.0",
+        "alt_names": [
+            "Mozilla Public License 2.0",
+            "MPL-2.0",
+            "MPLv2.0"
+        ]
+    },
+    {
+        "spdx_name": "MPL-2.0-no-copyleft-exception",
+        "alt_names": [
+            "Mozilla Public License 2.0 (no copyleft exception)",
+            "MPL-2.0-no-copyleft-exception"
+        ]
+    },
+    {
+        "spdx_name": "mplus",
+        "alt_names": [
+            "mplus Font License",
+            "mplus"
+        ]
+    },
+    {
+        "spdx_name": "MS-CL",
+        "alt_names": [
+            "Microsoft Shared Source Community License",
+            "MS-CL"
+        ]
+    },
+    {
+        "spdx_name": "MS-PL",
+        "alt_names": [
+            "Microsoft Public License",
+            "MS-PL"
+        ]
+    },
+    {
+        "spdx_name": "MS-RL",
+        "alt_names": [
+            "Microsoft Reciprocal License",
+            "MS-RL"
+        ]
+    },
+    {
+        "spdx_name": "MTLL",
+        "alt_names": [
+            "Matrix Template Library License",
+            "MTLL"
+        ]
+    },
+    {
+        "spdx_name": "MulanPSL-1.0",
+        "alt_names": [
+            "Mulan Permissive Software License, Version 1",
+            "MulanPSL-1.0"
+        ]
+    },
+    {
+        "spdx_name": "MulanPSL-2.0",
+        "alt_names": [
+            "Mulan Permissive Software License, Version 2",
+            "MulanPSL-2.0",
+            "MulanPSL2",
+            "Mulan PSL v2"
+        ]
+    },
+    {
+        "spdx_name": "Multics",
+        "alt_names": [
+            "Multics License",
+            "Multics"
+        ]
+    },
+    {
+        "spdx_name": "Mup",
+        "alt_names": [
+            "Mup License",
+            "Mup"
+        ]
+    },
+    {
+        "spdx_name": "NAIST-2003",
+        "alt_names": [
+            "Nara Institute of Science and Technology License (2003)",
+            "NAIST-2003"
+        ]
+    },
+    {
+        "spdx_name": "NASA-1.3",
+        "alt_names": [
+            "NASA Open Source Agreement 1.3",
+            "NASA-1.3"
+        ]
+    },
+    {
+        "spdx_name": "Naumen",
+        "alt_names": [
+            "Naumen Public License",
+            "Naumen"
+        ]
+    },
+    {
+        "spdx_name": "NBPL-1.0",
+        "alt_names": [
+            "Net Boolean Public License v1",
+            "NBPL-1.0"
+        ]
+    },
+    {
+        "spdx_name": "NCGL-UK-2.0",
+        "alt_names": [
+            "Non-Commercial Government Licence",
+            "NCGL-UK-2.0"
+        ]
+    },
+    {
+        "spdx_name": "NCSA",
+        "alt_names": [
+            "University of Illinois/NCSA Open Source License",
+            "NCSA"
+        ]
+    },
+    {
+        "spdx_name": "Net-SNMP",
+        "alt_names": [
+            "Net-SNMP License",
+            "Net-SNMP"
+        ]
+    },
+    {
+        "spdx_name": "NetCDF",
+        "alt_names": [
+            "NetCDF license",
+            "NetCDF"
+        ]
+    },
+    {
+        "spdx_name": "Newsletr",
+        "alt_names": [
+            "Newsletr License",
+            "Newsletr"
+        ]
+    },
+    {
+        "spdx_name": "NGPL",
+        "alt_names": [
+            "Nethack General Public License",
+            "NGPL"
+        ]
+    },
+    {
+        "spdx_name": "NIST-PD",
+        "alt_names": [
+            "NIST Public Domain Notice",
+            "NIST-PD"
+        ]
+    },
+    {
+        "spdx_name": "NIST-PD-fallback",
+        "alt_names": [
+            "NIST Public Domain Notice with license fallback",
+            "NIST-PD-fallback"
+        ]
+    },
+    {
+        "spdx_name": "NLOD-1.0",
+        "alt_names": [
+            "Norwegian Licence for Open Government Data",
+            "NLOD-1.0"
+        ]
+    },
+    {
+        "spdx_name": "NLOD-2.0",
+        "alt_names": [
+            "Norwegian Licence for Open Government Data (NLOD) 2.0",
+            "NLOD-2.0"
+        ]
+    },
+    {
+        "spdx_name": "NLPL",
+        "alt_names": [
+            "No Limit Public License",
+            "NLPL"
+        ]
+    },
+    {
+        "spdx_name": "NMPV1",
+        "alt_names": [
+            "Motif - New Modification Principle V1  License",
+            "NMPV1"
+        ]
+    },
+    {
+        "spdx_name": "Nokia",
+        "alt_names": [
+            "Nokia Open Source License",
+            "Nokia"
+        ]
+    },
+    {
+        "spdx_name": "NOSL",
+        "alt_names": [
+            "Netizen Open Source License",
+            "NOSL"
+        ]
+    },
+    {
+        "spdx_name": "Noweb",
+        "alt_names": [
+            "Noweb License",
+            "Noweb"
+        ]
+    },
+    {
+        "spdx_name": "NPL-1.0",
+        "alt_names": [
+            "Netscape Public License v1.0",
+            "NPL-1.0",
+            "Netscape"
+        ]
+    },
+    {
+        "spdx_name": "NPL-1.1",
+        "alt_names": [
+            "Netscape Public License v1.1",
+            "NPL-1.1"
+        ]
+    },
+    {
+        "spdx_name": "NPOSL-3.0",
+        "alt_names": [
+            "Non-Profit Open Software License 3.0",
+            "NPOSL-3.0"
+        ]
+    },
+    {
+        "spdx_name": "NRL",
+        "alt_names": [
+            "NRL License",
+            "NRL"
+        ]
+    },
+    {
+        "spdx_name": "NTP",
+        "alt_names": [
+            "NTP License",
+            "NTP"
+        ]
+    },
+    {
+        "spdx_name": "NTP-0",
+        "alt_names": [
+            "NTP No Attribution",
+            "NTP-0"
+        ]
+    },
+    {
+        "spdx_name": "O-UDA-1.0",
+        "alt_names": [
+            "Open Use of Data Agreement v1.0",
+            "O-UDA-1.0"
+        ]
+    },
+    {
+        "spdx_name": "OCaml-LGPL-linking-exception",
+        "alt_names": [
+            "OCaml LGPL Linking Exception",
+            "OCaml-LGPL-linking-exception"
+        ]
+    },
+    {
+        "spdx_name": "OCCT-exception-1.0",
+        "alt_names": [
+            "Open CASCADE Exception 1.0",
+            "OCCT-exception-1.0"
+        ]
+    },
+    {
+        "spdx_name": "OCCT-PL",
+        "alt_names": [
+            "Open CASCADE Technology Public License",
+            "OCCT-PL"
+        ]
+    },
+    {
+        "spdx_name": "OCLC-2.0",
+        "alt_names": [
+            "OCLC Research Public License 2.0",
+            "OCLC-2.0"
+        ]
+    },
+    {
+        "spdx_name": "ODbL-1.0",
+        "alt_names": [
+            "Open Data Commons Open Database License v1.0",
+            "ODbL-1.0"
+        ]
+    },
+    {
+        "spdx_name": "ODC-By-1.0",
+        "alt_names": [
+            "Open Data Commons Attribution License v1.0",
+            "ODC-By-1.0"
+        ]
+    },
+    {
+        "spdx_name": "OFL-1.0",
+        "alt_names": [
+            "SIL Open Font License 1.0",
+            "OFL-1.0",
+            "OFL"
+        ]
+    },
+    {
+        "spdx_name": "OFL-1.0-no-RFN",
+        "alt_names": [
+            "SIL Open Font License 1.0 with no Reserved Font Name",
+            "OFL-1.0-no-RFN"
+        ]
+    },
+    {
+        "spdx_name": "OFL-1.0-RFN",
+        "alt_names": [
+            "SIL Open Font License 1.0 with Reserved Font Name",
+            "OFL-1.0-RFN"
+        ]
+    },
+    {
+        "spdx_name": "OFL-1.1",
+        "alt_names": [
+            "SIL Open Font License 1.1",
+            "OFL-1.1"
+        ]
+    },
+    {
+        "spdx_name": "OFL-1.1-no-RFN",
+        "alt_names": [
+            "SIL Open Font License 1.1 with no Reserved Font Name",
+            "OFL-1.1-no-RFN"
+        ]
+    },
+    {
+        "spdx_name": "OFL-1.1-RFN",
+        "alt_names": [
+            "SIL Open Font License 1.1 with Reserved Font Name",
+            "OFL-1.1-RFN"
+        ]
+    },
+    {
+        "spdx_name": "OGC-1.0",
+        "alt_names": [
+            "OGC Software License, Version 1.0",
+            "OGC-1.0"
+        ]
+    },
+    {
+        "spdx_name": "OGL",
+        "alt_names": [
+            "OPEN GAME LICENSE",
+            "OGL"
+        ]
+    },
+    {
+        "spdx_name": "OGL-Canada-2.0",
+        "alt_names": [
+            "Open Government Licence - Canada",
+            "OGL-Canada-2.0"
+        ]
+    },
+    {
+        "spdx_name": "OGL-UK-1.0",
+        "alt_names": [
+            "Open Government Licence v1.0",
+            "OGL-UK-1.0"
+        ]
+    },
+    {
+        "spdx_name": "OGL-UK-2.0",
+        "alt_names": [
+            "Open Government Licence v2.0",
+            "OGL-UK-2.0"
+        ]
+    },
+    {
+        "spdx_name": "OGL-UK-3.0",
+        "alt_names": [
+            "Open Government Licence v3.0",
+            "OGL-UK-3.0"
+        ]
+    },
+    {
+        "spdx_name": "OGTSL",
+        "alt_names": [
+            "Open Group Test Suite License",
+            "OGTSL"
+        ]
+    },
+    {
+        "spdx_name": "OLDAP-1.1",
+        "alt_names": [
+            "Open LDAP Public License v1.1",
+            "OLDAP-1.1",
+            "OpenLDAP"
+        ]
+    },
+    {
+        "spdx_name": "OLDAP-1.2",
+        "alt_names": [
+            "Open LDAP Public License v1.2",
+            "OLDAP-1.2"
+        ]
+    },
+    {
+        "spdx_name": "OLDAP-1.3",
+        "alt_names": [
+            "Open LDAP Public License v1.3",
+            "OLDAP-1.3"
+        ]
+    },
+    {
+        "spdx_name": "OLDAP-1.4",
+        "alt_names": [
+            "Open LDAP Public License v1.4",
+            "OLDAP-1.4"
+        ]
+    },
+    {
+        "spdx_name": "OLDAP-2.0",
+        "alt_names": [
+            "Open LDAP Public License v2.0 (or possibly 2.0A and 2.0B)",
+            "OLDAP-2.0"
+        ]
+    },
+    {
+        "spdx_name": "OLDAP-2.0.1",
+        "alt_names": [
+            "Open LDAP Public License v2.0.1",
+            "OLDAP-2.0.1"
+        ]
+    },
+    {
+        "spdx_name": "OLDAP-2.1",
+        "alt_names": [
+            "Open LDAP Public License v2.1",
+            "OLDAP-2.1"
+        ]
+    },
+    {
+        "spdx_name": "OLDAP-2.2",
+        "alt_names": [
+            "Open LDAP Public License v2.2",
+            "OLDAP-2.2"
+        ]
+    },
+    {
+        "spdx_name": "OLDAP-2.2.1",
+        "alt_names": [
+            "Open LDAP Public License v2.2.1",
+            "OLDAP-2.2.1"
+        ]
+    },
+    {
+        "spdx_name": "OLDAP-2.2.2",
+        "alt_names": [
+            "Open LDAP Public License 2.2.2",
+            "OLDAP-2.2.2"
+        ]
+    },
+    {
+        "spdx_name": "OLDAP-2.3",
+        "alt_names": [
+            "Open LDAP Public License v2.3",
+            "OLDAP-2.3"
+        ]
+    },
+    {
+        "spdx_name": "OLDAP-2.4",
+        "alt_names": [
+            "Open LDAP Public License v2.4",
+            "OLDAP-2.4"
+        ]
+    },
+    {
+        "spdx_name": "OLDAP-2.5",
+        "alt_names": [
+            "Open LDAP Public License v2.5",
+            "OLDAP-2.5"
+        ]
+    },
+    {
+        "spdx_name": "OLDAP-2.6",
+        "alt_names": [
+            "Open LDAP Public License v2.6",
+            "OLDAP-2.6"
+        ]
+    },
+    {
+        "spdx_name": "OLDAP-2.7",
+        "alt_names": [
+            "Open LDAP Public License v2.7",
+            "OLDAP-2.7"
+        ]
+    },
+    {
+        "spdx_name": "OLDAP-2.8",
+        "alt_names": [
+            "Open LDAP Public License v2.8",
+            "OLDAP-2.8"
+        ]
+    },
+    {
+        "spdx_name": "OML",
+        "alt_names": [
+            "Open Market License",
+            "OML"
+        ]
+    },
+    {
+        "spdx_name": "OpenJDK-assembly-exception-1.0",
+        "alt_names": [
+            "OpenJDK Assembly exception 1.0",
+            "OpenJDK-assembly-exception-1.0"
+        ]
+    },
+    {
+        "spdx_name": "OpenSSL",
+        "alt_names": [
+            "OpenSSL License",
+            "OpenSSL"
+        ]
+    },
+    {
+        "spdx_name": "openvpn-openssl-exception",
+        "alt_names": [
+            "OpenVPN OpenSSL Exception",
+            "openvpn-openssl-exception"
+        ]
+    },
+    {
+        "spdx_name": "OPL-1.0",
+        "alt_names": [
+            "Open Public License v1.0",
+            "OPL-1.0"
+        ]
+    },
+    {
+        "spdx_name": "OPUBL-1.0",
+        "alt_names": [
+            "Open Publication License v1.0",
+            "OPUBL-1.0"
+        ]
+    },
+    {
+        "spdx_name": "OSET-PL-2.1",
+        "alt_names": [
+            "OSET Public License version 2.1",
+            "OSET-PL-2.1"
+        ]
+    },
+    {
+        "spdx_name": "OSL-1.0",
+        "alt_names": [
+            "Open Software License 1.0",
+            "OSL-1.0"
+        ]
+    },
+    {
+        "spdx_name": "OSL-1.1",
+        "alt_names": [
+            "Open Software License 1.1",
+            "OSL-1.1"
+        ]
+    },
+    {
+        "spdx_name": "OSL-2.0",
+        "alt_names": [
+            "Open Software License 2.0",
+            "OSL-2.0"
+        ]
+    },
+    {
+        "spdx_name": "OSL-2.1",
+        "alt_names": [
+            "Open Software License 2.1",
+            "OSL-2.1",
+            "OSL 2.1"
+        ]
+    },
+    {
+        "spdx_name": "OSL-3.0",
+        "alt_names": [
+            "Open Software License 3.0",
+            "OSL-3.0"
+        ]
+    },
+    {
+        "spdx_name": "paragraph 4 & 5 Fulltext",
+        "alt_names": [
+            "Quick Summary Use this license to use or redistribute the TORQUE software v2.5+ and later versions. Redistributions in any form must be accompanied by copyright notice, list of conditions",
+            "paragraph 4 & 5 Fulltext"
+        ]
+    },
+    {
+        "spdx_name": "Parity-6.0.0",
+        "alt_names": [
+            "The Parity Public License 6.0.0",
+            "Parity-6.0.0"
+        ]
+    },
+    {
+        "spdx_name": "Parity-7.0.0",
+        "alt_names": [
+            "The Parity Public License 7.0.0",
+            "Parity-7.0.0"
+        ]
+    },
+    {
+        "spdx_name": "PDDL-1.0",
+        "alt_names": [
+            "Open Data Commons Public Domain Dedication & License 1.0",
+            "PDDL-1.0"
+        ]
+    },
+    {
+        "spdx_name": "Personal &amp; Business TOS",
+        "alt_names": [
+            "Sandboxie -",
+            "Personal &amp; Business TOS"
+        ]
+    },
+    {
+        "spdx_name": "PHP-3.0",
+        "alt_names": [
+            "PHP License v3.0",
+            "PHP-3.0",
+            "PHP"
+        ]
+    },
+    {
+        "spdx_name": "PHP-3.01",
+        "alt_names": [
+            "PHP License v3.01",
+            "PHP-3.01"
+        ]
+    },
+    {
+        "spdx_name": "Plexus",
+        "alt_names": [
+            "Plexus Classworlds License",
+            "Plexus"
+        ]
+    },
+    {
+        "spdx_name": "PolyForm-Noncommercial-1.0.0",
+        "alt_names": [
+            "PolyForm Noncommercial License 1.0.0",
+            "PolyForm-Noncommercial-1.0.0"
+        ]
+    },
+    {
+        "spdx_name": "PolyForm-Small-Business-1.0.0",
+        "alt_names": [
+            "PolyForm Small Business License 1.0.0",
+            "PolyForm-Small-Business-1.0.0"
+        ]
+    },
+    {
+        "spdx_name": "PostgreSQL",
+        "alt_names": [
+            "PostgreSQL License",
+            "PostgreSQL"
+        ]
+    },
+    {
+        "spdx_name": "PS-or-PDF-font-exception-20170817",
+        "alt_names": [
+            "PS/PDF font exception (2017-08-17)",
+            "PS-or-PDF-font-exception-20170817"
+        ]
+    },
+    {
+        "spdx_name": "PSF-2.0",
+        "alt_names": [
+            "Python Software Foundation License 2.0",
+            "PSF-2.0",
+            "PSF"
+        ]
+    },
+    {
+        "spdx_name": "psfrag",
+        "alt_names": [
+            "psfrag License",
+            "psfrag"
+        ]
+    },
+    {
+        "spdx_name": "psutils",
+        "alt_names": [
+            "psutils License",
+            "psutils"
+        ]
+    },
+    {
+        "spdx_name": "Python-2.0",
+        "alt_names": [
+            "Python License 2.0",
+            "Python-2.0",
+            "Python",
+            "Python Software Foundation License"
+        ]
+    },
+    {
+        "spdx_name": "Qhull",
+        "alt_names": [
+            "Qhull License",
+            "Qhull"
+        ]
+    },
+    {
+        "spdx_name": "QPL-1.0",
+        "alt_names": [
+            "Q Public License 1.0",
+            "QPL-1.0"
+        ]
+    },
+    {
+        "spdx_name": "Qt-GPL-exception-1.0",
+        "alt_names": [
+            "Qt GPL exception 1.0",
+            "Qt-GPL-exception-1.0"
+        ]
+    },
+    {
+        "spdx_name": "Qt-LGPL-exception-1.1",
+        "alt_names": [
+            "Qt LGPL exception 1.1",
+            "Qt-LGPL-exception-1.1"
+        ]
+    },
+    {
+        "spdx_name": "Qwt-exception-1.0",
+        "alt_names": [
+            "Qwt exception 1.0",
+            "Qwt-exception-1.0"
+        ]
+    },
+    {
+        "spdx_name": "Rdisc",
+        "alt_names": [
+            "Rdisc License",
+            "Rdisc"
+        ]
+    },
+    {
+        "spdx_name": "RHeCos-1.1",
+        "alt_names": [
+            "Red Hat eCos Public License v1.1",
+            "RHeCos-1.1"
+        ]
+    },
+    {
+        "spdx_name": "RPL-1.1",
+        "alt_names": [
+            "Reciprocal Public License 1.1",
+            "RPL-1.1"
+        ]
+    },
+    {
+        "spdx_name": "RPL-1.5",
+        "alt_names": [
+            "Reciprocal Public License 1.5",
+            "RPL-1.5"
+        ]
+    },
+    {
+        "spdx_name": "RPSL-1.0",
+        "alt_names": [
+            "RealNetworks Public Source License v1.0",
+            "RPSL-1.0"
+        ]
+    },
+    {
+        "spdx_name": "RSA-MD",
+        "alt_names": [
+            "RSA Message-Digest License",
+            "RSA-MD",
+            "RSA"
+        ]
+    },
+    {
+        "spdx_name": "RSCPL",
+        "alt_names": [
+            "Ricoh Source Code Public License",
+            "RSCPL"
+        ]
+    },
+    {
+        "spdx_name": "Ruby",
+        "alt_names": [
+            "Ruby License",
+            "Ruby"
+        ]
+    },
+    {
+        "spdx_name": "SAX-PD",
+        "alt_names": [
+            "Sax Public Domain Notice",
+            "SAX-PD"
+        ]
+    },
+    {
+        "spdx_name": "Saxpath",
+        "alt_names": [
+            "Saxpath License",
+            "Saxpath"
+        ]
+    },
+    {
+        "spdx_name": "SCEA",
+        "alt_names": [
+            "SCEA Shared Source License",
+            "SCEA"
+        ]
+    },
+    {
+        "spdx_name": "SchemeReport",
+        "alt_names": [
+            "Scheme Language Report License",
+            "SchemeReport"
+        ]
+    },
+    {
+        "spdx_name": "Sendmail",
+        "alt_names": [
+            "Sendmail License",
+            "Sendmail"
+        ]
+    },
+    {
+        "spdx_name": "Sendmail-8.23",
+        "alt_names": [
+            "Sendmail License 8.23",
+            "Sendmail-8.23"
+        ]
+    },
+    {
+        "spdx_name": "SGI-B-1.0",
+        "alt_names": [
+            "SGI Free Software License B v1.0",
+            "SGI-B-1.0"
+        ]
+    },
+    {
+        "spdx_name": "SGI-B-1.1",
+        "alt_names": [
+            "SGI Free Software License B v1.1",
+            "SGI-B-1.1"
+        ]
+    },
+    {
+        "spdx_name": "SGI-B-2.0",
+        "alt_names": [
+            "SGI Free Software License B v2.0",
+            "SGI-B-2.0"
+        ]
+    },
+    {
+        "spdx_name": "SHL-0.5",
+        "alt_names": [
+            "Solderpad Hardware License v0.5",
+            "SHL-0.5"
+        ]
+    },
+    {
+        "spdx_name": "SHL-0.51",
+        "alt_names": [
+            "Solderpad Hardware License, Version 0.51",
+            "SHL-0.51"
+        ]
+    },
+    {
+        "spdx_name": "SHL-2.0",
+        "alt_names": [
+            "Solderpad Hardware License v2.0",
+            "SHL-2.0"
+        ]
+    },
+    {
+        "spdx_name": "SHL-2.1",
+        "alt_names": [
+            "Solderpad Hardware License v2.1",
+            "SHL-2.1"
+        ]
+    },
+    {
+        "spdx_name": "SimPL-2.0",
+        "alt_names": [
+            "Simple Public License 2.0",
+            "SimPL-2.0"
+        ]
+    },
+    {
+        "spdx_name": "SISSL",
+        "alt_names": [
+            "Sun Industry Standards Source License v1.1",
+            "SISSL"
+        ]
+    },
+    {
+        "spdx_name": "SISSL-1.2",
+        "alt_names": [
+            "Sun Industry Standards Source License v1.2",
+            "SISSL-1.2"
+        ]
+    },
+    {
+        "spdx_name": "Sleepycat",
+        "alt_names": [
+            "Sleepycat License",
+            "Sleepycat"
+        ]
+    },
+    {
+        "spdx_name": "SMLNJ",
+        "alt_names": [
+            "Standard ML of New Jersey License",
+            "SMLNJ"
+        ]
+    },
+    {
+        "spdx_name": "SMPPL",
+        "alt_names": [
+            "Secure Messaging Protocol Public License",
+            "SMPPL"
+        ]
+    },
+    {
+        "spdx_name": "SNCL",
+        "alt_names": [
+            "Simple Non Code License  2.1.0",
+            "SNCL"
+        ]
+    },
+    {
+        "spdx_name": "SNCL",
+        "alt_names": [
+            "Simple non code license",
+            "SNCL"
+        ]
+    },
+    {
+        "spdx_name": "SNIA",
+        "alt_names": [
+            "SNIA Public License 1.1",
+            "SNIA"
+        ]
+    },
+    {
+        "spdx_name": "Spencer-86",
+        "alt_names": [
+            "Spencer License 86",
+            "Spencer-86"
+        ]
+    },
+    {
+        "spdx_name": "Spencer-94",
+        "alt_names": [
+            "Spencer License 94",
+            "Spencer-94"
+        ]
+    },
+    {
+        "spdx_name": "Spencer-99",
+        "alt_names": [
+            "Spencer License 99",
+            "Spencer-99"
+        ]
+    },
+    {
+        "spdx_name": "Spice-1.1",
+        "alt_names": [
+            "The Spice Software License Version 1.1",
+            "Spice-1.1"
+        ]
+    },
+    {
+        "spdx_name": "SPL-1.0",
+        "alt_names": [
+            "Sun Public License v1.0",
+            "SPL-1.0"
+        ]
+    },
+    {
+        "spdx_name": "SSH-OpenSSH",
+        "alt_names": [
+            "SSH OpenSSH license",
+            "SSH-OpenSSH"
+        ]
+    },
+    {
+        "spdx_name": "SSH-short",
+        "alt_names": [
+            "SSH short notice",
+            "SSH-short"
+        ]
+    },
+    {
+        "spdx_name": "SSPL-1.0",
+        "alt_names": [
+            "Server Side Public License, v 1",
+            "SSPL-1.0"
+        ]
+    },
+    {
+        "spdx_name": "SugarCRM-1.1.3",
+        "alt_names": [
+            "SugarCRM Public License v1.1.3",
+            "SugarCRM-1.1.3"
+        ]
+    },
+    {
+        "spdx_name": "Swift-exception",
+        "alt_names": [
+            "Swift Exception",
+            "Swift-exception"
+        ]
+    },
+    {
+        "spdx_name": "SWL",
+        "alt_names": [
+            "Scheme Widget Library (SWL) Software License Agreement",
+            "SWL"
+        ]
+    },
+    {
+        "spdx_name": "TAPR-OHL-1.0",
+        "alt_names": [
+            "TAPR Open Hardware License v1.0",
+            "TAPR-OHL-1.0"
+        ]
+    },
+    {
+        "spdx_name": "TCL",
+        "alt_names": [
+            "TCL/TK License",
+            "TCL"
+        ]
+    },
+    {
+        "spdx_name": "TCP-wrappers",
+        "alt_names": [
+            "TCP Wrappers License",
+            "TCP-wrappers"
+        ]
+    },
+    {
+        "spdx_name": "TMate",
+        "alt_names": [
+            "TMate Open Source License",
+            "TMate"
+        ]
+    },
+    {
+        "spdx_name": "TORQUE-1.1",
+        "alt_names": [
+            "TORQUE v2.5+ Software License v1.1",
+            "TORQUE-1.1"
+        ]
+    },
+    {
+        "spdx_name": "TOSG-2.00",
+        "alt_names": [
+            "Tóca Operating System General License 2.0",
+            "TOSG-2.00"
+        ]
+    },
+    {
+        "spdx_name": "TOSL",
+        "alt_names": [
+            "Trusster Open Source License",
+            "TOSL"
+        ]
+    },
+    {
+        "spdx_name": "TU-Berlin-1.0",
+        "alt_names": [
+            "Technische Universitaet Berlin License 1.0",
+            "TU-Berlin-1.0"
+        ]
+    },
+    {
+        "spdx_name": "TU-Berlin-2.0",
+        "alt_names": [
+            "Technische Universitaet Berlin License 2.0",
+            "TU-Berlin-2.0"
+        ]
+    },
+    {
+        "spdx_name": "u-boot-exception-2.0",
+        "alt_names": [
+            "U-Boot exception 2.0",
+            "u-boot-exception-2.0"
+        ]
+    },
+    {
+        "spdx_name": "UCL-1.0",
+        "alt_names": [
+            "Upstream Compatibility License v1.0",
+            "UCL-1.0"
+        ]
+    },
+    {
+        "spdx_name": "UFL-1.0",
+        "alt_names": [
+            "Ubuntu Font License 1.0",
+            "UFL-1.0"
+        ]
+    },
+    {
+        "spdx_name": "Unicode-DFS-2015",
+        "alt_names": [
+            "Unicode License Agreement - Data Files and Software (2015)",
+            "Unicode-DFS-2015",
+            "Unicode"
+        ]
+    },
+    {
+        "spdx_name": "Unicode-DFS-2016",
+        "alt_names": [
+            "Unicode License Agreement - Data Files and Software (2016)",
+            "Unicode-DFS-2016"
+        ]
+    },
+    {
+        "spdx_name": "Unicode-TOU",
+        "alt_names": [
+            "Unicode Terms of Use",
+            "Unicode-TOU"
+        ]
+    },
+    {
+        "spdx_name": "Universal-FOSS-exception-1.0",
+        "alt_names": [
+            "Universal FOSS Exception, Version 1.0",
+            "Universal-FOSS-exception-1.0"
+        ]
+    },
+    {
+        "spdx_name": "Unlicense",
+        "alt_names": [
+            "The Unlicense",
+            "Unlicense"
+        ]
+    },
+    {
+        "spdx_name": "UPL-1.0",
+        "alt_names": [
+            "Universal Permissive License v1.0",
+            "UPL-1.0"
+        ]
+    },
+    {
+        "spdx_name": "Utopia",
+        "alt_names": [
+            "TUG Utopia license agreement",
+            "Utopia"
+        ]
+    },
+    {
+        "spdx_name": "Vim",
+        "alt_names": [
+            "Vim License",
+            "Vim"
+        ]
+    },
+    {
+        "spdx_name": "VOSTROM",
+        "alt_names": [
+            "VOSTROM Public License for Open Source",
+            "VOSTROM"
+        ]
+    },
+    {
+        "spdx_name": "VSL-1.0",
+        "alt_names": [
+            "Vovida Software License v1.0",
+            "VSL-1.0"
+        ]
+    },
+    {
+        "spdx_name": "VSPL",
+        "alt_names": [
+            "Very Simple Public License",
+            "VSPL"
+        ]
+    },
+    {
+        "spdx_name": "W3C",
+        "alt_names": [
+            "W3C Software Notice and License (2002-12-31)",
+            "W3C"
+        ]
+    },
+    {
+        "spdx_name": "W3C-19980720",
+        "alt_names": [
+            "W3C Software Notice and License (1998-07-20)",
+            "W3C-19980720"
+        ]
+    },
+    {
+        "spdx_name": "W3C-20150513",
+        "alt_names": [
+            "W3C Software Notice and Document License (2015-05-13)",
+            "W3C-20150513"
+        ]
+    },
+    {
+        "spdx_name": "Watcom-1.0",
+        "alt_names": [
+            "Sybase Open Watcom Public License 1.0",
+            "Watcom-1.0"
+        ]
+    },
+    {
+        "spdx_name": "Wsuipa",
+        "alt_names": [
+            "Wsuipa License",
+            "Wsuipa"
+        ]
+    },
+    {
+        "spdx_name": "WTFNMFPL-1.0",
+        "alt_names": [
+            "Do What The Fuck You Want To But It's Not My Fault Public License v1",
+            "WTFNMFPL-1.0"
+        ]
+    },
+    {
+        "spdx_name": "WTFPL",
+        "alt_names": [
+            "Do What The F*ck You Want To Public License",
+            "WTFPL"
+        ]
+    },
+    {
+        "spdx_name": "WTFPL-2.0",
+        "alt_names": [
+            "Do What The F*ck You Want To Public License v2",
+            "WTFPL-2.0"
+        ]
+    },
+    {
+        "spdx_name": "WXwindows",
+        "alt_names": [
+            "wxWindows Library License",
+            "WXwindows"
+        ]
+    },
+    {
+        "spdx_name": "WxWindows-exception-3.1",
+        "alt_names": [
+            "WxWindows Library Exception 3.1",
+            "WxWindows-exception-3.1"
+        ]
+    },
+    {
+        "spdx_name": "X11",
+        "alt_names": [
+            "X11 License",
+            "X11"
+        ]
+    },
+    {
+        "spdx_name": "X11-distribute-modifications-variant",
+        "alt_names": [
+            "X11 License Distribution Modification Variant",
+            "X11-distribute-modifications-variant"
+        ]
+    },
+    {
+        "spdx_name": "Xerox",
+        "alt_names": [
+            "Xerox License",
+            "Xerox"
+        ]
+    },
+    {
+        "spdx_name": "XFree86-1.1",
+        "alt_names": [
+            "XFree86 License 1.1",
+            "XFree86-1.1"
+        ]
+    },
+    {
+        "spdx_name": "xinetd",
+        "alt_names": [
+            "xinetd License",
+            "xinetd"
+        ]
+    },
+    {
+        "spdx_name": "Xnet",
+        "alt_names": [
+            "X.Net License",
+            "Xnet"
+        ]
+    },
+    {
+        "spdx_name": "xpp",
+        "alt_names": [
+            "XPP License",
+            "xpp"
+        ]
+    },
+    {
+        "spdx_name": "XSkat",
+        "alt_names": [
+            "XSkat License",
+            "XSkat"
+        ]
+    },
+    {
+        "spdx_name": "YPL-1.0",
+        "alt_names": [
+            "Yahoo! Public License v1.0",
+            "YPL-1.0"
+        ]
+    },
+    {
+        "spdx_name": "YPL-1.1",
+        "alt_names": [
+            "Yahoo! Public License v1.1",
+            "YPL-1.1"
+        ]
+    },
+    {
+        "spdx_name": "Zed",
+        "alt_names": [
+            "Zed License",
+            "Zed"
+        ]
+    },
+    {
+        "spdx_name": "Zend-2.0",
+        "alt_names": [
+            "Zend License v2.0",
+            "Zend-2.0",
+            "Zend"
+        ]
+    },
+    {
+        "spdx_name": "Zimbra-1.3",
+        "alt_names": [
+            "Zimbra Public License v1.3",
+            "Zimbra-1.3"
+        ]
+    },
+    {
+        "spdx_name": "Zimbra-1.4",
+        "alt_names": [
+            "Zimbra Public License v1.4",
+            "Zimbra-1.4"
+        ]
+    },
+    {
+        "spdx_name": "Zlib",
+        "alt_names": [
+            "zlib License",
+            "Zlib"
+        ]
+    },
+    {
+        "spdx_name": "zlib-acknowledgement",
+        "alt_names": [
+            "zlib/libpng License with Acknowledgement",
+            "zlib-acknowledgement",
+            "zlib with acknowledgement"
+        ]
+    },
+    {
+        "spdx_name": "ZPL-1.1",
+        "alt_names": [
+            "Zope Public License 1.1",
+            "ZPL-1.1"
+        ]
+    },
+    {
+        "spdx_name": "ZPL-2.0",
+        "alt_names": [
+            "Zope Public License 2.0",
+            "ZPL-2.0",
+            "ZPLv2.0"
+        ]
+    },
+    {
+        "spdx_name": "ZPL-2.1",
+        "alt_names": [
+            "Zope Public License 2.1",
+            "ZPL-2.1",
+            "ZPL 2.1"
+        ]
+    }
+]
