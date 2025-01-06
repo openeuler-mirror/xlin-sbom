@@ -28,7 +28,7 @@ import os
 creators_file_path = os.path.join(ASSIST_DIR, 'creators.json')
 
 
-def package_scanner(pkg_path, pkg_type, created_time, category_dict):
+def package_scanner(pkg_path, pkg_type, created_time):
     """
     扫描指定路径下的软件包，并根据软件包类型提取相关信息。
 
@@ -36,11 +36,10 @@ def package_scanner(pkg_path, pkg_type, created_time, category_dict):
         pkg_path (str): 软件包的文件路径。
         pkg_type (str): 软件包的类型。
         created_time (str): 创建时间，用于记录 SBOM 中的时间戳。
-        category_dict (dict): 软件包类型字典。
     Returns:
         dict: 包含处理后的软件包信息列表，包括 `packages_sbom`, `files_sbom`, `file_relationships_sbom`, `licenses_sbom`。
     """
-    
+
     packages = []
     licenses = []
     files = []
@@ -50,7 +49,7 @@ def package_scanner(pkg_path, pkg_type, created_time, category_dict):
 
     if pkg_type == "rpm":
         package, licenses, files, file_relationships, originators, provides = process_rpm_package(
-            pkg_path, originators, category_dict)
+            pkg_path, originators)
     packages.append(package)
     linx_sbom = {
         "packages_sbom": _add_header(packages, "packages", created_time),
@@ -66,14 +65,13 @@ def package_scanner(pkg_path, pkg_type, created_time, category_dict):
     return linx_sbom
 
 
-def process_rpm_package(pkg_path, originators, category_dict):
+def process_rpm_package(pkg_path, originators):
     """
     处理单个 RPM 包，提取相关信息并生成相应的数据结构。
 
     Args:
         pkg_path (str): RPM 包的完整路径。
         originators (dict): 发起者信息字典。
-        category_dict (dict): 软件包类型字典。
 
     Returns:
         tuple: 包含以下元素的元组：
@@ -84,7 +82,7 @@ def process_rpm_package(pkg_path, originators, category_dict):
             - originators (dict): 更新后的发起者信息字典。
             - provides (dict): 提供的文件列表及其关系。
     """
-    
+
     with open(pkg_path, 'rb') as f:
         package_sha1 = calculate_sha1(f)
     try:
@@ -100,8 +98,8 @@ def process_rpm_package(pkg_path, originators, category_dict):
             originator_name, is_organization, originators = extract_originator_name(
                 homepage, originators)
 
-            suppliers, category = get_suppliers(
-                name, full_version, release, homepage, originator_name, RPM_SUPPLIERS, category_dict)
+            suppliers = get_suppliers(
+                release, homepage, originator_name, RPM_SUPPLIERS)
 
             id_md5 = _safe_decode(rpm.headers.get('md5'))
             licenses = rpm_licenses_scanner(
@@ -115,7 +113,6 @@ def process_rpm_package(pkg_path, originators, category_dict):
                 "architecture": architecture,
                 "package_type": "rpm",
                 "depends": list(set(_safe_decode(dep) for dep in rpm.headers.get('requirename'))),
-                "category": category,
                 "licenses": license_id_list,
                 "suppliers": suppliers,
                 "description": _safe_decode(rpm.headers.get('description')),
