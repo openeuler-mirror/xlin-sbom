@@ -205,9 +205,6 @@ def main():
                                           help="软件包的路径。")
     parser.add_argument("--output", "-o", required=True, help="SBOM清单输出目录。")
 
-    # 其他可选参数
-    parser.add_argument("--category", "-c", required=False, default=None,
-                        help="软件包类型CSV文件的路径，用于区分软件包为自研（self_developed）、第三方开源修改（modified）还是第三方开源（third_party），预期 'package' 和 'category' 列。")
     # 解析命令行参数
     args = parser.parse_args()
 
@@ -230,11 +227,6 @@ def main():
     # 配置输出目录
     output_dir = args.output
 
-    # 加载供应商CSV文件
-    category_dict = None
-    if args.category is not None:
-        category_dict = load_category_dict(args.category)
-
     # 处理ISO镜像
     if args.iso is not None:
         iso_filename = os.path.splitext(os.path.basename(args.iso))[0]
@@ -256,7 +248,7 @@ def main():
                 package_type = "rpm"
                 print("Info: 侦测到RPM包系统")
                 linx_sbom = rpm_packages_scanner(
-                    mnt_dir, iso_filename, spdx_utc_time, category_dict)
+                    mnt_dir, iso_filename, spdx_utc_time)
             else:
                 print("Error: 未侦测到有效的包系统")
                 sys.exit(1)
@@ -287,7 +279,7 @@ def main():
             print("Error: 未侦测到有效的包")
             sys.exit(1)
         linx_sbom = package_scanner(
-            package_path, package_type, spdx_utc_time, category_dict)
+            package_path, package_type, spdx_utc_time)
 
         save_sbom(linx_sbom, package_type, pkg_filename,
                   formatted_utc_time, spdx_utc_time, output_dir)

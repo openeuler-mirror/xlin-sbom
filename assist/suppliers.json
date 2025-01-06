@@ -16,5 +16,11 @@
         "name": "Red Hat Enterprise Linux",
         "url": "https://mirrors.aliyun.com/centos-vault/",
         "type":"rpm"
+    },
+    {
+        "keywords": ["linx", "vlx"],
+        "name": "Linx Software, Inc.",
+        "url": "https://www.linx-info.com/",
+        "type":"rpm"
     }
 ]

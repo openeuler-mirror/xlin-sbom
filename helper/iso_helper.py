@@ -24,7 +24,7 @@ from tqdm import tqdm
 creators_file_path = os.path.join(ASSIST_DIR, 'creators.json')
 
 
-def rpm_packages_scanner(mnt_dir, iso_filename, created_time, category_dict):
+def rpm_packages_scanner(mnt_dir, iso_filename, created_time):
     """
     扫描并处理 RPM 包，生成软件物料清单（SBOM）。
 
@@ -32,7 +32,6 @@ def rpm_packages_scanner(mnt_dir, iso_filename, created_time, category_dict):
         mnt_dir (str): 挂载目录的路径。
         iso_filename (str): ISO 文件的名称。
         created_time (str): 创建时间的字符串。
-        category_dict (dict): 软件包类型字典。
 
     Returns:
         dict: 包含处理后的软件包信息的 SBOM 字典，包括软件包、文件、文件关系、许可证和组件依赖关系。
@@ -63,8 +62,8 @@ def rpm_packages_scanner(mnt_dir, iso_filename, created_time, category_dict):
 
     # 并发处理RPM文件以提高效率
     with ThreadPoolExecutor(max_workers=10) as executor:
-        futures = {executor.submit(process_rpm_package, full_path, originators,
-                                   category_dict): full_path for full_path in rpm_files}
+        futures = {executor.submit(
+            process_rpm_package, full_path, originators): full_path for full_path in rpm_files}
 
         # 显示进度条并处理完成的Future
         with tqdm(total=len(futures), desc="扫描 RPM 包", unit="包") as pbar:
