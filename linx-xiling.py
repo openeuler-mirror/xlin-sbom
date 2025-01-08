@@ -21,7 +21,7 @@ import csv
 import logging
 import argparse
 import subprocess
-from helper import PARENT_DIR
+from helper import PARENT_DIR, LOG_DIR
 from helper.json_helper import save_data_to_json
 from helper.iso_helper import rpm_packages_scanner
 from helper.package_helper import package_scanner
@@ -97,10 +97,10 @@ def load_category_dict(category_csv_path):
             return category_dict
 
     except FileNotFoundError:
-        print(f"Error: 软件包类型CSV文件未找到 - {category_csv_path}")
+        logging.error(f"软件包类型CSV文件未找到 - {category_csv_path}")
         sys.exit(1)
     except ValueError as e:
-        print(f"Error: {e}")
+        logging.error(f"异常抛出：{e}")
         sys.exit(1)
 
 
@@ -170,14 +170,14 @@ def save_sbom(linx_sbom, package_type, filename, utc_timestamp, spdx_timestamp, 
                       f"{linx_sbom_path}/{linx_sbom_package_relationships_filename}")
     save_data_to_json(linx_sbom.get('file_relationships_sbom'),
                       f"{linx_sbom_path}/{linx_sbom_file_relationships_filename}")
-    print(f"Info: {linx_sbom_dirname} 已被保存至 {output_dir}")
+    logging.info(f"{linx_sbom_dirname} 已被保存至 {output_dir}")
 
     # 生成 SPDX 格式 SBOM
     spdx_sbom = convert_to_spdx(
         linx_sbom, filename, spdx_timestamp, package_type)
     spdx_sbom_filename = f"spdx-sbom_{filename}_{utc_timestamp}.json"
     save_data_to_json(spdx_sbom, f"{sbom_path}/{spdx_sbom_filename}")
-    print(f"Info: {spdx_sbom_filename} 已被保存至 {output_dir}")
+    logging.info(f"{spdx_sbom_filename} 已被保存至 {output_dir}")
 
 
 def main():
@@ -215,14 +215,26 @@ def main():
     formatted_utc_time = time.strftime("%Y%m%d%H%M%S", utc_time_tuple)
 
     # 配置日志记录
-    # log_dir = os.path.join(PARENT_DIR, 'log')
-    # os.makedirs(log_dir, exist_ok=True)
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s [%(levelname)s] [%(name)s:%(funcName)s] %(message)s',
-        # filename=os.path.join(log_dir, f'log_{formatted_utc_time}.log'),
-        # filemode='w'
-    )
+    os.makedirs(LOG_DIR, exist_ok=True)
+    log_file = os.path.join(LOG_DIR, f'log_{formatted_utc_time}.log')
+
+    # 创建日志记录器
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+
+    # 文件处理器
+    file_handler = logging.FileHandler(log_file, mode='w')
+    file_handler.setLevel(logging.INFO)
+    file_formatter = logging.Formatter('%(asctime)s [%(levelname)s] [%(name)s:%(funcName)s] %(message)s')
+    file_handler.setFormatter(file_formatter)
+    logger.addHandler(file_handler)
+
+    # 控制台处理器
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.INFO)
+    console_formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(message)s')
+    console_handler.setFormatter(console_formatter)
+    logger.addHandler(console_handler)
 
     # 配置输出目录
     output_dir = args.output
@@ -235,7 +247,7 @@ def main():
         try:
             os.makedirs(mnt_dir, exist_ok=True)
         except Exception as e:
-            print(f"Error: 异常抛出: {e}")
+            logging.error(f"异常抛出: {e}")
 
         try:
             # 将args.iso中的所有空格前添加转义字符"\"
@@ -246,25 +258,25 @@ def main():
             package_type = "unknown"
             if is_rpm:
                 package_type = "rpm"
-                print("Info: 侦测到RPM包系统")
+                logging.info("侦测到RPM包系统")
                 linx_sbom = rpm_packages_scanner(
                     mnt_dir, iso_filename, spdx_utc_time)
             else:
-                print("Error: 未侦测到有效的包系统")
+                logging.error("未侦测到有效的包系统")
                 sys.exit(1)
 
             save_sbom(linx_sbom, package_type, iso_filename,
                       formatted_utc_time, spdx_utc_time, output_dir)
-            print("Info: Linx SBOM 生成完成")
+            logging.info("Linx SBOM 生成完成")
         except Exception as e:
-            print(f"Error: 异常抛出: {e}")
+            logging.error(f"异常抛出: {e}")
 
         finally:
             try:
                 umount_iso(mnt_dir)
                 os.rmdir(mnt_dir)
             except Exception as e:
-                print(f"Error: 异常抛出: {e}")
+                logging.error(f"异常抛出: {e}")
 
     # 处理软件包
     elif args.package is not None:
@@ -274,16 +286,16 @@ def main():
         package_type = "unknown"
         if package_path.endswith('.rpm'):
             package_type = "rpm"
-            print("Info: 侦测到RPM包")
+            logging.info("侦测到RPM包")
         else:
-            print("Error: 未侦测到有效的包")
+            logging.error("未侦测到有效的包")
             sys.exit(1)
         linx_sbom = package_scanner(
             package_path, package_type, spdx_utc_time)
 
         save_sbom(linx_sbom, package_type, pkg_filename,
                   formatted_utc_time, spdx_utc_time, output_dir)
-        print("Info: Linx SBOM 生成完成")
+        logging.info("Linx SBOM 生成完成")
 
 
 if __name__ == "__main__":

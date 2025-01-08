@@ -18,6 +18,7 @@ from helper.json_helper import save_data_to_json, read_data_from_json
 from helper.package_helper import process_rpm_package
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import os
+import logging
 from tqdm import tqdm
 
 
@@ -56,7 +57,7 @@ def rpm_packages_scanner(mnt_dir, iso_filename, created_time):
         rpm_files = [os.path.join(root, f) for root, _, files in os.walk(rpm_dir)
                      for f in files if f.endswith('.rpm')]
     else:
-        print("Error: 未找到 Packages 目录。")
+        logging.error("未找到 Packages 目录。")
 
     os_arch = _get_os_arch(mnt_dir)
 
@@ -148,7 +149,7 @@ def _add_header(sbom_data, data_name, iso_filename, iso_arch, created_time):
     parts = iso_filename.split('-')
 
     if len(parts) < 5:
-        print(f"Warnning: 不规范的ISO镜像文件名，需手动对{data_name}清单的ISO镜像数据进行补充。")
+        logging.warning(f"不规范的ISO镜像文件名，需手动对{data_name}清单的ISO镜像数据进行补充。")
     else:
         os_name = parts[0]
         os_version = '-'.join(parts[1:-2])
@@ -189,6 +190,6 @@ def _get_os_arch(mnt_dir):
             os_arch = 'loongarch64'
             break
     if os_arch is None:
-        print("Warning: 未找到操作系统架构信息。")
+        logging.warning("未找到操作系统架构信息。")
 
     return os_arch
