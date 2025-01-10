@@ -19,13 +19,12 @@ from helper.package_helper import process_rpm_package
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import os
 import logging
-from tqdm import tqdm
 
 
 creators_file_path = os.path.join(ASSIST_DIR, 'creators.json')
 
 
-def rpm_packages_scanner(mnt_dir, iso_filename, created_time):
+def rpm_packages_scanner(mnt_dir, iso_filename, created_time, disable_tqdm):
     """
     扫描并处理 RPM 包，生成软件物料清单（SBOM）。
 
@@ -37,6 +36,9 @@ def rpm_packages_scanner(mnt_dir, iso_filename, created_time):
     Returns:
         dict: 包含处理后的软件包信息的 SBOM 字典，包括软件包、文件、文件关系、许可证和组件依赖关系。
     """
+
+    from tqdm import tqdm
+
     packages = []
     files = []
     file_relationships = []
@@ -62,22 +64,32 @@ def rpm_packages_scanner(mnt_dir, iso_filename, created_time):
     os_arch = _get_os_arch(mnt_dir)
 
     # 并发处理RPM文件以提高效率
-    with ThreadPoolExecutor(max_workers=10) as executor:
-        futures = {executor.submit(
-            process_rpm_package, full_path, originators): full_path for full_path in rpm_files}
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        futures = {
+            executor.submit(process_rpm_package, full_path, originators): full_path
+            for full_path in rpm_files
+        }
 
-        # 显示进度条并处理完成的Future
-        with tqdm(total=len(futures), desc="扫描 RPM 包", unit="包") as pbar:
-            for future in as_completed(futures):
-                package_info, package_licenses, package_files, package_file_relationships, updated_originators, provides = future.result()
-                if package_info:
-                    packages.append(package_info)
-                    files.extend(package_files)
-                    file_relationships.extend(package_file_relationships)
-                    licenses.extend(package_licenses)
-                    originators = updated_originators
-                    provides_relationships.append(provides)
-                pbar.update(1)
+        # 根据 disable_tqdm 决定是否使用 tqdm
+        progress_iter = (
+            tqdm(total=len(futures), desc="扫描 RPM 包",
+                 unit="包") if not disable_tqdm else None
+        )
+
+        for future in as_completed(futures):
+            package_info, package_licenses, package_files, package_file_relationships, updated_originators, provides = future.result()
+            if package_info:
+                packages.append(package_info)
+                files.extend(package_files)
+                file_relationships.extend(package_file_relationships)
+                licenses.extend(package_licenses)
+                originators = updated_originators
+                provides_relationships.append(provides)
+            if not disable_tqdm:
+                progress_iter.update(1)
+
+        if not disable_tqdm:
+            progress_iter.close()
 
     # files去重
     files = _remove_duplicates(files)
@@ -90,7 +102,7 @@ def rpm_packages_scanner(mnt_dir, iso_filename, created_time):
 
     # 处理组件依赖关系
     package_relationships = get_rpm_relationships(
-        packages, provides_relationships)
+        packages, provides_relationships, disable_tqdm)
 
     linx_sbom = {
         "packages_sbom": _add_header(packages, "packages", iso_filename, os_arch, created_time),

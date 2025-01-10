@@ -204,6 +204,7 @@ def main():
     mutually_exclusive_group.add_argument("--package", "-p",
                                           help="软件包的路径。")
     parser.add_argument("--output", "-o", required=True, help="SBOM清单输出目录。")
+    parser.add_argument("--disable-tqdm", action='store_true', help="禁用进度条显示。")
 
     # 解析命令行参数
     args = parser.parse_args()
@@ -225,14 +226,16 @@ def main():
     # 文件处理器
     file_handler = logging.FileHandler(log_file, mode='w')
     file_handler.setLevel(logging.INFO)
-    file_formatter = logging.Formatter('%(asctime)s [%(levelname)s] [%(name)s:%(funcName)s] %(message)s')
+    file_formatter = logging.Formatter(
+        '%(asctime)s [%(levelname)s] [%(name)s:%(funcName)s] %(message)s')
     file_handler.setFormatter(file_formatter)
     logger.addHandler(file_handler)
 
     # 控制台处理器
     console_handler = logging.StreamHandler()
     console_handler.setLevel(logging.INFO)
-    console_formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(message)s')
+    console_formatter = logging.Formatter(
+        '%(asctime)s [%(levelname)s] %(message)s')
     console_handler.setFormatter(console_formatter)
     logger.addHandler(console_handler)
 
@@ -260,7 +263,7 @@ def main():
                 package_type = "rpm"
                 logging.info("侦测到RPM包系统")
                 linx_sbom = rpm_packages_scanner(
-                    mnt_dir, iso_filename, spdx_utc_time)
+                    mnt_dir, iso_filename, spdx_utc_time, args.disable_tqdm)
             else:
                 logging.error("未侦测到有效的包系统")
                 sys.exit(1)

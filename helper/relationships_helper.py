@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from tqdm import tqdm
-
 
 def get_file_relationships(file_list, package_id):
     """
@@ -36,20 +34,26 @@ def get_file_relationships(file_list, package_id):
     return relationships
 
 
-def get_rpm_relationships(packages, provides_relationships):
+def get_rpm_relationships(packages, provides_relationships, disable_tqdm):
     """
     生成 RPM 包之间的依赖关系列表。
 
     Args:
         packages (list): 包含 RPM 包信息的列表，每个元素是一个字典，包含 "id" 和 "depends" 键。
         provides_relationships (list): 包含提供者关系信息的列表，每个元素是一个字典，包含 "id" 和 "provides" 键。
+        disable_tqdm (bool): 是否禁用 tqdm 进度条。如果为 True，则不显示进度条。
 
     Returns:
         list: 包含 RPM 包之间依赖关系的列表，每个元素是一个字典，包含 "id"、"related_element" 和 "relationship_type" 键。
     """
 
+    from tqdm import tqdm
+
     relationships = []
-    for package in tqdm(packages, desc="处理包依赖关系", unit="包"):
+    # 根据 disable_tqdm 决定是否使用 tqdm
+    package_iter = tqdm(packages, desc="处理包依赖关系", unit="包") if not disable_tqdm else packages
+
+    for package in package_iter:
         added_relationships = []
         for dep in package.get('depends', []):
             for provide_relationship in provides_relationships:
@@ -62,4 +66,8 @@ def get_rpm_relationships(packages, provides_relationships):
                         "related_element": related_element,
                         "relationship_type": "DEPENDS_ON"
                     })
+
+    if not disable_tqdm:
+        package_iter.close()  # 确保 tqdm 资源被正确关闭
+
     return relationships
