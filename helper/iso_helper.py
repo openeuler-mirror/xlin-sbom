@@ -24,7 +24,7 @@ import logging
 creators_file_path = os.path.join(ASSIST_DIR, 'creators.json')
 
 
-def rpm_packages_scanner(mnt_dir, iso_filename, created_time, disable_tqdm):
+def rpm_packages_scanner(mnt_dir, iso_filename, created_time, disable_tqdm, workers):
     """
     扫描并处理 RPM 包，生成软件物料清单（SBOM）。
 
@@ -64,7 +64,12 @@ def rpm_packages_scanner(mnt_dir, iso_filename, created_time, disable_tqdm):
     os_arch = _get_os_arch(mnt_dir)
 
     # 并发处理RPM文件以提高效率
-    with ThreadPoolExecutor(max_workers=8) as executor:
+    if workers is None:
+        logging.info("使用默认的线程数进行扫描")
+    else:
+        logging.info(f"使用 {workers} 个线程进行扫描")
+
+    with ThreadPoolExecutor(max_workers=workers) as executor:
         futures = {
             executor.submit(process_rpm_package, full_path, originators): full_path
             for full_path in rpm_files

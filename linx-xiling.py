@@ -205,6 +205,7 @@ def main():
                                           help="软件包的路径。")
     parser.add_argument("--output", "-o", required=True, help="SBOM清单输出目录。")
     parser.add_argument("--disable-tqdm", action='store_true', help="禁用进度条显示。")
+    parser.add_argument("--max-workers", type=int, default=None, help="最大并发线程数。")
 
     # 解析命令行参数
     args = parser.parse_args()
@@ -263,7 +264,7 @@ def main():
                 package_type = "rpm"
                 logging.info("侦测到RPM包系统")
                 linx_sbom = rpm_packages_scanner(
-                    mnt_dir, iso_filename, spdx_utc_time, args.disable_tqdm)
+                    mnt_dir, iso_filename, spdx_utc_time, args.disable_tqdm, args.max_workers)
             else:
                 logging.error("未侦测到有效的包系统")
                 sys.exit(1)
