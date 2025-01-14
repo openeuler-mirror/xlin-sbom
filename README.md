@@ -48,7 +48,7 @@ $ sudo rpm -ivh ./linx-xiling-1.0-1.x86_64.rpm
 ### 运行命令
 指定一个Linux系统的ISO镜像文件或单个软件包进行扫描，获取其凝思格式SBOM和SPDX格式SBOM：
 ```
-$ linx-xiling [-h] (--iso ISO | --package PACKAGE) --output OUTPUT
+$ linx-xiling [-h] (--iso ISO | --package PACKAGE) --output OUTPUT [--disable-tqdm] [--max-workers MAX_WORKERS]
 ```
 
 #### 必需参数
@@ -61,7 +61,9 @@ $ linx-xiling [-h] (--iso ISO | --package PACKAGE) --output OUTPUT
 #### 可选参数
 | 参数                               | 说明                  |
 |------------------------------------|----------------------|
-| --help, -h                         | 显示帮助消息并退出。    |
+| --help, -h                         | 显示帮助消息并退出。   |
+| --disable-tqdm                     | 禁用进度条显示。       |
+| --max-workers MAX_WORKERS          | 最大并发线程数。       |
 
 ### 源码运行命令
 安装必要依赖：
@@ -71,7 +73,7 @@ $ pip install -r requirements.txt
 
 运行工具：
 ```
-$ python3 linx-xiling.py [-h] (--iso ISO | --package PACKAGE) --output OUTPUT
+$ python3 linx-xiling.py [-h] (--iso ISO | --package PACKAGE) --output OUTPUT [--disable-tqdm] [--max-workers MAX_WORKERS]
 ```
 
 ### 注意事项
@@ -80,3 +82,7 @@ $ python3 linx-xiling.py [-h] (--iso ISO | --package PACKAGE) --output OUTPUT
 ```
 $ docker run -it --privileged --cap-add SYS_ADMIN --device /dev/fuse IMAGE [ARG...]
 ```
+
+#### 运行日志的保存路径
+- 在生产环境中，运行日志保存在```~/.linx-xiling/logs/```目录下。
+- 在开发环境中，运行日志保存在项目根目录的```logs/```目录下。
