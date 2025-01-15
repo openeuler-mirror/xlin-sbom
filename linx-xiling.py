@@ -28,6 +28,70 @@ from helper.package_helper import package_scanner
 from helper.spdx_sbom_helper import convert_to_spdx
 
 
+def parse_arguments():
+    """
+    解析命令行参数，用于配置扫描源代码包以获取版权和许可证信息的工具。
+
+    Args:
+        None
+
+    Returns:
+        argparse.Namespace: 包含解析后的命令行参数的对象。
+    """
+
+    parser = argparse.ArgumentParser(
+        description="对ISO镜像或软件包进行扫描，并生成SBOM清单。")
+    # 添加互斥组，用户必须指定 --iso 或者 --package 之一
+    mutually_exclusive_group = parser.add_mutually_exclusive_group(
+        required=True)
+    mutually_exclusive_group.add_argument("--iso", "-i",
+                                          help="ISO镜像文件的路径。")
+    mutually_exclusive_group.add_argument("--package", "-p",
+                                          help="软件包的路径。")
+    parser.add_argument("--output", "-o", required=True, help="SBOM清单输出目录。")
+    parser.add_argument("--disable-tqdm", action='store_true', help="禁用进度条显示。")
+    parser.add_argument("--max-workers", type=int,
+                        default=None, help="最大并发线程数。")
+
+    return parser.parse_args()
+
+
+def setup_logging(formatted_utc_time):
+    """
+    配置日志记录，创建日志文件并设置日志格式和处理器。
+
+    Args:
+        formatted_utc_time (str): 格式化后的UTC时间字符串，用于生成日志文件名。
+
+    Returns:
+        None: 函数不返回任何内容。
+    """
+
+    # 配置日志记录
+    os.makedirs(LOG_DIR, exist_ok=True)
+    log_file = os.path.join(LOG_DIR, f'log_{formatted_utc_time}.log')
+
+    # 创建日志记录器
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+
+    # 文件处理器
+    file_handler = logging.FileHandler(log_file, mode='w')
+    file_handler.setLevel(logging.INFO)
+    file_formatter = logging.Formatter(
+        '%(asctime)s [%(levelname)s] [%(name)s:%(funcName)s] %(message)s')
+    file_handler.setFormatter(file_formatter)
+    logger.addHandler(file_handler)
+
+    # 控制台处理器
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.INFO)
+    console_formatter = logging.Formatter(
+        '%(asctime)s [%(levelname)s] %(message)s')
+    console_handler.setFormatter(console_formatter)
+    logger.addHandler(console_handler)
+
+
 def mount_iso(iso_path, mnt_dir):
     """
     使用挂载命令将ISO镜像文件挂载到指定的目录。
@@ -37,7 +101,7 @@ def mount_iso(iso_path, mnt_dir):
         mnt_dir (str): 挂载点目录的路径。该目录用于挂载ISO镜像文件。
 
     Returns:
-        None: 函数直接执行系统命令并不直接返回值，但会根据命令执行结果影响外部环境。
+        None: 函数不返回任何内容。
     """
 
     try:
@@ -144,7 +208,7 @@ def save_sbom(linx_sbom, package_type, filename, utc_timestamp, spdx_timestamp, 
         output_dir (str): 保存 SBOM 文件的目标目录。
 
     Returns:
-        None
+        None: 函数不返回任何内容。
     """
 
     sbom_path = os.path.join(output_dir, filename)
@@ -182,33 +246,17 @@ def save_sbom(linx_sbom, package_type, filename, utc_timestamp, spdx_timestamp, 
 
 def main():
     """
-    主程序入口。
+    主函数，负责解析命令行参数、设置日志记录系统、处理ISO镜像或软件包，并生成SBOM。
 
     Args:
-        无直接参数，通过命令行参数接收以下选项：
-            --iso (str): ISO镜像文件的路径。
-            --package (str): 软件包的路径。
-            --suppliers (str, optional): 供应商CSV文件的路径，默认为None。
+        无直接参数。命令行参数通过 `parse_arguments()` 函数解析后传递给本函数。
 
     Returns:
-        无返回值，执行过程中的日志和输出文件将保存到指定目录。
+        None: 函数不返回任何内容。
     """
 
-    parser = argparse.ArgumentParser(
-        description="对ISO镜像或软件包进行扫描，并生成SBOM清单。")
-    # 添加互斥组，用户必须指定 --iso 或者 --package 之一
-    mutually_exclusive_group = parser.add_mutually_exclusive_group(
-        required=True)
-    mutually_exclusive_group.add_argument("--iso", "-i",
-                                          help="ISO镜像文件的路径。")
-    mutually_exclusive_group.add_argument("--package", "-p",
-                                          help="软件包的路径。")
-    parser.add_argument("--output", "-o", required=True, help="SBOM清单输出目录。")
-    parser.add_argument("--disable-tqdm", action='store_true', help="禁用进度条显示。")
-    parser.add_argument("--max-workers", type=int, default=None, help="最大并发线程数。")
-
     # 解析命令行参数
-    args = parser.parse_args()
+    args = parse_arguments()
 
     # 获取 UTC 时间并格式化
     timestamp = time.time()
@@ -216,29 +264,8 @@ def main():
     spdx_utc_time = time.strftime("%Y-%m-%dT%H:%M:%SZ", utc_time_tuple)
     formatted_utc_time = time.strftime("%Y%m%d%H%M%S", utc_time_tuple)
 
-    # 配置日志记录
-    os.makedirs(LOG_DIR, exist_ok=True)
-    log_file = os.path.join(LOG_DIR, f'log_{formatted_utc_time}.log')
-
-    # 创建日志记录器
-    logger = logging.getLogger()
-    logger.setLevel(logging.INFO)
-
-    # 文件处理器
-    file_handler = logging.FileHandler(log_file, mode='w')
-    file_handler.setLevel(logging.INFO)
-    file_formatter = logging.Formatter(
-        '%(asctime)s [%(levelname)s] [%(name)s:%(funcName)s] %(message)s')
-    file_handler.setFormatter(file_formatter)
-    logger.addHandler(file_handler)
-
-    # 控制台处理器
-    console_handler = logging.StreamHandler()
-    console_handler.setLevel(logging.INFO)
-    console_formatter = logging.Formatter(
-        '%(asctime)s [%(levelname)s] %(message)s')
-    console_handler.setFormatter(console_formatter)
-    logger.addHandler(console_handler)
+    # 设置日志记录系统
+    setup_logging(formatted_utc_time)
 
     # 配置输出目录
     output_dir = args.output
