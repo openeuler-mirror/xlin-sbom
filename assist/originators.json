@@ -22060,5 +22060,11 @@
         "name": null,
         "is_organization": false,
         "file_analyzed": false
+    },
+    {
+        "homepage": "https://www.linx-info.com/",
+        "name": "Linx Software, Inc.",
+        "is_organization": true,
+        "file_analyzed": true
     }
 ]
