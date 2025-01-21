@@ -1,36 +1,88 @@
-# xlin-sbom
+# XiLing SBOM Tool
+The XiLing SBOM Tool scans ISO images or individual software packages to generate an SBOM (Software Bill of Materials) list.
 
-#### Description
-Allowing rapid and accurate scanning of Linux system ISO image files and RPM software packages to identify and generate a Software Bill of Materials (SBOM), ensuring the security of the software supply chain.
+## System Requirements
+- OS: Linx OS V6.0 series or Linux distributions
 
-#### Software Architecture
-Software architecture description
+## Hardware Requirements
+- x86_64 CPU
+- At least 4GB of RAM
+- At least 10GB of available disk space (sufficient space required for ISO image mounting)
 
-#### Installation
+## Runtime Dependencies
+- fuseiso
+- Python (>=3.7)
+- glibc (>=2.28)
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+## Installation
+### Install the .rpm package
+#### Install via yum with automatic dependency handling
+```
+$ sudo yum install RPM_PACKAGE
+```
+For example:
+```
+$ sudo yum install ./linx-xiling-1.0-1.x86_64.rpm
+```
 
-#### Instructions
+#### Install via dnf with automatic dependency handling
+```
+$ sudo dnf install RPM_PACKAGE
+```
+For example:
+```
+$ sudo dnf install ./linx-xiling-1.0-1.x86_64.rpm
+```
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+#### Install via rpm
+```
+$ sudo rpm -ivh RPM_PACKAGE
+```
+For example:
+```
+$ sudo rpm -ivh ./linx-xiling-1.0-1.x86_64.rpm
+```
+Note: Using rpm does not handle dependencies automatically, so you need to install them manually.
 
-#### Contribution
+## Usage Instructions
+### Running the Command
+Scan a Linux ISO image file or a single software package to generate both a Condensed Thinking-format SBOM and an SPDX-format SBOM:
+```
+$ linx-xiling [-h] (--iso ISO | --package PACKAGE) --output OUTPUT [--disable-tqdm] [--max-workers MAX_WORKERS]
+```
 
-1.  Fork the repository
-2.  Create Feat_xxx branch
-3.  Commit your code
-4.  Create Pull Request
+#### Required Parameters
+| Parameter                     | Description                          |
+| ----------------------------- | ------------------------------------ |
+| --iso ISO, -i ISO             | Path to the ISO image file.          |
+| --package PACKAGE, -p PACKAGE | Path to the software package.        |
+| --output OUTPUT, -o OUTPUT    | Output directory for the SBOM files. |
 
+#### 可Optional Parameters
+| Parameter                 | Description                           |
+| ------------------------- | ------------------------------------- |
+| --help, -h                | Show help message and exit.           |
+| --disable-tqdm            | Disable progress bar display.         |
+| --max-workers MAX_WORKERS | Maximum number of concurrent threads. |
 
-#### Gitee Feature
+### Running from Source
+Install required dependencies:
+```
+$ pip install -r requirements.txt
+```
 
-1.  You can use Readme\_XXX.md to support different languages, such as Readme\_en.md, Readme\_zh.md
-2.  Gitee blog [blog.gitee.com](https://blog.gitee.com)
-3.  Explore open source project [https://gitee.com/explore](https://gitee.com/explore)
-4.  The most valuable open source project [GVP](https://gitee.com/gvp)
-5.  The manual of Gitee [https://gitee.com/help](https://gitee.com/help)
-6.  The most popular members  [https://gitee.com/gitee-stars/](https://gitee.com/gitee-stars/)
+Run the tool:
+```
+$ python3 linx-xiling.py [-h] (--iso ISO | --package PACKAGE) --output OUTPUT [--disable-tqdm] [--max-workers MAX_WORKERS]
+```
+
+### Notes
+#### How to Run the Tool via Docker?
+The following command uses the ```--privileged``` option to grant additional privileges to the container and enables access to FUSE via the ```--cap-add SYS_ADMIN``` and ```--device /dev/fuse``` options, ensuring ISO images can be mounted inside the container:
+```
+$ docker run -it --privileged --cap-add SYS_ADMIN --device /dev/fuse IMAGE [ARG...]
+```
+
+#### Log File Paths
+- In production environments, logs are saved in the ```~/.linx-xiling/logs/``` directory.
+- In development environments, logs are saved in the ```logs/``` directory under the project root.
