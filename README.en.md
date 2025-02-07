@@ -58,7 +58,7 @@ $ linx-xiling [-h] (--iso ISO | --package PACKAGE) --output OUTPUT [--disable-tq
 | --package PACKAGE, -p PACKAGE | Path to the software package.        |
 | --output OUTPUT, -o OUTPUT    | Output directory for the SBOM files. |
 
-#### 可Optional Parameters
+#### Optional Parameters
 | Parameter                 | Description                           |
 | ------------------------- | ------------------------------------- |
 | --help, -h                | Show help message and exit.           |
