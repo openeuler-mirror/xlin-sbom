@@ -2583,133 +2583,133 @@
         "homepage": "http://data.astrometry.net/4200",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://anbox.io",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://atari800.github.io",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://wireless.kernel.org/en/users/Drivers/b43",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://basilisk.cebix.net/",
-        "name": null,
+        "name": "Christian Bauer (Christian.Bauer@uni-mainz.de)",
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://www.nuand.com/bladeRF",
-        "name": null,
-        "is_organization": false,
-        "analyzed": false
+        "name": "Nuand",
+        "is_organization": true,
+        "analyzed": true
     },
     {
         "homepage": "https://boinc.berkeley.edu/",
-        "name": null,
-        "is_organization": false,
-        "analyzed": false
+        "name": "University of California",
+        "is_organization": true,
+        "analyzed": true
     },
     {
         "homepage": "https://github.com/CasparCG/server/",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://files.b9.com/umlisp/",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://clsql.kpe.io/",
-        "name": null,
+        "name": "Kevin M. Rosenberg",
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://files.b9.com/umlisp-orf/",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://corsixth.com",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://www.eso.org/sci/software/pipelines/amber",
-        "name": null,
-        "is_organization": false,
-        "analyzed": false
+        "name": "European Southern Observatory (ESO)",
+        "is_organization": true,
+        "analyzed": true
     },
     {
         "homepage": "https://www.eso.org/sci/software/pipelines/fors",
-        "name": null,
-        "is_organization": false,
-        "analyzed": false
+        "name": "European Southern Observatory (ESO)",
+        "is_organization": true,
+        "analyzed": true
     },
     {
         "homepage": "https://www.eso.org/sci/software/pipelines/giraffe/giraffe-pipe-recipes.html",
-        "name": null,
-        "is_organization": false,
-        "analyzed": false
+        "name": "European Southern Observatory (ESO)",
+        "is_organization": true,
+        "analyzed": true
     },
     {
         "homepage": "https://www.eso.org/sci/software/pipelines/kmos",
-        "name": null,
-        "is_organization": false,
-        "analyzed": false
+        "name": "European Southern Observatory (ESO)",
+        "is_organization": true,
+        "analyzed": true
     },
     {
         "homepage": "https://www.eso.org/sci/software/pipelines/muse",
-        "name": null,
-        "is_organization": false,
-        "analyzed": false
+        "name": "European Southern Observatory (ESO)",
+        "is_organization": true,
+        "analyzed": true
     },
     {
         "homepage": "https://www.eso.org/sci/software/pipelines/naco",
-        "name": null,
-        "is_organization": false,
-        "analyzed": false
+        "name": "European Southern Observatory (ESO)",
+        "is_organization": true,
+        "analyzed": true
     },
     {
         "homepage": "https://www.eso.org/sci/software/pipelines/uves",
-        "name": null,
-        "is_organization": false,
-        "analyzed": false
+        "name": "European Southern Observatory (ESO)",
+        "is_organization": true,
+        "analyzed": true
     },
     {
         "homepage": "https://www.eso.org/sci/software/pipelines/visir",
-        "name": null,
-        "is_organization": false,
-        "analyzed": false
+        "name": "European Southern Observatory (ESO)",
+        "is_organization": true,
+        "analyzed": true
     },
     {
         "homepage": "https://www.eso.org/sci/software/pipelines/vimos",
-        "name": null,
-        "is_organization": false,
-        "analyzed": false
+        "name": "European Southern Observatory (ESO)",
+        "is_organization": true,
+        "analyzed": true
     },
     {
         "homepage": "https://www.eso.org/sci/software/pipelines/xshooter/",
-        "name": null,
-        "is_organization": false,
-        "analyzed": false
+        "name": "European Southern Observatory (ESO)",
+        "is_organization": true,
+        "analyzed": true
     },
     {
         "homepage": "http://cytadela.sf.net/",
@@ -8659,27 +8659,27 @@
     },
     {
         "homepage": "http://linx-info.com",
-        "name": null,
-        "is_organization": false,
-        "analyzed": false
+        "name": "Linx Software, Inc.",
+        "is_organization": true,
+        "analyzed": true
     },
     {
         "homepage": "http://www.linx-info.com",
-        "name": null,
-        "is_organization": false,
-        "analyzed": false
+        "name": "Linx Software, Inc.",
+        "is_organization": true,
+        "analyzed": true
     },
     {
         "homepage": "https://gitlab.linx-info.cd/linx-os-6.0.100/code/linx-tools",
-        "name": null,
-        "is_organization": false,
-        "analyzed": false
+        "name": "Linx Software, Inc.",
+        "is_organization": true,
+        "analyzed": true
     },
     {
         "homepage": "http://gitlab.rd.in.linx/linx6.0.60/linx-trustboot-tools/",
-        "name": null,
-        "is_organization": false,
-        "analyzed": false
+        "name": "Linx Software, Inc.",
+        "is_organization": true,
+        "analyzed": true
     },
     {
         "homepage": "https://wiki.debian.org/DebianLive",
@@ -8797,21 +8797,21 @@
     },
     {
         "homepage": "http://gitlab.rd.in.linx/linxsec/ltcs/code/ltcs-kernel-module",
-        "name": null,
-        "is_organization": false,
-        "analyzed": false
+        "name": "Linx Software, Inc.",
+        "is_organization": true,
+        "analyzed": true
     },
     {
         "homepage": "http://gitlab.rd.in.linx/Linx-TM/ltcs-tools/code/linx60/lapmctl",
-        "name": null,
-        "is_organization": false,
-        "analyzed": false
+        "name": "Linx Software, Inc.",
+        "is_organization": true,
+        "analyzed": true
     },
     {
         "homepage": "http://gitlab.rd.in.linx/Linx-TM/ltcs-tools/code/linx42/ltcs-sign-tools",
-        "name": null,
-        "is_organization": false,
-        "analyzed": false
+        "name": "Linx Software, Inc.",
+        "is_organization": true,
+        "analyzed": true
     },
     {
         "homepage": "http://code.google.com/p/lua-augeas/",
