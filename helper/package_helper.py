@@ -50,6 +50,9 @@ def package_scanner(pkg_path, pkg_type, created_time):
     if pkg_type == "rpm":
         package, licenses, files, file_relationships, originators, provides = process_rpm_package(
             pkg_path, originators)
+    elif pkg_type == "source":
+        package, licenses, files, file_relationships, originators = process_source_package(
+            pkg_path, originators)
     packages.append(package)
     linx_sbom = {
         "packages_sbom": _add_header(packages, "packages", created_time),
@@ -134,6 +137,26 @@ def process_rpm_package(pkg_path, originators):
         logging.error(f'跳过 {pkg_path} 由于读取错误: {e}')
         return None
 
+
+def process_source_package(pkg_path, originators):
+    # TO-DO
+    # return package_info, licenses, files, file_relationships, originators
+    package_info = {
+        "id": "Package-Source",
+        "name": "Source",
+        "version": "Source",
+        "architecture": "Source",
+        "package_type": "source",
+        "depends": [],
+        "licenses": [],
+        "suppliers": [],
+        "description": "Source",
+        "checksum": {
+            "value": "Source",
+            "algorithm": "Source"
+        }
+    }
+    return package_info, [], [], [], originators
 
 def _safe_decode(value):
     """

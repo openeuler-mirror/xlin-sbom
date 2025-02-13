@@ -318,15 +318,17 @@ def main():
         if package_path.endswith('.rpm'):
             package_type = "rpm"
             logging.info("侦测到RPM包")
+        elif package_path.endswith(('.tar.gz', '.tgz', '.tar.bz2', '.tar.xz', '.tar', '.zip')):
+            package_type = "source"
+            logging.info("侦测到源码包")
         else:
             logging.error("未侦测到有效的包")
             sys.exit(1)
-        linx_sbom = package_scanner(
-            package_path, package_type, spdx_utc_time)
 
-        save_sbom(linx_sbom, package_type, pkg_filename,
-                  formatted_utc_time, spdx_utc_time, output_dir)
+        linx_sbom = package_scanner(package_path, package_type, spdx_utc_time)
+        save_sbom(linx_sbom, package_type, pkg_filename, formatted_utc_time, spdx_utc_time, output_dir)
         logging.info("Linx SBOM 生成完成")
+
 
 
 if __name__ == "__main__":
