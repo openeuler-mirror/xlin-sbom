@@ -2715,79 +2715,79 @@
         "homepage": "http://cytadela.sf.net/",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://dhewm3.org/",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://wiki.debian.org/Diaspora",
-        "name": null,
-        "is_organization": false,
-        "analyzed": false
+        "name": "Debian",
+        "is_organization": true,
+        "analyzed": true
     },
     {
         "homepage": "https://www.dynare.org/",
-        "name": null,
+        "name": "Dynare Team",
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://easy-spice.sourceforge.net",
-        "name": null,
+        "name": "Werner Hoch (werner.ho@gmx.de)",
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://exult.sourceforge.net/",
-        "name": null,
+        "name": "Exult Team",
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://www.ibm.com/plex/",
-        "name": null,
-        "is_organization": false,
-        "analyzed": false
+        "name": "IBM",
+        "is_organization": true,
+        "analyzed": true
     },
     {
         "homepage": "http://madmalik.github.io/mononoki/",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://github.com/scp-fs2open/wxlauncher/",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://github.com/i-rinat/freshplayerplugin",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://wiki.debian.org/Games/GameDataPackager",
-        "name": null,
-        "is_organization": false,
-        "analyzed": false
+        "name": "Debian",
+        "is_organization": true,
+        "analyzed": true
     },
     {
         "homepage": "http://www.gemrb.org/",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://dev.maxmind.com/geoip/geoipupdate/",
-        "name": null,
-        "is_organization": false,
-        "analyzed": false
+        "name": "MaxMind, Inc.",
+        "is_organization": true,
+        "analyzed": true
     },
     {
         "homepage": "http://www.codon.org.uk/~mjg59/gobi_loader/",
@@ -2797,63 +2797,63 @@
     },
     {
         "homepage": "https://developer.android.com/about/index.html",
-        "name": null,
-        "is_organization": false,
-        "analyzed": false
+        "name": "Google LLC",
+        "is_organization": true,
+        "analyzed": true
     },
     {
         "homepage": "https://developer.android.com/topic/libraries/support-library/index.html",
-        "name": null,
-        "is_organization": false,
-        "analyzed": false
+        "name": "Google LLC",
+        "is_organization": true,
+        "analyzed": true
     },
     {
         "homepage": "http://open-jtalk.sourceforge.net",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://cars9.uchicago.edu/ifeffit/",
-        "name": null,
-        "is_organization": false,
-        "analyzed": false
+        "name": "The University of Chicago",
+        "is_organization": true,
+        "analyzed": true
     },
     {
         "homepage": "https://github.com/iortcw/iortcw/",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://www.isdn4linux.de/",
-        "name": null,
+        "name": "Fritz Elfert (webmaster@isdn4linux.de)",
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://launchpad.net/isight-firmware-tools/",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://gitlab.com/iucode-tool",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://kcemu.sourceforge.net/",
-        "name": null,
+        "name": "Torsten Paul (Torsten.Paul@gmx.de)",
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://git.ao2.it/kinect-audio-setup.git/",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://linuxbrew.sh/",
