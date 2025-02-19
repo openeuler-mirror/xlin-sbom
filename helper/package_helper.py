@@ -20,6 +20,7 @@ from helper.suppliers_helper import get_suppliers, RPM_SUPPLIERS
 from helper.originators_helper import extract_originator_name
 from helper.relationships_helper import get_file_relationships
 from helper.json_helper import save_data_to_json, read_data_from_json
+from helper.src_package_helper import process_src_package
 import logging
 import rpmfile
 import os
@@ -141,6 +142,8 @@ def process_rpm_package(pkg_path, originators):
 def process_source_package(pkg_path, originators):
     # TO-DO
     # return package_info, licenses, files, file_relationships, originators
+
+    process_src_package(pkg_path, originators)
     package_info = {
         "id": "Package-Source",
         "name": "Source",
