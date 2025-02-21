@@ -142,24 +142,9 @@ def process_rpm_package(pkg_path, originators):
 def process_source_package(pkg_path, originators):
     # TO-DO
     # return package_info, licenses, files, file_relationships, originators
-
-    process_src_package(pkg_path, originators)
-    package_info = {
-        "id": "Package-Source",
-        "name": "Source",
-        "version": "Source",
-        "architecture": "Source",
-        "package_type": "source",
-        "depends": [],
-        "licenses": [],
-        "suppliers": [],
-        "description": "Source",
-        "checksum": {
-            "value": "Source",
-            "algorithm": "Source"
-        }
-    }
+    package_info, originators = process_src_package(pkg_path, originators)
     return package_info, [], [], [], originators
+
 
 def _safe_decode(value):
     """
