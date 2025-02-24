@@ -142,8 +142,9 @@ def process_rpm_package(pkg_path, originators):
 def process_source_package(pkg_path, originators):
     # TO-DO
     # return package_info, licenses, files, file_relationships, originators
-    package_info, originators = process_src_package(pkg_path, originators)
-    return package_info, [], [], [], originators
+    package_info, licenses, originators = process_src_package(
+        pkg_path, originators)
+    return package_info, licenses, [], [], originators
 
 
 def _safe_decode(value):

@@ -5,6 +5,7 @@ import hashlib
 from typing import Dict, Any
 from helper.suppliers_helper import get_suppliers, RPM_SUPPLIERS
 from helper.originators_helper import extract_originator_name
+from helper.licenses_helper import rpm_licenses_scanner
 
 
 def process_src_package(pkg_path: str, originators: Dict[str, Any]) -> Dict[str, Any]:
@@ -91,6 +92,8 @@ def _process_spec(pkg_path: str, originators: Dict[str, Any]) -> Dict[str, Any]:
         homepage, originators)
     suppliers = get_suppliers(
         release, homepage, originator_name, RPM_SUPPLIERS)
+    licenses = rpm_licenses_scanner(spec_data.get('license', ''))
+    license_id_list = [license.get("id") for license in licenses]
 
     # 构建返回数据结构
     package_info = {
@@ -100,7 +103,7 @@ def _process_spec(pkg_path: str, originators: Dict[str, Any]) -> Dict[str, Any]:
         "architecture": spec_data.get('architecture', ''),
         "package_type": "source",
         "depends": processed_depends,
-        "licenses": spec_data.get('license', []),
+        "licenses": license_id_list,
         "suppliers": suppliers,
         "description": spec_data.get('description', ''),
         "checksum": {
@@ -109,7 +112,7 @@ def _process_spec(pkg_path: str, originators: Dict[str, Any]) -> Dict[str, Any]:
         }
     }
 
-    return package_info, originators
+    return package_info, licenses, originators
 
 
 def _extract_spec_content(pkg_path: str) -> str:
@@ -176,9 +179,7 @@ def _parse_spec_content(spec_content: str) -> Dict[str, Any]:
             elif stripped_line.lower().startswith('release:'):
                 parsed['release'] = stripped_line.split(':', 1)[1].strip()
             elif stripped_line.lower().startswith('license:'):
-                license_parts = [l.strip() for l in stripped_line.split(':', 1)[
-                    1].split() if l.strip()]
-                parsed['license'] = license_parts
+                parsed['license'] = stripped_line.split(':', 1)[1].strip()
             elif stripped_line.lower().startswith('url:'):
                 parsed['url'] = stripped_line.split(':', 1)[1].strip()
             elif stripped_line.lower().startswith('buildrequires:'):
