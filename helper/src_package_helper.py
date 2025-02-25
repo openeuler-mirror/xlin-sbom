@@ -66,6 +66,37 @@ def _process_spec(pkg_path: str, originators: Dict[str, Any]) -> Dict[str, Any]:
     """
     处理RPM源码包的主函数
     """
+    def _process_requires(requires: list[str]):
+        """
+        处理RPM依赖项
+        """
+        operators = {'>=', '<=', '>', '<', '=', '!=', '~>'}  # 定义可能的操作符集合
+        processed_requires = []
+
+        for require in requires:
+            tokens = require.split()
+            i = 0
+            while i < len(tokens):
+                # 检查是否存在后续操作符
+                if i + 1 < len(tokens) and tokens[i+1] in operators:
+                    # 合并操作符和版本号
+                    if i + 2 < len(tokens):
+                        req = f"{tokens[i]} {tokens[i+1]} {tokens[i+2]}"
+                        i += 3
+                    else:
+                        # 格式错误，仅保留当前部分
+                        req = tokens[i]
+                        i += 1
+                else:
+                    req = tokens[i]
+                    i += 1
+                # 替换宏变量
+                processed_req = req.replace('%{name}', name).replace(
+                    '%{version}', version).replace('%{release}', release)
+                processed_requires.append(processed_req)
+
+        return processed_requires
+
     # 计算校验和
     md5_value = _calculate_package_md5(pkg_path)
 
@@ -77,15 +108,12 @@ def _process_spec(pkg_path: str, originators: Dict[str, Any]) -> Dict[str, Any]:
     # 解析spec文件
     spec_data = _parse_spec_content(spec_content)
 
-    # 处理依赖项中的宏变量替换
+    name = spec_data.get('name', 'unknown')
     version = spec_data.get('version', '')
     release = spec_data.get('release', '')
-    processed_depends = []
-    for dep_data in spec_data.get('requires', []):
-        dep_list = dep_data.split()
-        for dep in dep_list:
-            processed_depends.append(dep.replace(
-                '%{version}', version).replace('%{release}', release))
+
+    build_requires = _process_requires(spec_data.get('buildrequires', [])) # TO-DO
+    requires = _process_requires(spec_data.get('requires', []))
 
     homepage = spec_data.get('url', '')
     originator_name, is_organization, originators = extract_originator_name(
@@ -97,12 +125,12 @@ def _process_spec(pkg_path: str, originators: Dict[str, Any]) -> Dict[str, Any]:
 
     # 构建返回数据结构
     package_info = {
-        "id": f"Package-{spec_data.get('name', 'unknown')}-{md5_value}",
-        "name": spec_data.get('name', ''),
+        "id": f"Package-{name}-{md5_value}",
+        "name": name,
         "version": version,
         "architecture": spec_data.get('architecture', ''),
         "package_type": "source",
-        "depends": processed_depends,
+        "depends": requires,
         "licenses": license_id_list,
         "suppliers": suppliers,
         "description": spec_data.get('description', ''),
@@ -183,6 +211,10 @@ def _parse_spec_content(spec_content: str) -> Dict[str, Any]:
             elif stripped_line.lower().startswith('url:'):
                 parsed['url'] = stripped_line.split(':', 1)[1].strip()
             elif stripped_line.lower().startswith('buildrequires:'):
+                buildrequires = [r.strip() for r in stripped_line.split(
+                    ':', 1)[1].split(',') if r.strip()]
+                parsed.setdefault('buildrequires', []).extend(buildrequires)
+            elif stripped_line.lower().startswith('requires:'):
                 requires = [r.strip() for r in stripped_line.split(
                     ':', 1)[1].split(',') if r.strip()]
                 parsed.setdefault('requires', []).extend(requires)
