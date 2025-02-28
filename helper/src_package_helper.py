@@ -12,8 +12,16 @@ from helper.licenses_helper import rpm_licenses_scanner
 
 def process_src_package(pkg_path: str, originators: Dict[str, Any]) -> Dict[str, Any]:
     """
-    主处理函数，根据源码包类型分发到不同的处理流程
+    处理源码包并返回其详细信息。
+
+    Args:
+        pkg_path (str): 源码包的文件路径。
+        originators (Dict[str, Any]): 包含来源者信息的字典，用于在后续处理中提取和更新来源者信息。
+
+    Returns:
+        Dict[str, Any]: 返回一个字典，包含源码包的详细信息，如包名、版本、依赖、许可证、供应商等。
     """
+
     md5_value = _calculate_package_md5(pkg_path)
     package_type, content = _detect_package_type(pkg_path)
 
@@ -27,8 +35,15 @@ def process_src_package(pkg_path: str, originators: Dict[str, Any]) -> Dict[str,
 
 def _calculate_package_md5(file_path: str) -> str:
     """
-    计算源码包的MD5校验和
+    计算文件的MD5校验和。
+
+    Args:
+        file_path (str): 文件的绝对路径或相对路径。
+
+    Returns:
+        str: 文件的MD5校验和，以十六进制字符串形式返回。
     """
+
     hash_md5 = hashlib.md5()
     with open(file_path, "rb") as f:
         for chunk in iter(lambda: f.read(4096), b""):
@@ -38,8 +53,17 @@ def _calculate_package_md5(file_path: str) -> str:
 
 def _detect_package_type(pkg_path: str) -> Tuple[str, str]:
     """
-    检测源码包类型并返回类型和对应文件内容
+    检测源码包类型并返回类型和对应文件内容。
+
+    Args:
+        pkg_path (str): 源码包的文件路径，可以是绝对路径或相对路径。
+
+    Returns:
+        Tuple[str, str]: 返回一个元组，包含两个元素：
+            - 第一个元素为字符串，表示检测到的源码包类型（如 'rpm', 'deb' 或 'other'）。
+            - 第二个元素为字符串，表示对应文件的内容。如果未检测到特定类型，则返回空字符串。
     """
+
     MULTI_EXTENSIONS = (
         '.tar.gz',  '.tgz',    # gzip压缩的tar
         '.tar.bz2', '.tbz2',   # bzip2压缩的tar
@@ -68,8 +92,18 @@ def _detect_package_type(pkg_path: str) -> Tuple[str, str]:
 
 def _detect_from_archive(tar: tarfile.TarFile, current_depth: int) -> Tuple[str, str]:
     """
-    处理tar类型压缩包的递归检测
+    从 tar 压缩文件中检测源码包类型并返回类型和对应文件内容。
+
+    Args:
+        tar (tarfile.TarFile): 已打开的 tar 压缩文件对象，用于读取文件内容。
+        current_depth (int): 当前递归深度，用于控制递归检测的深度。
+
+    Returns:
+        Tuple[str, str]: 返回一个元组，包含两个元素：
+            - 第一个元素为字符串，表示检测到的源码包类型（如 'rpm', 'deb' 或 'other'）。
+            - 第二个元素为字符串，表示对应文件的内容。如果未检测到特定类型，则返回空字符串。
     """
+
     return _detect_from_members(
         members=tar.getmembers(),
         extract_file=lambda m: tar.extractfile(m).read(),
@@ -79,8 +113,18 @@ def _detect_from_archive(tar: tarfile.TarFile, current_depth: int) -> Tuple[str,
 
 def _detect_from_zip(zipf: zipfile.ZipFile, current_depth: int) -> Tuple[str, str]:
     """
-    处理zip类型压缩包的递归检测
+    从 zip 压缩文件中检测源码包类型并返回类型和对应文件内容。
+
+    Args:
+        zipf (zipfile.ZipFile): 已打开的 zip 压缩文件对象，用于读取文件内容。
+        current_depth (int): 当前递归深度，用于控制递归检测的深度。
+
+    Returns:
+        Tuple[str, str]: 返回一个元组，包含两个元素：
+            - 第一个元素为字符串，表示检测到的源码包类型（如 'rpm', 'deb' 或 'other'）。
+            - 第二个元素为字符串，表示对应文件的内容。如果未检测到特定类型，则返回空字符串。
     """
+
     return _detect_from_members(
         members=zipf.namelist(),
         extract_file=lambda m: zipf.open(m).read(),
@@ -91,8 +135,20 @@ def _detect_from_zip(zipf: zipfile.ZipFile, current_depth: int) -> Tuple[str, st
 
 def _detect_from_members(members, extract_file, current_depth: int, is_zip=False) -> Tuple[str, str]:
     """
-    通用检测逻辑实现
+    从压缩文件成员中检测源码包类型并返回类型和对应文件内容。
+
+    Args:
+        members (list): 压缩文件中的成员列表。
+        extract_file (Callable): 用于提取文件内容的函数。
+        current_depth (int): 当前递归深度，用于控制递归检测的深度。
+        is_zip (bool, optional): 布尔值，指示当前处理的是否为 zip 压缩文件。默认为 `False`，表示处理 tar 压缩文件。
+
+    Returns:
+        Tuple[str, str]: 返回一个元组，包含两个元素：
+            - 第一个元素为字符串，表示检测到的源码包类型（如 'rpm', 'deb' 或 'other'）。
+            - 第二个元素为字符串，表示对应文件的内容。如果未检测到特定类型，则返回空字符串。
     """
+
     MAX_DEPTH = 1
     if current_depth > MAX_DEPTH:
         return ('other', '')
@@ -139,12 +195,31 @@ def _detect_from_members(members, extract_file, current_depth: int, is_zip=False
 
 def _process_spec(spec_content: str, md5_value: str, originators: Dict[str, Any]) -> Dict[str, Any]:
     """
-    处理RPM源码包的主函数
+    处理RPM源码包的spec文件内容，并返回源码包的详细信息。
+
+    Args:
+        spec_content (str): spec文件的内容，以字符串形式表示。
+        md5_value (str): 源码包的MD5校验和，以十六进制字符串形式表示。
+        originators (Dict[str, Any]): 包含来源者信息的字典，用于在后续处理中提取和更新来源者信息。
+
+    Returns:
+        Tuple[Dict[str, Any], List[Dict[str, Any]], Dict[str, Any]]: 返回一个包含三个元素的元组：
+            - 第一个元素为字典，包含源码包的详细信息，如包名、版本、依赖、许可证、供应商等。
+            - 第二个元素为列表，包含解析后的许可证信息。
+            - 第三个元素为字典，更新后的来源者信息。
     """
+
     def _process_requires(requires: list[str]):
         """
-        处理RPM依赖项
+        处理RPM依赖项。
+
+        Args:
+            requires (list[str]): 依赖项列表，每个依赖项为字符串形式。
+
+        Returns:
+            list[str]: 处理后的依赖项列表，替换掉宏变量（如 %{name}, %{version}, %{release}）。
         """
+
         operators = {'>=', '<=', '>', '<', '=', '!=', '~>'}  # 定义可能的操作符集合
         processed_requires = []
 
@@ -207,8 +282,24 @@ def _process_spec(spec_content: str, md5_value: str, originators: Dict[str, Any]
 
 def _parse_spec_content(spec_content: str) -> Dict[str, Any]:
     """
-    解析spec文件内容的核心函数
+    解析 RPM spec 文件内容并提取相关信息。
+
+    Args:
+        spec_content (str): spec 文件的内容，以字符串形式表示。
+
+    Returns:
+        Dict[str, Any]: 返回一个字典，包含从 spec 文件中提取的信息，包括：
+            - `name`: 包名。
+            - `version`: 版本号。
+            - `release`: 发行号。
+            - `license`: 许可证信息。
+            - `url`: 主页 URL。
+            - `buildrequires`: 构建依赖项列表。
+            - `requires`: 运行时依赖项列表。
+            - `architecture`: 架构信息。
+            - `description`: 包的描述信息。
     """
+
     parsed = {}
     current_section = None
     description_lines = []
