@@ -315,12 +315,12 @@ def main():
         pkg_filename = os.path.splitext(os.path.basename(package_path))[0]
 
         package_type = "unknown"
-        if package_path.endswith('.rpm'):
-            package_type = "rpm"
-            logging.info("侦测到RPM包")
-        elif package_path.endswith(('.tar.gz', '.tgz', '.tar.bz2', '.tar.xz', '.tar', '.zip')):
+        if package_path.endswith(('.src.rpm','.tar.gz', '.tgz', '.tar.bz2', '.tar.xz', '.tar', '.zip')):
             package_type = "source"
             logging.info("侦测到源码包")
+        elif package_path.endswith('.rpm'):
+            package_type = "rpm"
+            logging.info("侦测到RPM包")
         else:
             logging.error("未侦测到有效的包")
             sys.exit(1)

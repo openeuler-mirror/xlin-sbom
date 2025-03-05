@@ -1,6 +1,7 @@
 import os
 import tarfile
 import zipfile
+import rpmfile
 import hashlib
 import io
 import logging
@@ -65,6 +66,7 @@ def _detect_package_type(pkg_path: str) -> Tuple[str, str]:
     """
 
     MULTI_EXTENSIONS = (
+        '.src.rpm',            # rpm源码格式
         '.tar.gz',  '.tgz',    # gzip压缩的tar
         '.tar.bz2', '.tbz2',   # bzip2压缩的tar
         '.tar.xz',  '.txz',    # xz压缩的tar
@@ -77,6 +79,9 @@ def _detect_package_type(pkg_path: str) -> Tuple[str, str]:
         if lower_path.endswith(ext):
             try:
                 # 根据类型调用对应处理逻辑
+                if ext == '.src.rpm':
+                    with rpmfile.open(pkg_path) as rpm:
+                        return _detect_from_src_rpm(rpm)
                 if ext in ('.tar.gz', '.tgz', '.tar.bz2', '.tbz2', '.tar.xz', '.txz', '.tar'):
                     with tarfile.open(pkg_path, 'r:*') as tar:
                         return _detect_from_archive(tar, current_depth=0)
@@ -87,6 +92,26 @@ def _detect_package_type(pkg_path: str) -> Tuple[str, str]:
                 logging.error(f"处理 {ext} 格式时出错: {str(e)}")
                 continue
 
+    return ('other', '')
+
+
+def _detect_from_src_rpm(rpm: rpmfile.RPMFile) -> Tuple[str, str]:
+    """
+    从 RPM 源码包中检测 spec 文件并返回其内容。
+
+    Args:
+        rpm (rpmfile.RPMFile): 已打开的 RPM 源码包文件对象，用于读取文件内容。
+
+    Returns:
+        Tuple[str, str]: 返回一个元组，包含两个元素：
+            - 第一个元素为字符串，表示检测到的源码包类型（如 'rpm' 或 'other'）。
+            - 第二个元素为字符串，表示 spec 文件的内容。如果未检测到 spec 文件，则返回空字符串。
+    """
+    for member in rpm.getmembers():
+        if member.name.endswith('.spec'):
+            content = rpm.extractfile(member).read().decode(
+                'utf-8', errors='ignore')
+            return ('rpm', content)
     return ('other', '')
 
 
