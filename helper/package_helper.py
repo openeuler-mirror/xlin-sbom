@@ -29,7 +29,7 @@ import os
 creators_file_path = os.path.join(ASSIST_DIR, 'creators.json')
 
 
-def package_scanner(pkg_path, pkg_type, created_time):
+def package_scanner(pkg_path, pkg_type, created_time, checksum_values):
     """
     扫描指定路径下的软件包，并根据软件包类型提取相关信息。
 
@@ -50,7 +50,7 @@ def package_scanner(pkg_path, pkg_type, created_time):
 
     if pkg_type == "rpm":
         package, licenses, files, file_relationships, originators, provides = process_rpm_package(
-            pkg_path, originators)
+            pkg_path, originators, checksum_values)
     elif pkg_type == "source":
         package, licenses, files, file_relationships, originators = process_source_package(
             pkg_path, originators)
@@ -69,7 +69,7 @@ def package_scanner(pkg_path, pkg_type, created_time):
     return linx_sbom
 
 
-def process_rpm_package(pkg_path, originators):
+def process_rpm_package(pkg_path, originators, checksum_values):
     """
     处理单个 RPM 包，提取相关信息并生成相应的数据结构。
 
@@ -89,6 +89,8 @@ def process_rpm_package(pkg_path, originators):
 
     with open(pkg_path, 'rb') as f:
         package_sha1 = calculate_sha1(f)
+        if package_sha1 in checksum_values:
+            return None
     try:
         with rpmfile.open(pkg_path) as rpm:
             name = _safe_decode(rpm.headers.get('name'))

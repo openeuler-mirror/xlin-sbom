@@ -24,7 +24,7 @@ import logging
 creators_file_path = os.path.join(ASSIST_DIR, 'creators.json')
 
 
-def rpm_packages_scanner(mnt_dir, iso_filename, created_time, disable_tqdm, workers):
+def rpm_packages_scanner(mnt_dir, iso_filename, created_time, disable_tqdm, workers, checksum_values):
     """
     扫描并处理 RPM 包，生成软件物料清单（SBOM）。
 
@@ -71,7 +71,7 @@ def rpm_packages_scanner(mnt_dir, iso_filename, created_time, disable_tqdm, work
 
     with ThreadPoolExecutor(max_workers=workers) as executor:
         futures = {
-            executor.submit(process_rpm_package, full_path, originators): full_path
+            executor.submit(process_rpm_package, full_path, originators, checksum_values): full_path
             for full_path in rpm_files
         }
 
@@ -82,6 +82,8 @@ def rpm_packages_scanner(mnt_dir, iso_filename, created_time, disable_tqdm, work
         )
 
         for future in as_completed(futures):
+            if not future.result():
+                continue
             package_info, package_licenses, package_files, package_file_relationships, updated_originators, provides = future.result()
             if package_info:
                 packages.append(package_info)
