@@ -48,7 +48,7 @@ $ sudo rpm -ivh ./linx-xiling-1.0-1.x86_64.rpm
 ### 运行命令
 指定一个Linux系统的ISO镜像文件或单个软件包进行扫描，获取其凝思格式SBOM和SPDX格式SBOM：
 ```
-$ linx-xiling [-h] (--iso ISO | --package PACKAGE) --output OUTPUT [--disable-tqdm] [--max-workers MAX_WORKERS]
+$ linx-xiling [-h] (--iso ISO | --package PACKAGE) --output OUTPUT [--disable-tqdm] [--max-workers MAX_WORKERS] [--sbom SBOM]
 ```
 
 #### 必需参数
@@ -64,6 +64,7 @@ $ linx-xiling [-h] (--iso ISO | --package PACKAGE) --output OUTPUT [--disable-tq
 | --help, -h                         | 显示帮助消息并退出。   |
 | --disable-tqdm                     | 禁用进度条显示。       |
 | --max-workers MAX_WORKERS          | 最大并发线程数。       |
+| --sbom SBOM                        | 指定已存在的SBOM文件（JSON格式）进行增量更新。|
 
 ### 源码运行命令
 安装必要依赖：
