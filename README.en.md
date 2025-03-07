@@ -48,7 +48,7 @@ Note: Using rpm does not handle dependencies automatically, so you need to insta
 ### Running the Command
 Scan a Linux ISO image file or a single software package to generate both a Condensed Thinking-format SBOM and an SPDX-format SBOM:
 ```
-$ linx-xiling [-h] (--iso ISO | --package PACKAGE) --output OUTPUT [--disable-tqdm] [--max-workers MAX_WORKERS]
+$ linx-xiling [-h] (--iso ISO | --package PACKAGE) --output OUTPUT [--disable-tqdm] [--max-workers MAX_WORKERS] [--sbom SBOM]
 ```
 
 #### Required Parameters
@@ -64,6 +64,7 @@ $ linx-xiling [-h] (--iso ISO | --package PACKAGE) --output OUTPUT [--disable-tq
 | --help, -h                | Show help message and exit.           |
 | --disable-tqdm            | Disable progress bar display.         |
 | --max-workers MAX_WORKERS | Maximum number of concurrent threads. |
+| --sbom SBOM               | Specify an existing SBOM file (JSON format) for incremental updates.|
 
 ### Running from Source
 Install required dependencies:
