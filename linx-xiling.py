@@ -21,8 +21,9 @@ import csv
 import logging
 import argparse
 import subprocess
+from typing import List
 from helper import PARENT_DIR, LOG_DIR
-from helper.json_helper import save_data_to_json
+from helper.json_helper import save_data_to_json, read_data_from_json
 from helper.iso_helper import rpm_packages_scanner
 from helper.package_helper import package_scanner
 from helper.spdx_sbom_helper import convert_to_spdx
@@ -52,6 +53,8 @@ def parse_arguments():
     parser.add_argument("--disable-tqdm", action='store_true', help="禁用进度条显示。")
     parser.add_argument("--max-workers", type=int,
                         default=None, help="最大并发线程数。")
+    parser.add_argument("--sbom", required=False, default=None,
+                        help="指定已存在的SBOM文件（JSON格式）进行增量更新。")
 
     return parser.parse_args()
 
@@ -244,6 +247,52 @@ def save_sbom(linx_sbom, package_type, filename, utc_timestamp, spdx_timestamp, 
     logging.info(f"{spdx_sbom_filename} 已被保存至 {output_dir}")
 
 
+def validate_and_extract_checksums(sbom_file: str) -> List[str]:
+    """
+    验证并从 SBOM 文件中提取校验值列表。
+
+    Args:
+        sbom_file (str): SBOM 文件的路径，文件应为 JSON 格式。
+
+    Returns:
+        List[str]: 包含从 SBOM 文件中提取的所有校验值的列表。如果文件读取失败或文件格式不正确，则返回空列表。
+    """
+
+    try:
+        sbom_data = read_data_from_json(sbom_file)
+    except Exception as e:
+        logging.error(f"SBOM文件读取失败: {str(e)}")
+        return []
+
+    # 验证顶层packages字段
+    if not isinstance(sbom_data.get("packages"), list):
+        logging.warning("SBOM文件中缺少有效的packages列表")
+        return []
+
+    checksum_values = []
+
+    for package in sbom_data["packages"]:
+        # 检查校验和字段存在性
+        if "checksums" in package:
+            if not isinstance(package["checksums"], list):
+                continue
+
+            # 处理checksums列表
+            for cs in package["checksums"]:
+                if "checksumValue" in cs:
+                    checksum_values.append(cs["checksumValue"])
+
+        elif "checksum" in package:
+            if not isinstance(package["checksum"], dict):
+                continue
+
+            # 处理checksum字典
+            if "value" in package["checksum"]:
+                checksum_values.append(package["checksum"]["value"])
+
+    return checksum_values
+
+
 def main():
     """
     主函数，负责解析命令行参数、设置日志记录系统、处理ISO镜像或软件包，并生成SBOM。
@@ -257,6 +306,7 @@ def main():
 
     # 解析命令行参数
     args = parse_arguments()
+    checksum_values = []
 
     # 获取 UTC 时间并格式化
     timestamp = time.time()
@@ -272,6 +322,10 @@ def main():
 
     # 处理ISO镜像
     if args.iso is not None:
+        # 处理输入的SBOM文件信息
+        if args.sbom is not None:
+            checksum_values = validate_and_extract_checksums(args.sbom)
+
         iso_filename = os.path.splitext(os.path.basename(args.iso))[0]
         mnt_dir = os.path.join(PARENT_DIR, 'mnt', str(formatted_utc_time))
 
@@ -291,7 +345,7 @@ def main():
                 package_type = "rpm"
                 logging.info("侦测到RPM包系统")
                 linx_sbom = rpm_packages_scanner(
-                    mnt_dir, iso_filename, spdx_utc_time, args.disable_tqdm, args.max_workers)
+                    mnt_dir, iso_filename, spdx_utc_time, args.disable_tqdm, args.max_workers, checksum_values)
             else:
                 logging.error("未侦测到有效的包系统")
                 sys.exit(1)
@@ -315,7 +369,7 @@ def main():
         pkg_filename = os.path.splitext(os.path.basename(package_path))[0]
 
         package_type = "unknown"
-        if package_path.endswith(('.src.rpm','.tar.gz', '.tgz', '.tar.bz2', '.tar.xz', '.tar', '.zip')):
+        if package_path.endswith(('.src.rpm', '.tar.gz', '.tgz', '.tar.bz2', '.tar.xz', '.tar', '.zip')):
             package_type = "source"
             logging.info("侦测到源码包")
         elif package_path.endswith('.rpm'):
@@ -325,10 +379,11 @@ def main():
             logging.error("未侦测到有效的包")
             sys.exit(1)
 
-        linx_sbom = package_scanner(package_path, package_type, spdx_utc_time)
-        save_sbom(linx_sbom, package_type, pkg_filename, formatted_utc_time, spdx_utc_time, output_dir)
+        linx_sbom = package_scanner(
+            package_path, package_type, spdx_utc_time, checksum_values)
+        save_sbom(linx_sbom, package_type, pkg_filename,
+                  formatted_utc_time, spdx_utc_time, output_dir)
         logging.info("Linx SBOM 生成完成")
-
 
 
 if __name__ == "__main__":
