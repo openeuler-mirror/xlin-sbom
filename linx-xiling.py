@@ -26,6 +26,7 @@ from helper import PARENT_DIR, LOG_DIR
 from helper.json_helper import save_data_to_json, read_data_from_json
 from helper.iso_helper import rpm_packages_scanner
 from helper.package_helper import package_scanner
+from helper.repo_helper import repo_scanner, find_primary_xml_in_repo
 from helper.spdx_sbom_helper import convert_to_spdx
 
 
@@ -49,6 +50,8 @@ def parse_arguments():
                                           help="ISO镜像文件的路径。")
     mutually_exclusive_group.add_argument("--package", "-p",
                                           help="软件包的路径。")
+    mutually_exclusive_group.add_argument("--repo", "-r",
+                                          help="更新源地址。")
     parser.add_argument("--output", "-o", required=True, help="SBOM清单输出目录。")
     parser.add_argument("--disable-tqdm", action='store_true', help="禁用进度条显示。")
     parser.add_argument("--max-workers", type=int,
@@ -326,7 +329,7 @@ def main():
         if args.sbom is not None:
             checksum_values = validate_and_extract_checksums(args.sbom)
 
-        iso_filename = os.path.splitext(os.path.basename(args.iso))[0]
+        filename = os.path.splitext(os.path.basename(args.iso))[0]
         mnt_dir = os.path.join(PARENT_DIR, 'mnt', str(formatted_utc_time))
 
         try:
@@ -345,14 +348,11 @@ def main():
                 package_type = "rpm"
                 logging.info("侦测到RPM包系统")
                 linx_sbom = rpm_packages_scanner(
-                    mnt_dir, iso_filename, spdx_utc_time, args.disable_tqdm, args.max_workers, checksum_values)
+                    mnt_dir, filename, spdx_utc_time, args.disable_tqdm, args.max_workers, checksum_values)
             else:
                 logging.error("未侦测到有效的包系统")
                 sys.exit(1)
 
-            save_sbom(linx_sbom, package_type, iso_filename,
-                      formatted_utc_time, spdx_utc_time, output_dir)
-            logging.info("Linx SBOM 生成完成")
         except Exception as e:
             logging.error(f"异常抛出: {e}")
 
@@ -366,7 +366,7 @@ def main():
     # 处理软件包
     elif args.package is not None:
         package_path = args.package.replace(' ', '\\ ')
-        pkg_filename = os.path.splitext(os.path.basename(package_path))[0]
+        filename = os.path.splitext(os.path.basename(package_path))[0]
 
         package_type = "unknown"
         if package_path.endswith(('.src.rpm', '.tar.gz', '.tgz', '.tar.bz2', '.tar.xz', '.tar', '.zip')):
@@ -381,9 +381,25 @@ def main():
 
         linx_sbom = package_scanner(
             package_path, package_type, spdx_utc_time, checksum_values)
-        save_sbom(linx_sbom, package_type, pkg_filename,
-                  formatted_utc_time, spdx_utc_time, output_dir)
-        logging.info("Linx SBOM 生成完成")
+
+    # 处理更新源
+    elif args.repo is not None:
+        filename = "repo"
+        package_type = "repo"
+
+        # 查找 primary.xml.gz 文件
+        primary_xml_url = find_primary_xml_in_repo(args.repo)
+        if not primary_xml_url:
+            logging.error(f"未侦测到有效的更新源地址")
+            sys.exit(1)
+
+        linx_sbom = repo_scanner(
+            primary_xml_url, args.repo, spdx_utc_time, args.disable_tqdm)
+
+    # 保存SBOM
+    save_sbom(linx_sbom, package_type, filename,
+              formatted_utc_time, spdx_utc_time, output_dir)
+    logging.info("Linx SBOM 生成完成")
 
 
 if __name__ == "__main__":
