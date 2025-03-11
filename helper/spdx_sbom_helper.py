@@ -85,27 +85,29 @@ def convert_to_spdx(linx_sbom, os_name, created_time, package_type):
         spdx_packages.append(spdx_package)
 
     # 构建 SPDX 文件元素
-    for file in linx_sbom.get('files_sbom').get('files'):
-        spdx_file = {
-            "fileName": file['name'],
-            "SPDXID": f"SPDXRef-{file['name']}-{file['checksums']['value']}",
-            "checksums": [
-                {
-                    "algorithm": file['checksums']['algorithm'],
-                    "checksumValue": file['checksums']['value']
-                }
-            ]
-        }
-        spdx_files.append(spdx_file)
+    if linx_sbom.get('files_sbom'):
+        for file in linx_sbom.get('files_sbom').get('files'):
+            spdx_file = {
+                "fileName": file['name'],
+                "SPDXID": f"SPDXRef-{file['name']}-{file['checksums']['value']}",
+                "checksums": [
+                    {
+                        "algorithm": file['checksums']['algorithm'],
+                        "checksumValue": file['checksums']['value']
+                    }
+                ]
+            }
+            spdx_files.append(spdx_file)
 
     # 创建 SPDX 文件元素和包与文件的关系
-    for file_relationship in linx_sbom.get('file_relationships_sbom').get('file_relationships'):
-        spdx_file_relationship = {
-            "spdxElementId": f"SPDXRef-{file_relationship['id']}",
-            "relatedSpdxElement": f"SPDXRef-{file_relationship['related_element']}",
-            "relationshipType": file_relationship['relationship_type']
-        }
-        spdx_relationships.append(spdx_file_relationship)
+    if linx_sbom.get('file_relationships_sbom'):
+        for file_relationship in linx_sbom.get('file_relationships_sbom').get('file_relationships'):
+            spdx_file_relationship = {
+                "spdxElementId": f"SPDXRef-{file_relationship['id']}",
+                "relatedSpdxElement": f"SPDXRef-{file_relationship['related_element']}",
+                "relationshipType": file_relationship['relationship_type']
+            }
+            spdx_relationships.append(spdx_file_relationship)
 
     # 创建 SPDX 包依赖关系
     if linx_sbom.get('package_relationships_sbom'):
