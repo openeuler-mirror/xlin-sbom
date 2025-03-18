@@ -2,6 +2,8 @@ from helper import ASSIST_DIR
 from helper.json_helper import read_data_from_json, save_data_to_json
 from helper.suppliers_helper import get_suppliers, RPM_SUPPLIERS
 from helper.originators_helper import extract_originator_name
+from helper.licenses_helper import rpm_licenses_scanner
+from helper.iso_helper import remove_duplicates
 import os
 import logging
 import requests
@@ -10,15 +12,27 @@ creators_file_path = os.path.join(ASSIST_DIR, 'creators.json')
 
 
 def repo_scanner(primary_xml_url, repo_url, created_time):
+    """
+    扫描指定的 primary.xml.gz 文件并生成软件包和许可证的 SBOM。
+
+    Args:
+        primary_xml_url (str): primary.xml.gz 文件的URL。
+        repo_url (str): 更新源的URL。
+        created_time (str): 创建时间的字符串。
+
+    Returns:
+        dict: 包含软件包和许可证 SBOM 的字典。
+    """
+
     packages = []
     licenses = []
     originators_file_path = os.path.join(ASSIST_DIR, 'originators.json')
     originators = read_data_from_json(originators_file_path)
 
-    # TO-DO，从xml中获取packages，licenses和更新后的originators信息
     xml_data = _fetch_and_extract_gzip(primary_xml_url)
     if xml_data:
-        packages, licenses, originators = _parse_primary_xml(xml_data, originators)
+        packages, licenses, originators = _parse_primary_xml(
+            xml_data, originators)
 
     linx_sbom = {
         "packages_sbom": _add_header(packages, "packages", repo_url, created_time),
@@ -37,7 +51,7 @@ def find_primary_xml_in_repo(repo_url):
     在给定的仓库URL中查找 primary.xml.gz 文件的URL。
 
     Args:
-        repo_url (str): 仓库的URL，通常指向一个包含 repodata 文件夹的目录。
+        repo_url (str): 更新源的URL，通常指向一个包含 repodata 文件夹的目录。
 
     Returns:
         str or None: 如果找到 primary.xml.gz 文件，则返回其URL；否则返回 None。
@@ -96,8 +110,17 @@ def _add_header(sbom_data, data_name, repo_url, created_time):
     return sbom
 
 
-# 下载并解压 primary.xml.gz 到内存中
 def _fetch_and_extract_gzip(primary_xml_url):
+    """
+    从指定的 URL 获取并解压 gzip 压缩的 primary.xml 文件。
+
+    Args:
+        primary_xml_url (str): primary.xml.gz 文件的URL。
+
+    Returns:
+        bytes or None: 如果成功解压，返回解压后的数据；否则返回 None。
+    """
+
     import gzip
     from io import BytesIO
 
@@ -115,6 +138,20 @@ def _fetch_and_extract_gzip(primary_xml_url):
 
 
 def _parse_primary_xml(xml_data, originators):
+    """
+    解析 primary.xml 数据并提取软件包和许可证信息。
+
+    Args:
+        xml_data (bytes): primary.xml 文件的解压后数据。
+        originators (list): 发起者信息列表。
+
+    Returns:
+        tuple: 包含解析后的软件包列表、许可证列表和更新后的发起者信息列表的元组。
+            - packages (list): 软件包信息列表。
+            - licenses (list): 许可证信息列表。
+            - originators (list): 更新后的发起者信息列表。
+    """
+    
     import xml.etree.ElementTree as ET
 
     tree = ET.ElementTree(ET.fromstring(xml_data))
@@ -133,11 +170,18 @@ def _parse_primary_xml(xml_data, originators):
             name = package.findtext("ns0:name", namespaces=namespaces)
             ver = package.find("ns0:version", namespaces).attrib.get("ver", '')
             rel = package.find("ns0:version", namespaces).attrib.get("rel", '')
+
             homepage = package.findtext("ns0:url", namespaces=namespaces)
             originator_name, is_organization, originators = extract_originator_name(
                 homepage, originators)
             suppliers = get_suppliers(
                 rel, homepage, originator_name, RPM_SUPPLIERS)
+
+            licenses_ = rpm_licenses_scanner(package.findtext(
+                "ns0:format/rpm:license", namespaces=namespaces))
+            license_id_list = [license.get("id") for license in licenses_]
+            licenses.extend(licenses_)
+
             checksum = package.findtext("ns0:checksum", namespaces=namespaces)
             source = package.findtext(
                 "ns0:format/rpm:sourcerpm", namespaces=namespaces)  # TO-DO
@@ -149,7 +193,7 @@ def _parse_primary_xml(xml_data, originators):
                 "architecture": package.findtext("ns0:arch", namespaces=namespaces),
                 "package_type": "rpm",
                 "depends": [],
-                "license": package.findtext("ns0:format/rpm:license", namespaces=namespaces),
+                "licenses": license_id_list,
                 "suppliers": suppliers,
                 "description": package.findtext("ns0:description", namespaces=namespaces),
                 "checksum": {
@@ -168,4 +212,5 @@ def _parse_primary_xml(xml_data, originators):
             logging.error(f"解析包 {name} 时发生错误: {e}")
             continue
 
+    licenses = remove_duplicates(licenses)
     return packages, licenses, originators

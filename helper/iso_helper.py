@@ -99,10 +99,10 @@ def rpm_packages_scanner(mnt_dir, iso_filename, created_time, disable_tqdm, work
             progress_iter.close()
 
     # files去重
-    files = _remove_duplicates(files)
+    files = remove_duplicates(files)
 
     # licenses去重
-    licenses = _remove_duplicates(licenses)
+    licenses = remove_duplicates(licenses)
 
     # 对结果按软件包名称排序
     packages.sort(key=lambda x: x.get("name", ""))
@@ -126,7 +126,7 @@ def rpm_packages_scanner(mnt_dir, iso_filename, created_time, disable_tqdm, work
     return linx_sbom
 
 
-def _remove_duplicates(list):
+def remove_duplicates(list):
     """
     从给定的列表中移除具有重复ID的项，并返回一个新列表，其中每个ID只出现一次。
 
