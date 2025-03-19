@@ -1,5 +1,5 @@
 # XiLing SBOM Tool 析灵SBOM工具
-对ISO镜像或单个软件包进行扫描并生成SBOM（Software Bill of Materials）清单。
+对ISO镜像、单个软件包或更新源URL进行扫描并生成SBOM（Software Bill of Materials）清单。
 
 ## 系统要求
 - 操作系统： 凝思安全操作系统V6.0系列 及 Linux发行版
@@ -46,9 +46,9 @@ $ sudo rpm -ivh ./linx-xiling-1.0-1.x86_64.rpm
 
 ## 使用说明
 ### 运行命令
-指定一个Linux系统的ISO镜像文件或单个软件包进行扫描，获取其凝思格式SBOM和SPDX格式SBOM：
+指定一个Linux系统的ISO镜像文件、单个软件包或更新源URL进行扫描，获取其凝思格式SBOM和SPDX格式SBOM：
 ```
-$ linx-xiling [-h] (--iso ISO | --package PACKAGE) --output OUTPUT [--disable-tqdm] [--max-workers MAX_WORKERS] [--sbom SBOM]
+$ linx-xiling [-h] (--iso ISO | --package PACKAGE | --repo REPOSITORY) --output OUTPUT [--disable-tqdm] [--max-workers MAX_WORKERS] [--sbom SBOM]
 ```
 
 #### 必需参数
@@ -56,6 +56,7 @@ $ linx-xiling [-h] (--iso ISO | --package PACKAGE) --output OUTPUT [--disable-tq
 |---------------------------------|----------------------|
 | --iso ISO, -i ISO               | ISO镜像文件的路径 。   |
 | --package PACKAGE, -p PACKAGE   | 软件包的路径。         |
+| --repo REPOSITORY, -r REPOSITORY| 更新源URL。           |
 | --output OUTPUT, -o OUTPUT      | SBOM清单输出目录。     |
 
 #### 可选参数
@@ -74,7 +75,7 @@ $ pip install -r requirements.txt
 
 运行工具：
 ```
-$ python3 linx-xiling.py [-h] (--iso ISO | --package PACKAGE) --output OUTPUT [--disable-tqdm] [--max-workers MAX_WORKERS]
+$ python3 linx-xiling.py [-h] (--iso ISO | --package PACKAGE | --repo REPOSITORY) --output OUTPUT [--disable-tqdm] [--max-workers MAX_WORKERS] [--sbom SBOM]
 ```
 
 ### 注意事项
