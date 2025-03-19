@@ -1,5 +1,5 @@
 # XiLing SBOM Tool
-The XiLing SBOM Tool scans ISO images or individual software packages to generate an SBOM (Software Bill of Materials) list.
+The XiLing SBOM Tool scans ISO images, a software package, or a repository URL to generate an SBOM (Software Bill of Materials) list.
 
 ## System Requirements
 - OS: Linx OS V6.0 series or Linux distributions
@@ -46,9 +46,9 @@ Note: Using rpm does not handle dependencies automatically, so you need to insta
 
 ## Usage Instructions
 ### Running the Command
-Scan a Linux ISO image file or a single software package to generate both a Condensed Thinking-format SBOM and an SPDX-format SBOM:
+Scan a Linux ISO image file, a software package, or a repository url to generate both a Condensed Thinking-format SBOM and an SPDX-format SBOM:
 ```
-$ linx-xiling [-h] (--iso ISO | --package PACKAGE) --output OUTPUT [--disable-tqdm] [--max-workers MAX_WORKERS] [--sbom SBOM]
+$ linx-xiling [-h] (--iso ISO | --package PACKAGE | --repo REPOSITORY) --output OUTPUT [--disable-tqdm] [--max-workers MAX_WORKERS] [--sbom SBOM]
 ```
 
 #### Required Parameters
@@ -56,6 +56,7 @@ $ linx-xiling [-h] (--iso ISO | --package PACKAGE) --output OUTPUT [--disable-tq
 | ----------------------------- | ------------------------------------ |
 | --iso ISO, -i ISO             | Path to the ISO image file.          |
 | --package PACKAGE, -p PACKAGE | Path to the software package.        |
+| --repo REPOSITORY, -r REPOSITORY| Repository URL.                    |
 | --output OUTPUT, -o OUTPUT    | Output directory for the SBOM files. |
 
 #### Optional Parameters
@@ -74,7 +75,7 @@ $ pip install -r requirements.txt
 
 Run the tool:
 ```
-$ python3 linx-xiling.py [-h] (--iso ISO | --package PACKAGE) --output OUTPUT [--disable-tqdm] [--max-workers MAX_WORKERS]
+$ python3 linx-xiling.py [-h] (--iso ISO | --package PACKAGE | --repo REPOSITORY) --output OUTPUT [--disable-tqdm] [--max-workers MAX_WORKERS] [--sbom SBOM]
 ```
 
 ### Notes
