@@ -2865,13 +2865,13 @@
         "homepage": "http://sourceforge.net/projects/libgdf",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://toxygen.net/ydpdict/",
-        "name": null,
+        "name": "Wojtek Kaniewski (wojtekka@toxygen.net)",
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://tcts.fpms.ac.be/synthesis/",
@@ -2883,43 +2883,43 @@
         "homepage": "https://github.com/fommil/matrix-toolkits-java/",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://github.com/NVIDIA/nvidia-modprobe",
-        "name": null,
-        "is_organization": false,
-        "analyzed": false
+        "name": "NVIDIA Corporation",
+        "is_organization": true,
+        "analyzed": true
     },
     {
         "homepage": "https://download.nvidia.com/XFree86/nvidia-xconfig/",
-        "name": null,
-        "is_organization": false,
-        "analyzed": false
+        "name": "NVIDIA Corporation",
+        "is_organization": true,
+        "analyzed": true
     },
     {
         "homepage": "https://github.com/cpbotha/nvpy",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://www.alister.eu/jazz/oj/",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://openmw.org",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://openrocket.sourceforge.net/",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://bitbucket.org/opentyrian/opentyrian/",
@@ -2929,33 +2929,33 @@
     },
     {
         "homepage": "http://wiki.debian.org/PepperFlashPlayer",
-        "name": null,
-        "is_organization": false,
-        "analyzed": false
+        "name": "Google LLC",
+        "is_organization": true,
+        "analyzed": true
     },
     {
         "homepage": "http://eion.robbmob.com/",
-        "name": null,
+        "name": "Eion Robb (eion@robbmob.com)",
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://www.dotslashplay.it/",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://www.playonlinux.com/",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://gitlab.com/coringao/pokemmo-installer/wikis",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://pvpgn.berlios.de/",
@@ -2965,9 +2965,9 @@
     },
     {
         "homepage": "http://mathema.tician.de/software/pycuda",
-        "name": null,
+        "name": "Andreas Kloeckner (inducer@mastodon.social)",
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://github.com/ntoll/uflash",
