@@ -2973,25 +2973,25 @@
         "homepage": "https://github.com/ntoll/uflash",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://github.com/vertica/vertica-python",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://cyxdown.free.fr/reminiscence/",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://source.android.com/source/developing.html",
-        "name": null,
-        "is_organization": false,
-        "analyzed": false
+        "name": "Google LLC",
+        "is_organization": true,
+        "analyzed": true
     },
     {
         "homepage": "http://residualvm.org/",
@@ -3001,15 +3001,15 @@
     },
     {
         "homepage": "https://icculus.org/rott/",
-        "name": null,
-        "is_organization": false,
-        "analyzed": false
+        "name": "3D Realms",
+        "is_organization": true,
+        "analyzed": true
     },
     {
         "homepage": "http://artsoft.org",
-        "name": null,
-        "is_organization": false,
-        "analyzed": false
+        "name": "Artsoft Entertainment",
+        "is_organization": true,
+        "analyzed": true
     },
     {
         "homepage": "http://googlecharts.rubyforge.org/",
@@ -3021,49 +3021,49 @@
         "homepage": "http://github.com/rmosolgo/graphiql-rails",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://sabnzbd.org",
-        "name": null,
+        "name": "The SABnzbd-team",
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://sandboxgamemaker.com/",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://devel.freebsoft.org/speechd",
-        "name": null,
-        "is_organization": false,
-        "analyzed": false
+        "name": "BRAILCOM, o.p.s.",
+        "is_organization": true,
+        "analyzed": true
     },
     {
         "homepage": "https://lazarusllong.github.io/sqlcl-package/",
-        "name": null,
+        "name": "Lazarus Long (lazarus.long@sapo.pt)",
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://lazarusllong.github.io/sqldeveloper-package/",
-        "name": null,
+        "name": "Lazarus Long (lazarus.long@sapo.pt)",
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://nullwise.com/thunar-dropbox.html",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://github.com/soimort/translate-shell",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://github.com/NigelCunningham/Tuxonice-Userui",
@@ -3075,7 +3075,7 @@
         "homepage": "http://uhexen2.sourceforge.net/",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://vcmi.eu",
