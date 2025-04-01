@@ -14,7 +14,7 @@
 
 from helper import ASSIST_DIR
 from helper.relationships_helper import get_rpm_relationships
-from helper.json_helper import save_data_to_json, read_data_from_json
+from helper.data_helper import save_data_to_json, read_data_from_json,remove_duplicates
 from helper.package_helper import process_rpm_package
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import os
@@ -124,27 +124,6 @@ def rpm_packages_scanner(mnt_dir, iso_filename, created_time, disable_tqdm, work
 
     # 返回处理后的软件包信息列表
     return linx_sbom
-
-
-def remove_duplicates(list):
-    """
-    从给定的列表中移除具有重复ID的项，并返回一个新列表，其中每个ID只出现一次。
-
-    Args:
-        list (list of dict): 包含字典元素的列表，每个字典必须有'id'键用于唯一标识。
-
-    Returns:
-        list of dict: 不含重复ID项的新列表。
-    """
-
-    unique_list = []
-    seen_ids = set()
-    for item in list:
-        item_id = item.get("id")
-        if item_id not in seen_ids:
-            seen_ids.add(item_id)
-            unique_list.append(item)
-    return unique_list
 
 
 def _add_header(sbom_data, data_name, iso_filename, iso_arch, created_time):

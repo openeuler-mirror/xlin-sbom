@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from helper import ASSIST_DIR
-from helper.json_helper import read_data_from_json
+from helper.data_helper import read_data_from_json
 import os
 
 
