@@ -1,9 +1,8 @@
 from helper import ASSIST_DIR
-from helper.json_helper import read_data_from_json, save_data_to_json
+from helper.data_helper import read_data_from_json, save_data_to_json, remove_duplicates
 from helper.suppliers_helper import get_suppliers, RPM_SUPPLIERS
 from helper.originators_helper import extract_originator_name
 from helper.licenses_helper import rpm_licenses_scanner
-from helper.iso_helper import remove_duplicates
 import os
 import logging
 import requests
@@ -151,7 +150,7 @@ def _parse_primary_xml(xml_data, originators):
             - licenses (list): 许可证信息列表。
             - originators (list): 更新后的发起者信息列表。
     """
-    
+
     import xml.etree.ElementTree as ET
 
     tree = ET.ElementTree(ET.fromstring(xml_data))

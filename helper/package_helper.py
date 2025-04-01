@@ -15,11 +15,10 @@
 from helper import ASSIST_DIR
 from helper.package_files_helper import rpm_files_scanner
 from helper.licenses_helper import rpm_licenses_scanner
-from helper.hash_helper import calculate_sha1
+from helper.data_helper import calculate_sha1, save_data_to_json, read_data_from_json
 from helper.suppliers_helper import get_suppliers, RPM_SUPPLIERS
 from helper.originators_helper import extract_originator_name
 from helper.relationships_helper import get_file_relationships
-from helper.json_helper import save_data_to_json, read_data_from_json
 from helper.src_package_helper import process_src_package
 import logging
 import rpmfile

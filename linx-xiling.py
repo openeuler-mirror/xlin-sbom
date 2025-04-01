@@ -23,7 +23,7 @@ import argparse
 import subprocess
 from typing import List
 from helper import PARENT_DIR, LOG_DIR
-from helper.json_helper import save_data_to_json, read_data_from_json
+from helper.data_helper import save_data_to_json, read_data_from_json
 from helper.iso_helper import rpm_packages_scanner
 from helper.package_helper import package_scanner
 from helper.repo_helper import repo_scanner, find_primary_xml_in_repo

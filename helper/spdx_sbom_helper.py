@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from helper.json_helper import read_data_from_json
+from helper.data_helper import read_data_from_json
 import os
 
 
