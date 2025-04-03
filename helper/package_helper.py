@@ -36,6 +36,7 @@ def package_scanner(pkg_path, pkg_type, created_time, checksum_values):
         pkg_path (str): 软件包的文件路径。
         pkg_type (str): 软件包的类型。
         created_time (str): 创建时间，用于记录 SBOM 中的时间戳。
+        checksum_values (list): 校验值列表，用于增量更新。
     Returns:
         dict: 包含处理后的软件包信息列表，包括 `packages_sbom`, `files_sbom`, `file_relationships_sbom`, `licenses_sbom`。
     """
@@ -75,6 +76,7 @@ def process_rpm_package(pkg_path, originators, checksum_values):
     Args:
         pkg_path (str): RPM 包的完整路径。
         originators (dict): 发起者信息字典。
+        checksum_values (list): 校验值列表，用于增量更新。
 
     Returns:
         tuple: 包含以下元素的元组：
@@ -84,6 +86,7 @@ def process_rpm_package(pkg_path, originators, checksum_values):
             - file_relationships (list): 文件关系列表。
             - originators (dict): 更新后的发起者信息字典。
             - provides (dict): 提供的文件列表及其关系。
+        None: 如果校验失败或发生异常，则返回 None。
     """
 
     with open(pkg_path, 'rb') as f:
@@ -141,8 +144,22 @@ def process_rpm_package(pkg_path, originators, checksum_values):
 
 
 def process_source_package(pkg_path, originators):
-    # TO-DO
-    # return package_info, licenses, files, file_relationships, originators
+    """
+    处理源码包，提取相关信息并生成相应的数据结构。
+
+    Args:
+        pkg_path (str): 源码包的完整路径。
+        originators (dict): 发起者信息字典。
+
+    Returns:
+        tuple: 包含以下元素的元组：
+            - package_info (dict): 软件包信息。
+            - licenses (list): 许可证列表。
+            - files (list): 文件列表。
+            - file_relationships (list): 文件关系列表。
+            - originators (dict): 更新后的发起者信息字典。
+    """
+
     package_info, licenses, originators = process_src_package(
         pkg_path, originators)
     return package_info, licenses, [], [], originators

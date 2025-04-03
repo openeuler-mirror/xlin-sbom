@@ -32,6 +32,9 @@ def rpm_packages_scanner(mnt_dir, iso_filename, created_time, disable_tqdm, work
         mnt_dir (str): 挂载目录的路径。
         iso_filename (str): ISO 文件的名称。
         created_time (str): 创建时间的字符串。
+        disable_tqdm (bool): 是否禁用进度条显示。
+        workers (int or None): 最大并发线程数。如果为 None，则使用默认线程数。
+        checksum_values (list): 校验值列表，用于增量更新。
 
     Returns:
         dict: 包含处理后的软件包信息的 SBOM 字典，包括软件包、文件、文件关系、许可证和组件依赖关系。
@@ -133,7 +136,7 @@ def _add_header(sbom_data, data_name, iso_filename, iso_arch, created_time):
     Args:
         sbom_data (list): SBOM 数据列表。
         data_name (str): 数据类型名称（如 "packages"、"files" 等）。
-        iso_file_name (str): ISO 文件名称。
+        iso_filename (str): ISO 文件名称。
         iso_arch (str): 操作系统架构。
         created_time (str): 创建时间的字符串。
 

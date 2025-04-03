@@ -5,13 +5,13 @@ import rpmfile
 import hashlib
 import io
 import logging
-from typing import Dict, Any, Tuple
+from typing import Dict, Any, Tuple, List
 from helper.suppliers_helper import get_suppliers, RPM_SUPPLIERS
 from helper.originators_helper import extract_originator_name
 from helper.licenses_helper import rpm_licenses_scanner
 
 
-def process_src_package(pkg_path: str, originators: Dict[str, Any]) -> Dict[str, Any]:
+def process_src_package(pkg_path: str, originators: Dict[str, Any]) -> Tuple[Dict[str, Any], List[Dict[str, Any]], Dict[str, Any]]:
     """
     处理源码包并返回其详细信息。
 
@@ -19,8 +19,10 @@ def process_src_package(pkg_path: str, originators: Dict[str, Any]) -> Dict[str,
         pkg_path (str): 源码包的文件路径。
         originators (Dict[str, Any]): 包含来源者信息的字典，用于在后续处理中提取和更新来源者信息。
 
-    Returns:
-        Dict[str, Any]: 返回一个字典，包含源码包的详细信息，如包名、版本、依赖、许可证、供应商等。
+    Tuple[Dict[str, Any], List[Dict[str, Any]], Dict[str, Any]]: 如果处理 spec 文件，则返回一个元组，包含三个元素：
+        - 第一个元素为字典，包含源码包的详细信息。
+        - 第二个元素为列表，包含解析后的许可证信息。
+        - 第三个元素为字典，更新后的来源者信息。
     """
 
     md5_value = _calculate_package_md5(pkg_path)
@@ -218,7 +220,7 @@ def _detect_from_members(members, extract_file, current_depth: int, is_zip=False
     return ('other', '')
 
 
-def _process_spec(spec_content: str, md5_value: str, originators: Dict[str, Any]) -> Dict[str, Any]:
+def _process_spec(spec_content: str, md5_value: str, originators: Dict[str, Any]) -> Tuple[Dict[str, Any], List[Dict[str, Any]], Dict[str, Any]]:
     """
     处理RPM源码包的spec文件内容，并返回源码包的详细信息。
 
