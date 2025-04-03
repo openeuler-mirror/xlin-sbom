@@ -108,6 +108,9 @@ def mount_iso(iso_path, mnt_dir):
 
     Returns:
         None: 函数不返回任何内容。
+
+    Raises:
+        subprocess.CalledProcessError: 如果挂载命令执行失败，则会抛出此异常。
     """
 
     try:
@@ -125,6 +128,9 @@ def umount_iso(mnt_dir):
 
     Returns:
         None: 函数不返回任何内容。
+
+    Raises:
+        subprocess.CalledProcessError: 如果卸载命令执行失败，则会抛出此异常。
     """
 
     try:

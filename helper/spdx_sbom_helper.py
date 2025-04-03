@@ -24,6 +24,7 @@ def convert_to_spdx(linx_sbom, os_name, created_time, package_type):
         linx_sbom (dict): 包含 SBOM 数据的字典，包括软件包、文件及其关系。
         os_name (str): 操作系统的名称。
         created_time (str): SPDX 文档的创建时间。
+        package_type (str): 包类型，用于生成 purl 标识符。
 
     Returns:
         dict: 转换后的 SPDX SBOM 字典。
