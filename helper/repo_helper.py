@@ -1,9 +1,22 @@
+# Copyright 2024 Linx Software, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 from helper import ASSIST_DIR
-from helper.json_helper import read_data_from_json, save_data_to_json
+from helper.data_helper import read_data_from_json, save_data_to_json, remove_duplicates
 from helper.suppliers_helper import get_suppliers, RPM_SUPPLIERS
 from helper.originators_helper import extract_originator_name
 from helper.licenses_helper import rpm_licenses_scanner
-from helper.iso_helper import remove_duplicates
 import os
 import logging
 import requests
