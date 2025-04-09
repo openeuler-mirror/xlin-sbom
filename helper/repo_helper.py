@@ -219,7 +219,7 @@ def _parse_primary_xml(xml_data, originators):
                 "ns0:format/rpm:sourcerpm", namespaces=namespaces)  # TO-DO
 
             package_info = {
-                "id": f"Package-{name}-{checksum}",
+                "id": f"Package-{name}-{checksum[:12]}",
                 "name": name,
                 "version": f"{ver}-{rel}",
                 "architecture": package.findtext("ns0:arch", namespaces=namespaces),

@@ -39,7 +39,7 @@ def rpm_licenses_scanner(license):
         # 获取许可证标准名称
         license_name = _standardize_license_name(license)
         license_info = {
-            "id": f"LicenseRef-{hashlib.md5(license_name.encode()).hexdigest()}",
+            "id": f"LicenseRef-{hashlib.md5(license_name.encode()).hexdigest()[:12]}",
             "name": license_name,
         }
         license_info_list.append(license_info)
