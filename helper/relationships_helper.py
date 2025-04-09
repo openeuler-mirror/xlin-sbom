@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 def get_file_relationships(file_list, package_id):
     """
     生成文件与包之间的关系列表。
