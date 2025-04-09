@@ -90,7 +90,7 @@ def convert_to_spdx(linx_sbom, os_name, created_time, package_type):
         for file in linx_sbom.get('files_sbom').get('files'):
             spdx_file = {
                 "fileName": file['name'],
-                "SPDXID": f"SPDXRef-{file['name']}-{file['checksums']['value']}",
+                "SPDXID": f"SPDXRef-{file['name']}-{file['checksums']['value'][:12]}",
                 "checksums": [
                     {
                         "algorithm": file['checksums']['algorithm'],

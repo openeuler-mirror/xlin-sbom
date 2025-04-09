@@ -109,7 +109,7 @@ def process_rpm_package(pkg_path, originators, checksum_values):
             suppliers = get_suppliers(
                 release, homepage, originator_name, RPM_SUPPLIERS)
 
-            id_md5 = _safe_decode(rpm.headers.get('md5'))
+            id_md5 = _safe_decode(rpm.headers.get('md5'))[:12]
             licenses = rpm_licenses_scanner(
                 _safe_decode(rpm.headers.get('copyright')))
             license_id_list = [license.get("id") for license in licenses]

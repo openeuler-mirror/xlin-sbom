@@ -303,7 +303,7 @@ def _process_spec(spec_content: str, md5_value: str, originators: Dict[str, Any]
     license_id_list = [license.get("id") for license in licenses]
 
     package_info = {
-        "id": f"Package-{name}-{md5_value}",
+        "id": f"Package-{name}-{md5_value[:12]}",
         "name": name,
         "version": version,
         "architecture": spec_data.get('architecture', ''),

@@ -55,7 +55,7 @@ def rpm_files_scanner(package_path):
                 continue
             file_path = dirnames[dirindexes[i]].decode(
                 'utf-8') + basenames[i].decode('utf-8')
-            id_md5 = hashlib.md5(file_path.encode()).hexdigest()
+            id_md5 = hashlib.md5(file_path.encode()).hexdigest()[:12]
             file_info = {
                 "id": f"File-{basenames[i].decode('utf-8')}-{id_md5}",
                 "name": basenames[i].decode('utf-8'),
