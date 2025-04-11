@@ -394,12 +394,13 @@ def main():
         package_type = "repo"
 
         # 查找 primary.xml.gz 文件
-        primary_xml_url = find_primary_xml_in_repo(args.repo)
+        repo_url = args.repo.rstrip('/') + '/'
+        primary_xml_url = find_primary_xml_in_repo(repo_url)
         if not primary_xml_url:
             logging.error(f"未侦测到有效的更新源地址")
             sys.exit(1)
 
-        linx_sbom = repo_scanner(primary_xml_url, args.repo, spdx_utc_time)
+        linx_sbom = repo_scanner(primary_xml_url, repo_url, spdx_utc_time)
 
     # 保存SBOM
     save_sbom(linx_sbom, package_type, filename,
