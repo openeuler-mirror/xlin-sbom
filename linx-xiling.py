@@ -400,7 +400,7 @@ def main():
             logging.error(f"未侦测到有效的更新源地址")
             sys.exit(1)
 
-        linx_sbom = repo_scanner(primary_xml_url, repo_url, spdx_utc_time)
+        linx_sbom = repo_scanner(primary_xml_url, repo_url, spdx_utc_time,args.disable_tqdm)
 
     # 保存SBOM
     save_sbom(linx_sbom, package_type, filename,
