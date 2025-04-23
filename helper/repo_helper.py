@@ -24,7 +24,7 @@ import requests
 creators_file_path = os.path.join(ASSIST_DIR, 'creators.json')
 
 
-def repo_scanner(primary_xml_url, repo_url, created_time):
+def repo_scanner(primary_xml_url, repo_url, created_time,disable_tqdm):
     """
     扫描指定的 primary.xml.gz 文件并生成软件包和许可证的 SBOM。
 
@@ -45,7 +45,7 @@ def repo_scanner(primary_xml_url, repo_url, created_time):
     xml_data = _fetch_and_extract_xml(primary_xml_url)
     if xml_data:
         packages, licenses, originators = _parse_primary_xml(
-            xml_data, originators)
+            xml_data, originators,disable_tqdm)
 
     linx_sbom = {
         "packages_sbom": _add_header(packages, "packages", repo_url, created_time),
@@ -169,13 +169,14 @@ def _fetch_and_extract_xml(primary_xml_url):
         return None
 
 
-def _parse_primary_xml(xml_data, originators):
+def _parse_primary_xml(xml_data, originators, disable_tqdm=False):
     """
     解析 primary.xml 数据并提取软件包和许可证信息。
 
     Args:
         xml_data (bytes): primary.xml 文件的解压后数据。
         originators (list): 发起者信息列表。
+        disable_tqdm (bool): 是否禁用tqdm进度条，默认为False显示进度条。
 
     Returns:
         tuple: 包含解析后的软件包列表、许可证列表和更新后的发起者信息列表的元组。
@@ -185,6 +186,7 @@ def _parse_primary_xml(xml_data, originators):
     """
     
     import xml.etree.ElementTree as ET
+    from tqdm import tqdm
 
     tree = ET.ElementTree(ET.fromstring(xml_data))
     root = tree.getroot()
@@ -197,7 +199,7 @@ def _parse_primary_xml(xml_data, originators):
     packages = []
     licenses = []
 
-    for package in root.findall("ns0:package", namespaces):
+    for package in tqdm(root.findall("ns0:package", namespaces), disable=disable_tqdm):
         try:
             name = package.findtext("ns0:name", namespaces=namespaces)
             ver = package.find("ns0:version", namespaces).attrib.get("ver", '')
