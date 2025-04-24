@@ -1,9 +1,22 @@
+# Copyright 2024 Linx Software, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 from helper import ASSIST_DIR
-from helper.json_helper import read_data_from_json, save_data_to_json
+from helper.data_helper import read_data_from_json, save_data_to_json, remove_duplicates
 from helper.suppliers_helper import get_suppliers, RPM_SUPPLIERS
 from helper.originators_helper import extract_originator_name
 from helper.licenses_helper import rpm_licenses_scanner
-from helper.iso_helper import remove_duplicates
 import os
 import logging
 import requests
@@ -11,7 +24,7 @@ import requests
 creators_file_path = os.path.join(ASSIST_DIR, 'creators.json')
 
 
-def repo_scanner(primary_xml_url, repo_url, created_time):
+def repo_scanner(primary_xml_url, repo_url, created_time,disable_tqdm):
     """
     扫描指定的 primary.xml.gz 文件并生成软件包和许可证的 SBOM。
 
@@ -29,10 +42,10 @@ def repo_scanner(primary_xml_url, repo_url, created_time):
     originators_file_path = os.path.join(ASSIST_DIR, 'originators.json')
     originators = read_data_from_json(originators_file_path)
 
-    xml_data = _fetch_and_extract_gzip(primary_xml_url)
+    xml_data = _fetch_and_extract_xml(primary_xml_url)
     if xml_data:
         packages, licenses, originators = _parse_primary_xml(
-            xml_data, originators)
+            xml_data, originators,disable_tqdm)
 
     linx_sbom = {
         "packages_sbom": _add_header(packages, "packages", repo_url, created_time),
@@ -77,7 +90,7 @@ def find_primary_xml_in_repo(repo_url):
         soup = BeautifulSoup(response.text, "html.parser")
 
         for link in soup.find_all("a", href=True):
-            if "primary.xml.gz" in link['href']:
+            if "primary.xml" in link['href']:
                 return repodata_link + link['href']
 
     except requests.exceptions.RequestException as e:
@@ -110,40 +123,60 @@ def _add_header(sbom_data, data_name, repo_url, created_time):
     return sbom
 
 
-def _fetch_and_extract_gzip(primary_xml_url):
-    """
-    从指定的 URL 获取并解压 gzip 压缩的 primary.xml 文件。
-
-    Args:
-        primary_xml_url (str): primary.xml.gz 文件的URL。
-
-    Returns:
-        bytes or None: 如果成功解压，返回解压后的数据；否则返回 None。
-    """
-
+def _fetch_and_extract_xml(primary_xml_url):
     import gzip
     from io import BytesIO
+    import logging
+    import requests
+    import zstandard
 
     try:
         response = requests.get(primary_xml_url)
         response.raise_for_status()
 
-        with gzip.GzipFile(fileobj=BytesIO(response.content)) as f:
-            decompressed_data = f.read()
-        return decompressed_data
+        content = response.content
+
+        if primary_xml_url.endswith('.gz'):
+            try:
+                with gzip.GzipFile(fileobj=BytesIO(content)) as f:
+                    return f.read()
+            except gzip.BadGzipFile as e:
+                logging.error(f"解压gzip失败: {e}")
+                return None
+
+        elif primary_xml_url.endswith('.zst'):
+            try:
+                # 流式解压
+                dctx = zstandard.ZstdDecompressor()
+                decompressed = bytearray()
+                with dctx.stream_reader(BytesIO(content)) as reader:
+                    while True:
+                        chunk = reader.read(16384)
+                        if not chunk:
+                            break
+                        decompressed.extend(chunk)
+                return bytes(decompressed)
+            except zstandard.ZstdError as e:
+                logging.error(f"解压zst失败: {e}")
+                return None
+
+        else:
+            logging.error(f"不支持的格式: {primary_xml_url}")
+            return None
 
     except requests.exceptions.RequestException as e:
-        logging.error(f"获取primary.xml.gz时发生错误: {e}")
+        logging.error(f"下载失败: {e}")
         return None
 
 
-def _parse_primary_xml(xml_data, originators):
+def _parse_primary_xml(xml_data, originators, disable_tqdm=False):
     """
     解析 primary.xml 数据并提取软件包和许可证信息。
 
     Args:
         xml_data (bytes): primary.xml 文件的解压后数据。
         originators (list): 发起者信息列表。
+        disable_tqdm (bool): 是否禁用tqdm进度条，默认为False显示进度条。
 
     Returns:
         tuple: 包含解析后的软件包列表、许可证列表和更新后的发起者信息列表的元组。
@@ -153,6 +186,7 @@ def _parse_primary_xml(xml_data, originators):
     """
     
     import xml.etree.ElementTree as ET
+    from tqdm import tqdm
 
     tree = ET.ElementTree(ET.fromstring(xml_data))
     root = tree.getroot()
@@ -165,7 +199,7 @@ def _parse_primary_xml(xml_data, originators):
     packages = []
     licenses = []
 
-    for package in root.findall("ns0:package", namespaces):
+    for package in tqdm(root.findall("ns0:package", namespaces), disable=disable_tqdm):
         try:
             name = package.findtext("ns0:name", namespaces=namespaces)
             ver = package.find("ns0:version", namespaces).attrib.get("ver", '')
@@ -187,7 +221,7 @@ def _parse_primary_xml(xml_data, originators):
                 "ns0:format/rpm:sourcerpm", namespaces=namespaces)  # TO-DO
 
             package_info = {
-                "id": f"Package-{name}-{checksum}",
+                "id": f"Package-{name}-{checksum[:12]}",
                 "name": name,
                 "version": f"{ver}-{rel}",
                 "architecture": package.findtext("ns0:arch", namespaces=namespaces),

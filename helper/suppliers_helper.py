@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from helper import ASSIST_DIR
-from helper.json_helper import read_data_from_json
+from helper.data_helper import read_data_from_json
 import os
 
 
@@ -28,18 +28,13 @@ def get_suppliers(direct_supplier, homepage, originator_name, supplier_dicts):
     根据提供的参数获取供应商信息并分类。
 
     Args:
-        package_name (str): 软件包名称。
-        package_version (str): 软件包版本。
         direct_supplier (str): 直接供应商名称。
         homepage (str): 软件包主页链接。
         originator_name (str): 软件包原始作者名称。
         supplier_dicts (list): 供应商字典列表。
-        category_dict (dict): 分类字典。
 
     Returns:
-        tuple: 包含两个元素的元组：
-            - suppliers (list): 供应商信息列表。
-            - category (str): 软件包类型（'self_developed'、'modified' 或 'third_party'）。
+        list: 供应商信息列表。
     """
 
     # 初始化供应商列表

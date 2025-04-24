@@ -23,7 +23,7 @@ import argparse
 import subprocess
 from typing import List
 from helper import PARENT_DIR, LOG_DIR
-from helper.json_helper import save_data_to_json, read_data_from_json
+from helper.data_helper import save_data_to_json, read_data_from_json
 from helper.iso_helper import rpm_packages_scanner
 from helper.package_helper import package_scanner
 from helper.repo_helper import repo_scanner, find_primary_xml_in_repo
@@ -108,6 +108,9 @@ def mount_iso(iso_path, mnt_dir):
 
     Returns:
         None: 函数不返回任何内容。
+
+    Raises:
+        subprocess.CalledProcessError: 如果挂载命令执行失败，则会抛出此异常。
     """
 
     try:
@@ -125,6 +128,9 @@ def umount_iso(mnt_dir):
 
     Returns:
         None: 函数不返回任何内容。
+
+    Raises:
+        subprocess.CalledProcessError: 如果卸载命令执行失败，则会抛出此异常。
     """
 
     try:
@@ -388,12 +394,13 @@ def main():
         package_type = "repo"
 
         # 查找 primary.xml.gz 文件
-        primary_xml_url = find_primary_xml_in_repo(args.repo)
+        repo_url = args.repo.rstrip('/') + '/'
+        primary_xml_url = find_primary_xml_in_repo(repo_url)
         if not primary_xml_url:
             logging.error(f"未侦测到有效的更新源地址")
             sys.exit(1)
 
-        linx_sbom = repo_scanner(primary_xml_url, args.repo, spdx_utc_time)
+        linx_sbom = repo_scanner(primary_xml_url, repo_url, spdx_utc_time,args.disable_tqdm)
 
     # 保存SBOM
     save_sbom(linx_sbom, package_type, filename,

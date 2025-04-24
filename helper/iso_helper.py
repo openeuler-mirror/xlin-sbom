@@ -14,7 +14,7 @@
 
 from helper import ASSIST_DIR
 from helper.relationships_helper import get_rpm_relationships
-from helper.json_helper import save_data_to_json, read_data_from_json
+from helper.data_helper import save_data_to_json, read_data_from_json,remove_duplicates
 from helper.package_helper import process_rpm_package
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import os
@@ -32,6 +32,9 @@ def rpm_packages_scanner(mnt_dir, iso_filename, created_time, disable_tqdm, work
         mnt_dir (str): 挂载目录的路径。
         iso_filename (str): ISO 文件的名称。
         created_time (str): 创建时间的字符串。
+        disable_tqdm (bool): 是否禁用进度条显示。
+        workers (int or None): 最大并发线程数。如果为 None，则使用默认线程数。
+        checksum_values (list): 校验值列表，用于增量更新。
 
     Returns:
         dict: 包含处理后的软件包信息的 SBOM 字典，包括软件包、文件、文件关系、许可证和组件依赖关系。
@@ -126,27 +129,6 @@ def rpm_packages_scanner(mnt_dir, iso_filename, created_time, disable_tqdm, work
     return linx_sbom
 
 
-def remove_duplicates(list):
-    """
-    从给定的列表中移除具有重复ID的项，并返回一个新列表，其中每个ID只出现一次。
-
-    Args:
-        list (list of dict): 包含字典元素的列表，每个字典必须有'id'键用于唯一标识。
-
-    Returns:
-        list of dict: 不含重复ID项的新列表。
-    """
-
-    unique_list = []
-    seen_ids = set()
-    for item in list:
-        item_id = item.get("id")
-        if item_id not in seen_ids:
-            seen_ids.add(item_id)
-            unique_list.append(item)
-    return unique_list
-
-
 def _add_header(sbom_data, data_name, iso_filename, iso_arch, created_time):
     """
     为 SBOM 数据添加头部信息。
@@ -154,7 +136,7 @@ def _add_header(sbom_data, data_name, iso_filename, iso_arch, created_time):
     Args:
         sbom_data (list): SBOM 数据列表。
         data_name (str): 数据类型名称（如 "packages"、"files" 等）。
-        iso_file_name (str): ISO 文件名称。
+        iso_filename (str): ISO 文件名称。
         iso_arch (str): 操作系统架构。
         created_time (str): 创建时间的字符串。
 

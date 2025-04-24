@@ -12,18 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from helper.json_helper import read_data_from_json
+from helper.data_helper import read_data_from_json
 import os
 
 
-def convert_to_spdx(linx_sbom, os_name, created_time, package_type):
+def convert_to_spdx(linx_sbom, filename, created_time, package_type):
     """
     将给定的 SBOM 数据转换为 SPDX 格式。
 
     Args:
         linx_sbom (dict): 包含 SBOM 数据的字典，包括软件包、文件及其关系。
-        os_name (str): 操作系统的名称。
+        filename (str): 生成的 SBOM 文件的基本名称。
         created_time (str): SPDX 文档的创建时间。
+        package_type (str): 包类型，用于生成 purl 标识符。
 
     Returns:
         dict: 转换后的 SPDX SBOM 字典。
@@ -89,7 +90,7 @@ def convert_to_spdx(linx_sbom, os_name, created_time, package_type):
         for file in linx_sbom.get('files_sbom').get('files'):
             spdx_file = {
                 "fileName": file['name'],
-                "SPDXID": f"SPDXRef-{file['name']}-{file['checksums']['value']}",
+                "SPDXID": f"SPDXRef-{file['id']}",
                 "checksums": [
                     {
                         "algorithm": file['checksums']['algorithm'],
@@ -133,8 +134,8 @@ def convert_to_spdx(linx_sbom, os_name, created_time, package_type):
         "spdxVersion": "SPDX-2.3",
         "dataLicense": "CC0-1.0",
         "SPDXID": "SPDXRef-DOCUMENT",
-        "name": os_name,
-        "documentNamespace": os_name,
+        "name": filename,
+        "documentNamespace": filename,
         "creationInfo": {
             "licenseListVersion": "3.23",
             "creators": read_data_from_json(creators_file_path),
