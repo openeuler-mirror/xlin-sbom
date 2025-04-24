@@ -8683,9 +8683,9 @@
     },
     {
         "homepage": "https://wiki.debian.org/DebianLive",
-        "name": null,
-        "is_organization": false,
-        "analyzed": false
+        "name": "Debian",
+        "is_organization": true,
+        "analyzed": true
     },
     {
         "homepage": "http://lizardfs.org/",
@@ -8697,55 +8697,55 @@
         "homepage": "http://lksctp.sf.net/",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://lnav.org",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://youpibouh.thefreecat.org/loadlin/",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://gitlab.com/taggart/lockdown",
-        "name": null,
+        "name": "Matt Taggart (taggart@debian.org)",
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://log4cpp.sourceforge.net",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://logging.apache.org/log4net/",
-        "name": null,
-        "is_organization": false,
-        "analyzed": false
+        "name": "Apache Software Foundation",
+        "is_organization": true,
+        "analyzed": true
     },
     {
         "homepage": "https://logback.qos.ch",
-        "name": null,
-        "is_organization": false,
-        "analyzed": false
+        "name": "QOS.CH Sarl (Switzerland)",
+        "is_organization": true,
+        "analyzed": true
     },
     {
         "homepage": "https://github.com/logrotate/logrotate",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://github.com/JulienPalard/logtop",
-        "name": null,
+        "name": "Palard Julien (julien@palard.fr)",
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://www.logwatch.org/",
@@ -8757,31 +8757,31 @@
         "homepage": "http://lpsolve.sourceforge.net",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://ohse.de/uwe/software/lrzsz.html",
-        "name": null,
+        "name": "Uwe Ohse (uwe@ohse.de)",
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://wiki.linuxfoundation.org/lsb/start",
-        "name": null,
-        "is_organization": false,
-        "analyzed": false
+        "name": "The Linux Foundation",
+        "is_organization": true,
+        "analyzed": true
     },
     {
         "homepage": "https://github.com/lyonel/lshw",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://people.freebsd.org/~abe/",
-        "name": null,
+        "name": "Victor A. Abell (abe@purdue.edu)",
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://sg.danny.cz/scsi/lsscsi.html",
