@@ -20,9 +20,44 @@
             "389 Directory Server Exception",
             "389-exception"
         ],
-        "must": [],
-        "can": [],
-        "cannot": []
+        "must": [
+            {
+                "name": "Include Copyright & License",
+                "cn_name": "包含版权和许可"
+            },
+            {
+                "name": "Same License",
+                "cn_name": "许可证“传染性”"
+            },
+            {
+                "name": "Disclose Source",
+                "cn_name": "源代码可获取"
+            }
+        ],
+        "can": [
+            {
+                "name": "Distribute",
+                "cn_name": "分发"
+            },
+            {
+                "name": "Modify",
+                "cn_name": "修改"
+            },
+            {
+                "name": "Commercial Use",
+                "cn_name": "商业用途"
+            },
+            {
+                "name": "Private Use",
+                "cn_name": "私下使用"
+            }
+        ],
+        "cannot": [
+            {
+                "name": "Hold Liable / Place Warranty",
+                "cn_name": "质量保证"
+            }
+        ]
     },
     {
         "spdx_name": "AAL",
@@ -1488,8 +1523,30 @@
             "Autoconf exception 2.0",
             "Autoconf-exception-2.0"
         ],
-        "must": [],
-        "can": [],
+        "must": [
+            {
+                "name": "Include Copyright & License",
+                "cn_name": "包含版权和许可"
+            }
+        ],
+        "can": [
+            {
+                "name": "Distribute",
+                "cn_name": "分发"
+            },
+            {
+                "name": "Modify",
+                "cn_name": "修改"
+            },
+            {
+                "name": "Commercial Use",
+                "cn_name": "商业用途"
+            },
+            {
+                "name": "Private Use",
+                "cn_name": "私下使用"
+            }
+        ],
         "cannot": []
     },
     {
@@ -1498,8 +1555,38 @@
             "Autoconf exception 3.0",
             "Autoconf-exception-3.0"
         ],
-        "must": [],
-        "can": [],
+        "must": [
+            {
+                "name": "Include Copyright & License",
+                "cn_name": "包含版权和许可"
+            },
+            {
+                "name": "Same License",
+                "cn_name": "许可证“传染性”"
+            }
+        ],
+        "can": [
+            {
+                "name": "Commercial Use",
+                "cn_name": "商业用途"
+            },
+            {
+                "name": "Distribute",
+                "cn_name": "分发"
+            },
+            {
+                "name": "Modify",
+                "cn_name": "修改"
+            },
+            {
+                "name": "Private Use",
+                "cn_name": "私下使用"
+            },
+            {
+                "name": "Patent Use",
+                "cn_name": "专利使用"
+            }
+        ],
         "cannot": []
     },
     {
@@ -1633,7 +1720,16 @@
             "Bison-exception-2.2"
         ],
         "must": [],
-        "can": [],
+        "can": [
+            {
+                "name": "Distribute",
+                "cn_name": "分发"
+            },
+            {
+                "name": "Modify",
+                "cn_name": "修改"
+            }
+        ],
         "cannot": []
     },
     {
@@ -1859,9 +1955,48 @@
             "Bootloader Distribution Exception",
             "Bootloader-exception"
         ],
-        "must": [],
-        "can": [],
-        "cannot": []
+        "must": [
+            {
+                "name": "Include Copyright & License",
+                "cn_name": "包含版权和许可"
+            },
+            {
+                "name": "Disclose Source",
+                "cn_name": "源代码可获取"
+            },
+            {
+                "name": "Same License",
+                "cn_name": "许可证“传染性”"
+            },
+            {
+                "name": "State Changes",
+                "cn_name": "列明修改"
+            }
+        ],
+        "can": [
+            {
+                "name": "Distribute",
+                "cn_name": "分发"
+            },
+            {
+                "name": "Modify",
+                "cn_name": "修改"
+            },
+            {
+                "name": "Commercial Use",
+                "cn_name": "商业用途"
+            },
+            {
+                "name": "Private Use",
+                "cn_name": "私下使用"
+            }
+        ],
+        "cannot": [
+            {
+                "name": "Hold Liable / Place Warranty",
+                "cn_name": "质量保证"
+            }
+        ]
     },
     {
         "spdx_name": "Borceux",
