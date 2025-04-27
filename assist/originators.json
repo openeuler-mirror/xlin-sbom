@@ -8823,43 +8823,43 @@
         "homepage": "https://github.com/mascarenhas/cosmo",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://www.inf.puc-rio.br/~roberto/lpeg.html",
-        "name": null,
-        "is_organization": false,
-        "analyzed": false
+        "name": "PUC-Rio",
+        "is_organization": true,
+        "analyzed": true
     },
     {
         "homepage": "https://github.com/keplerproject/luafilesystem",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://github.com/keplerproject/md5",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://johannes-bauer.com/linux/luksipc/",
-        "name": null,
+        "name": "Johannes Bauer (JohannesBauer@gmx.de)",
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://linuxcontainers.org/",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://linuxcontainers.org",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://www.lxc.tl/",
@@ -8871,49 +8871,49 @@
         "homepage": "http://lxml.de/",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://lynx.invisible-island.net/",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://github.com/Cyan4973/lz4",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://www.lyx.org/",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://www.oberhumer.com/opensource/lzo/",
-        "name": null,
-        "is_organization": false,
-        "analyzed": false
+        "name": "oberhumer.com GmbH",
+        "is_organization": true,
+        "analyzed": true
     },
     {
         "homepage": "http://www.lzop.org/",
-        "name": null,
-        "is_organization": false,
-        "analyzed": false
+        "name": "oberhumer.com GmbH",
+        "is_organization": true,
+        "analyzed": true
     },
     {
         "homepage": "https://gitlab.dkrz.de/k202009/libaec",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://metacpan.org/release/Alien-wxWidgets",
-        "name": null,
+        "name": "Mark Dootson (mdootson@cpan.org)",
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://metacpan.org/release/Algorithm-C3",
