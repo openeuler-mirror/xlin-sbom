@@ -101,6 +101,7 @@ def process_rpm_package(pkg_path, originators, checksum_values):
             full_version = f"{version}-{release}"
             homepage = _safe_decode(rpm.headers.get('url'))
             architecture = _safe_decode(rpm.headers.get('arch'))
+            src_rpm = _safe_decode(rpm.headers.get('sourcerpm'))
 
             # 提取发起者名称、判断是否为组织及更新发起者列表
             originator_name, is_organization, originators = extract_originator_name(
@@ -121,6 +122,7 @@ def process_rpm_package(pkg_path, originators, checksum_values):
                 "architecture": architecture,
                 "package_type": "rpm",
                 "depends": list(set(_safe_decode(dep) for dep in rpm.headers.get('requirename'))),
+                "sourcerpm": src_rpm,
                 "licenses": license_id_list,
                 "suppliers": suppliers,
                 "description": _safe_decode(rpm.headers.get('description')),
