@@ -218,7 +218,7 @@ def _parse_primary_xml(xml_data, originators, disable_tqdm=False):
 
             checksum = package.findtext("ns0:checksum", namespaces=namespaces)
             source = package.findtext(
-                "ns0:format/rpm:sourcerpm", namespaces=namespaces)  # TO-DO
+                "ns0:format/rpm:sourcerpm", namespaces=namespaces)
 
             package_info = {
                 "id": f"Package-{name}-{checksum[:12]}",
@@ -227,6 +227,7 @@ def _parse_primary_xml(xml_data, originators, disable_tqdm=False):
                 "architecture": package.findtext("ns0:arch", namespaces=namespaces),
                 "package_type": "rpm",
                 "depends": [],
+                "sourcerpm": source,
                 "licenses": license_id_list,
                 "suppliers": suppliers,
                 "description": package.findtext("ns0:description", namespaces=namespaces),
