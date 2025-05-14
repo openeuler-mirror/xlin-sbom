@@ -20,6 +20,7 @@ from helper.suppliers_helper import get_suppliers, RPM_SUPPLIERS
 from helper.originators_helper import extract_originator_name
 from helper.relationships_helper import get_file_relationships
 from helper.src_package_helper import process_src_package
+from helper.scancode_helper import scan_src_rpm
 import logging
 import rpmfile
 import os
@@ -28,7 +29,7 @@ import os
 creators_file_path = os.path.join(ASSIST_DIR, 'creators.json')
 
 
-def package_scanner(pkg_path, pkg_type, created_time, checksum_values):
+def package_scanner(pkg_path, pkg_type, created_time, checksum_values, include, exclude, workers, disable_tqdm, brief_mode):
     """
     扫描指定路径下的软件包，并根据软件包类型提取相关信息。
 
@@ -37,6 +38,11 @@ def package_scanner(pkg_path, pkg_type, created_time, checksum_values):
         pkg_type (str): 软件包的类型。
         created_time (str): 创建时间，用于记录 SBOM 中的时间戳。
         checksum_values (list): 校验值列表，用于增量更新。
+        include (list): 包含的文件模式列表，用于源码扫描。
+        exclude (list): 排除的文件模式列表，用于源码扫描。
+        workers (int): 并行处理的工作线程数，用于源码扫描。
+        disable_tqdm (bool): 是否禁用进度条显示，用于源码扫描。
+        brief_mode (bool): 是否启用简要模式，若为 True 则跳过文件扫描，用于源码扫描。
     Returns:
         dict: 包含处理后的软件包信息列表，包括 `packages_sbom`, `files_sbom`, `file_relationships_sbom`, `licenses_sbom`。
     """
@@ -53,7 +59,8 @@ def package_scanner(pkg_path, pkg_type, created_time, checksum_values):
             pkg_path, originators, checksum_values)
     elif pkg_type == "source":
         package, licenses, files, file_relationships, originators = process_source_package(
-            pkg_path, originators)
+            pkg_path, originators, include, exclude, workers, disable_tqdm, brief_mode)
+
     packages.append(package)
     linx_sbom = {
         "packages_sbom": _add_header(packages, "packages", created_time),
@@ -145,13 +152,18 @@ def process_rpm_package(pkg_path, originators, checksum_values):
         return None
 
 
-def process_source_package(pkg_path, originators):
+def process_source_package(pkg_path, originators, include, exclude, workers, disable_tqdm, brief_mode):
     """
     处理源码包，提取相关信息并生成相应的数据结构。
 
     Args:
         pkg_path (str): 源码包的完整路径。
         originators (dict): 发起者信息字典。
+        include (list): 包含的文件模式列表。
+        exclude (list): 排除的文件模式列表。
+        workers (int): 并行处理的工作线程数。
+        disable_tqdm (bool): 是否禁用进度条显示。
+        brief_mode (bool): 是否启用简要模式，若为 True 则跳过文件扫描。
 
     Returns:
         tuple: 包含以下元素的元组：
@@ -164,7 +176,15 @@ def process_source_package(pkg_path, originators):
 
     package_info, licenses, originators = process_src_package(
         pkg_path, originators)
-    return package_info, licenses, [], [], originators
+    files = []
+    file_relationships = []
+    if not brief_mode:
+        files, file_licenses = scan_src_rpm(
+            pkg_path, include, exclude, workers, disable_tqdm)
+        licenses.extend(file_licenses)
+        file_relationships = get_file_relationships(
+            files, package_info["id"])
+    return package_info, licenses, files, file_relationships, originators
 
 
 def _safe_decode(value):

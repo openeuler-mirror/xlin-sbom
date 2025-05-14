@@ -58,6 +58,12 @@ def parse_arguments():
                         default=None, help="最大并发线程数。")
     parser.add_argument("--sbom", required=False, default=None,
                         help="指定已存在的SBOM文件（JSON格式）进行增量更新。")
+    parser.add_argument("--include", action='append',
+                        help="要包含的文件模式（仅源码包扫描生效）。")
+    parser.add_argument("--exclude", action='append',
+                        help="要排除的文件模式（仅源码包扫描生效）。")
+    parser.add_argument("--brief", action='store_true',
+                        help="不进行精细扫描（仅源码包扫描生效）。")
 
     return parser.parse_args()
 
@@ -386,7 +392,7 @@ def main():
             sys.exit(1)
 
         linx_sbom = package_scanner(
-            package_path, package_type, spdx_utc_time, checksum_values)
+            package_path, package_type, spdx_utc_time, checksum_values, args.include, args.exclude, args.max_workers, args.disable_tqdm, args.brief)
 
     # 处理更新源
     elif args.repo is not None:
@@ -400,7 +406,8 @@ def main():
             logging.error(f"未侦测到有效的更新源地址")
             sys.exit(1)
 
-        linx_sbom = repo_scanner(primary_xml_url, repo_url, spdx_utc_time,args.disable_tqdm)
+        linx_sbom = repo_scanner(
+            primary_xml_url, repo_url, spdx_utc_time, args.disable_tqdm)
 
     # 保存SBOM
     save_sbom(linx_sbom, package_type, filename,
