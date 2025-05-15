@@ -306,7 +306,7 @@ def _process_spec(spec_content: str, md5_value: str, originators: Dict[str, Any]
         "id": f"Package-{name}-{md5_value[:12]}",
         "name": name,
         "version": version,
-        "architecture": spec_data.get('architecture', ''),
+        "architecture": spec_data.get('architecture', 'source'),
         "package_type": "source",
         "depends": requires,
         "licenses": license_id_list,
