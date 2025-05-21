@@ -6,7 +6,6 @@ import hashlib
 from tqdm import tqdm
 from multiprocessing import Pool
 from fnmatch import fnmatch
-from scancode import api as scancode
 from helper.data_helper import calculate_md5, remove_duplicates
 from helper.licenses_helper import rpm_licenses_scanner
 
@@ -38,6 +37,8 @@ def _extract_src_rpm(src_rpm_path):
                 if entry.isdir:
                     os.makedirs(pathname, exist_ok=True)
                 elif entry.isfile:
+                    parent_dir = os.path.dirname(pathname)
+                    os.makedirs(parent_dir, exist_ok=True)
                     with open(pathname, 'wb') as f:
                         for block in entry.get_blocks():
                             f.write(block)
@@ -65,6 +66,8 @@ def _extract_src_rpm(src_rpm_path):
                 if entry.isdir:
                     os.makedirs(pathname, exist_ok=True)
                 elif entry.isfile:
+                    parent_dir = os.path.dirname(pathname)
+                    os.makedirs(parent_dir, exist_ok=True)
                     with open(pathname, 'wb') as f:
                         for block in entry.get_blocks():
                             f.write(block)
@@ -117,6 +120,8 @@ def _process_member(member_path):
                 - checksums (dict): 文件的校验信息，包含算法（algorithm）和值（value）。
             - license_id_list (list of str): 许可证扫描器返回的许可证ID列表。
     """
+
+    from scancode import api as scancode
 
     licenses = scancode.get_licenses(location=member_path, include_text=True)
     copyright_data = scancode.get_copyrights(location=member_path)
