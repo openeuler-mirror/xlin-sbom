@@ -53,6 +53,7 @@ def package_scanner(pkg_path, pkg_type, created_time, checksum_values, include, 
     file_relationships = []
     originators_file_path = os.path.join(ASSIST_DIR, 'originators.json')
     originators = read_data_from_json(originators_file_path)
+    pkg_name = os.path.basename(pkg_path)
 
     if pkg_type == "rpm":
         package, licenses, files, file_relationships, originators, provides = process_rpm_package(
@@ -63,10 +64,10 @@ def package_scanner(pkg_path, pkg_type, created_time, checksum_values, include, 
 
     packages.append(package)
     linx_sbom = {
-        "packages_sbom": _add_header(packages, "packages", created_time),
-        "files_sbom": _add_header(files, "files", created_time),
-        "file_relationships_sbom": _add_header(file_relationships, "file_relationships", created_time),
-        "licenses_sbom": _add_header(licenses, "licenses", created_time),
+        "packages_sbom": _add_header(packages, "packages", pkg_name, created_time),
+        "files_sbom": _add_header(files, "files", pkg_name, created_time),
+        "file_relationships_sbom": _add_header(file_relationships, "file_relationships", pkg_name, created_time),
+        "licenses_sbom": _add_header(licenses, "licenses", pkg_name, created_time),
     }
 
     # 保存更新后的发起者信息
@@ -201,7 +202,7 @@ def _safe_decode(value):
     return value.decode('utf-8') if value is not None else ''
 
 
-def _add_header(sbom_data, data_name, created_time):
+def _add_header(sbom_data, data_name, pkg_name, created_time):
     """
     为 SBOM 数据添加头部信息。
 
@@ -215,6 +216,7 @@ def _add_header(sbom_data, data_name, created_time):
     """
 
     sbom = {
+        "scan_target": pkg_name,
         "creation_info": {
             "creators": read_data_from_json(creators_file_path),
             "created": created_time

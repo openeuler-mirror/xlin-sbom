@@ -113,7 +113,7 @@ def _add_header(sbom_data, data_name, repo_url, created_time):
     """
 
     sbom = {
-        "repo_url": repo_url or "NOASSERTION",
+        "scan_target": repo_url or "NOASSERTION",
         "creation_info": {
             "creators": read_data_from_json(creators_file_path),
             "created": created_time
