@@ -156,6 +156,7 @@ def _add_header(sbom_data, data_name, iso_filename, iso_arch, created_time):
         os_version = '-'.join(parts[1:-2])
 
     sbom = {
+        "scan_target": iso_filename,
         "os_name": os_name or "NOASSERTION",
         "os_version": os_version or "NOASSERTION",
         "os_arch": iso_arch or "NOASSERTION",
