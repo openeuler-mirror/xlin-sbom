@@ -58,7 +58,9 @@ def convert_to_spdx(linx_sbom, filename, created_time, package_type):
         license = ' AND '.join(package.get('licenses', []))
         supplier = package['suppliers'][0].get(
             'name', 'NOASSERTION') if package.get('suppliers') else 'NOASSERTION'
-
+        
+        arch = package.get('architecture','')
+        purl_arch = f"?arch={package['architecture']}" if arch else ""
         # 构建 SPDX 包元素
         spdx_package = {
             "name": replace_none_value(package['name']),
@@ -72,7 +74,7 @@ def convert_to_spdx(linx_sbom, filename, created_time, package_type):
             "externalRefs": [
                 {
                     "referenceCategory": "PACKAGE_MANAGER",
-                    "referenceLocator": f"pkg:{package_type}/{package['name']}@{package['version']}?arch={package['architecture']}",
+                    "referenceLocator": f"pkg:{package_type}/{package['name']}@{package['version']}{purl_arch}",
                     "referenceType": "purl",
                 }
             ],
