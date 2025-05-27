@@ -3081,25 +3081,25 @@
         "homepage": "http://vcmi.eu",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://vice-emu.sourceforge.net/",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://github.com/hash-bang/VMM",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://vusb-analyzer.sourceforge.net/",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://files.b9.com/wdq2wav/",
@@ -3109,9 +3109,9 @@
     },
     {
         "homepage": "https://github.com/Winetricks/winetricks",
-        "name": null,
+        "name": "Austin English (austinenglish@gmail.com)",
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://www.chaos-software.de.vu/",
@@ -3121,33 +3121,33 @@
     },
     {
         "homepage": "http://www.tim-mann.org/xtrs.html",
-        "name": null,
+        "name": "Tim Mann (tim@tim-mann.org)",
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://www.yamagi.org/quake2/",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://github.com/zfsonlinux/zfs-auto-snapshot",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://www.zfsonlinux.org/",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://sqweek.net/code/9mount/",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://gitorious.org/ac100/abootimg",
