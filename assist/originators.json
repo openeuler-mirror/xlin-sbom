@@ -3157,57 +3157,51 @@
     },
     {
         "homepage": "http://www.gnu.org/software/acct/",
-        "name": null,
-        "is_organization": false,
-        "analyzed": false
+        "name": "Free Software Foundation, Inc.",
+        "is_organization": true,
+        "analyzed": true
     },
     {
         "homepage": "http://www.arm.linux.org.uk/machines/riscpc/stage-2/",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://sourceforge.net/projects/acpiclient",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://sourceforge.net/projects/acpid2/",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://sourceforge.net/projects/acpitool/",
         "name": null,
         "is_organization": false,
-        "analyzed": false
-    },
-    {
-        "homepage": "<insert the upstream URL, if relevant>",
-        "name": null,
-        "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://www.freedesktop.org/software/realmd/",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://www.chiark.greenend.org.uk/~ian/adns/",
-        "name": null,
+        "name": "Ian Jackson (ijackson@chiark.greenend.org.uk)",
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://github.com/sshock/AFFLIBv3",
-        "name": null,
+        "name": "Phillip Hellewell (sshock@gmail.com)",
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://sourceforge.net/adobe/aglfn/",
@@ -3219,13 +3213,13 @@
         "homepage": "https://aide.github.io",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://amavisd-milter.sourceforge.net/",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://www.ijs.si/software/amavisd/",
