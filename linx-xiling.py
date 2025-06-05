@@ -70,7 +70,7 @@ def parse_arguments():
 
 def setup_logging(formatted_utc_time):
     """
-    配置日志记录，创建日志文件并设置日志格式和处理器。
+    配置日志记录，创建日志文件并设置日志格式和处理器，同时限制日志文件数量，只保留最近的200个。
 
     Args:
         formatted_utc_time (str): 格式化后的UTC时间字符串，用于生成日志文件名。
@@ -79,8 +79,28 @@ def setup_logging(formatted_utc_time):
         None: 函数不返回任何内容。
     """
 
-    # 配置日志记录
+    # 创建日志目录
     os.makedirs(LOG_DIR, exist_ok=True)
+
+    # 获取所有日志文件
+    log_files = [f for f in os.listdir(LOG_DIR) if f.startswith('log_') and f.endswith('.log')]
+    
+    # 按创建时间排序（旧文件在前）
+    log_files.sort(key=lambda x: os.path.getctime(os.path.join(LOG_DIR, x)))
+    
+    # 删除超出的旧日志文件
+    max_log_files = 200
+    if len(log_files) + 1 > max_log_files:
+        files_to_delete = len(log_files) + 1 - max_log_files
+        for i in range(files_to_delete):
+            file_to_delete = os.path.join(LOG_DIR, log_files[i])
+            try:
+                os.remove(file_to_delete)
+                logging.debug(f"删除日志: {file_to_delete}")
+            except Exception as e:
+                logging.error(f"删除 {file_to_delete} 时失败: {str(e)}")
+
+    # 创建新日志文件           
     log_file = os.path.join(LOG_DIR, f'log_{formatted_utc_time}.log')
 
     # 创建日志记录器
