@@ -342,12 +342,26 @@ def _parse_spec_content(spec_content: str) -> Dict[str, Any]:
     """
 
     parsed = {}
+    macros = {}
     current_section = None
     description_lines = []
     in_preamble = True
 
-    for line in spec_content.split('\n'):
+    lines = spec_content.split('\n')
+
+    for line in lines:
         stripped_line = line.rstrip()
+
+        if stripped_line.startswith('%define') or stripped_line.startswith('%global'):
+            # 解析 %define 和 %global 宏
+            parts = stripped_line.split(maxsplit=2)
+            if len(parts) == 3:
+                macro_name = parts[1]
+                macro_value = parts[2]
+                # 替换宏值中的嵌套宏变量
+                macro_value = _replace_macros(macro_value, macros)
+                macros[macro_name] = macro_value
+            continue
 
         if stripped_line.startswith('%package') and in_preamble:
             in_preamble = False
@@ -358,25 +372,33 @@ def _parse_spec_content(spec_content: str) -> Dict[str, Any]:
 
         if in_preamble:
             if stripped_line.lower().startswith('name:'):
-                parsed['name'] = stripped_line.split(':', 1)[1].strip()
+                name = stripped_line.split(':', 1)[1].strip()
+                parsed['name'] = _replace_macros(name, macros)
             elif stripped_line.lower().startswith('version:'):
-                parsed['version'] = stripped_line.split(':', 1)[1].strip()
+                version = stripped_line.split(':', 1)[1].strip()
+                parsed['version'] = _replace_macros(version, macros)
             elif stripped_line.lower().startswith('release:'):
-                parsed['release'] = stripped_line.split(':', 1)[1].strip()
+                release = stripped_line.split(':', 1)[1].strip()
+                parsed['release'] = _replace_macros(release, macros)
             elif stripped_line.lower().startswith('license:'):
-                parsed['license'] = stripped_line.split(':', 1)[1].strip()
+                license = stripped_line.split(':', 1)[1].strip()
+                parsed['license'] = _replace_macros(license, macros)
             elif stripped_line.lower().startswith('url:'):
-                parsed['url'] = stripped_line.split(':', 1)[1].strip()
+                url = stripped_line.split(':', 1)[1].strip()
+                parsed['url'] = _replace_macros(url, macros)
             elif stripped_line.lower().startswith('buildrequires:'):
                 buildrequires = [r.strip() for r in stripped_line.split(
                     ':', 1)[1].split(',') if r.strip()]
+                buildrequires = [_replace_macros(r, macros) for r in buildrequires]
                 parsed.setdefault('buildrequires', []).extend(buildrequires)
             elif stripped_line.lower().startswith('requires:'):
                 requires = [r.strip() for r in stripped_line.split(
                     ':', 1)[1].split(',') if r.strip()]
+                requires = [_replace_macros(r, macros) for r in requires]
                 parsed.setdefault('requires', []).extend(requires)
             elif stripped_line.lower().startswith('buildarch:'):
-                parsed['architecture'] = stripped_line.split(':', 1)[1].strip()
+                arch = stripped_line.split(':', 1)[1].strip()
+                parsed['architecture'] = _replace_macros(arch, macros)
 
             if current_section == '%description':
                 description_lines.append(stripped_line)
@@ -387,6 +409,34 @@ def _parse_spec_content(spec_content: str) -> Dict[str, Any]:
         )
 
     return parsed
+
+
+def _replace_macros(value: str, macros: Dict[str, str]) -> str:
+    """
+    替换字符串中的宏变量。
+
+    Args:
+        value (str): 包含宏变量的字符串。
+        macros (Dict[str, str]): 宏名称到值的映射。
+
+    Returns:
+        str: 替换宏变量后的字符串。
+    """
+
+    import re
+
+    def replace(match):
+        macro_name = match.group(1)
+        if macro_name.startswith('?'):
+            # 处理条件宏 %{?macro_name}
+            macro_name = macro_name[1:]
+            return macros.get(macro_name, '')
+        else:
+            return macros.get(macro_name, match.group(0))
+
+    # 匹配 %{macro_name} 和 %{?macro_name} 形式的宏
+    pattern = r'%\{(\??\w+)\}'
+    return re.sub(pattern, replace, value)
 
 
 def _process_control(control_content: str, md5_value: str, originators: Dict[str, Any]) -> Dict[str, Any]:
