@@ -14,9 +14,10 @@
 
 import hashlib
 import json
+from typing import Any, Dict, List, Union
 
 
-def calculate_sha1(file):
+def calculate_sha1(file: Any) -> str:
     """
     计算文件的 SHA-1 哈希值。
 
@@ -37,7 +38,7 @@ def calculate_sha1(file):
     return sha1.hexdigest()
 
 
-def calculate_md5(file):
+def calculate_md5(file: Any) -> str:
     """
     计算文件的 MD5 哈希值。
 
@@ -58,7 +59,7 @@ def calculate_md5(file):
     return md5.hexdigest()
 
 
-def read_data_from_json(json_file_path):
+def read_data_from_json(json_file_path: str) -> Union[Dict[str, Any], List[Any]]:
     """
     从 JSON 文件中读取数据。
 
@@ -74,7 +75,7 @@ def read_data_from_json(json_file_path):
     return data
 
 
-def save_data_to_json(data, json_file_path):
+def save_data_to_json(data: Union[Dict[str, Any], List[Any]], json_file_path: str) -> None:
     """
     将数据保存到 JSON 文件中。
 
@@ -90,20 +91,19 @@ def save_data_to_json(data, json_file_path):
             json.dump(data, json_file, ensure_ascii=False, indent=4)
 
 
-def remove_duplicates(list):
+def remove_duplicates(list_of_dicts: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """
     从给定的列表中移除具有重复ID的项，并返回一个新列表，其中每个ID只出现一次。
 
     Args:
-        list (list of dict): 包含字典元素的列表，每个字典必须有'id'键用于唯一标识。
+        list_of_dicts (list of dict): 包含字典元素的列表，每个字典必须有'id'键用于唯一标识。
 
     Returns:
         list of dict: 不含重复ID项的新列表。
     """
-
     unique_list = []
     seen_ids = set()
-    for item in list:
+    for item in list_of_dicts:
         item_id = item.get("id")
         if item_id not in seen_ids:
             seen_ids.add(item_id)
