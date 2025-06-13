@@ -19,12 +19,20 @@ from helper.package_helper import process_rpm_package
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import os
 import logging
+from typing import Any, Dict, List, Tuple, Optional, Union
 
 
 creators_file_path = os.path.join(ASSIST_DIR, 'creators.json')
 
 
-def rpm_packages_scanner(mnt_dir, iso_filename, created_time, disable_tqdm, workers, checksum_values):
+def rpm_packages_scanner(
+    mnt_dir: str,
+    iso_filename: str,
+    created_time: str,
+    disable_tqdm: bool,
+    workers: Optional[int],
+    checksum_values: List[str]
+) -> Dict[str, Any]:
     """
     扫描并处理 RPM 包，生成软件物料清单（SBOM）。
 
@@ -129,7 +137,13 @@ def rpm_packages_scanner(mnt_dir, iso_filename, created_time, disable_tqdm, work
     return linx_sbom
 
 
-def _add_header(sbom_data, data_name, iso_filename, iso_arch, created_time):
+def _add_header(
+    sbom_data: List[Dict[str, Any]],
+    data_name: str,
+    iso_filename: str,
+    iso_arch: Optional[str],
+    created_time: str
+) -> Dict[str, Any]:
     """
     为 SBOM 数据添加头部信息。
 
@@ -169,7 +183,7 @@ def _add_header(sbom_data, data_name, iso_filename, iso_arch, created_time):
     return sbom
 
 
-def _get_os_arch(mnt_dir):
+def _get_os_arch(mnt_dir: str) -> Optional[str]:
     """
     获取操作系统的架构信息。
 
