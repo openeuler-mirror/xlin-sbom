@@ -14,6 +14,7 @@
 
 from helper import ASSIST_DIR
 from helper.data_helper import read_data_from_json
+from typing import List, Dict, Optional, Any
 import os
 import re
 import hashlib
@@ -23,7 +24,7 @@ licenses_file_path = os.path.join(ASSIST_DIR, 'licenses.json')
 SPDX_LICENSES_LIST = read_data_from_json(licenses_file_path)
 
 
-def rpm_licenses_scanner(license):
+def rpm_licenses_scanner(license: str) -> List[Dict[str, str]]:
     """
     扫描 RPM 包的许可证信息，并生成许可证信息列表。
 
@@ -45,7 +46,7 @@ def rpm_licenses_scanner(license):
         license_info_list.append(license_info)
     return license_info_list
 
-def _standardize_license_name(license_input):
+def _standardize_license_name(license_input: str) -> str:
     """
     将提供的许可名称标准化为 SPDX 标准名称。
 
