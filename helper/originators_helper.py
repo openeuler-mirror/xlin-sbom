@@ -12,7 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-def extract_originator_name(homepage, originators):
+from typing import List, Dict, Optional, Tuple, Any
+
+def extract_originator_name(
+    homepage: str, 
+    originators: List[Dict[str, Any]]
+) -> Tuple[Optional[str], bool, List[Dict[str, Any]]]:
     """
     从给定的主页 URL 和一组原始作者信息中提取原始作者的名称及其是否为组织。
 
