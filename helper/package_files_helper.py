@@ -14,9 +14,10 @@
 
 import hashlib
 import rpmfile
+from typing import List, Dict, Any
 
 
-def rpm_files_scanner(package_path):
+def rpm_files_scanner(package_path: str) -> List[Dict[str, Any]]:
     """
     扫描RPM包中的文件信息并构建文件列表。
 
