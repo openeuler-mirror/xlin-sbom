@@ -3225,7 +3225,7 @@
         "homepage": "http://www.ijs.si/software/amavisd/",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://alioth.debian.org/projects/amiga-fdisk/",
@@ -3235,39 +3235,39 @@
     },
     {
         "homepage": "https://www.ansible.com",
-        "name": null,
-        "is_organization": false,
-        "analyzed": false
+        "name": "Red Hat, Inc.",
+        "is_organization": true,
+        "analyzed": true
     },
     {
         "homepage": "http://ant.apache.org",
-        "name": null,
-        "is_organization": false,
-        "analyzed": false
+        "name": "The Apache Software Foundation",
+        "is_organization": true,
+        "analyzed": true
     },
     {
         "homepage": "http://aoetools.sf.net",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://github.com/tessus/apachetop",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://maven.apache.org/pom/asf/",
-        "name": null,
-        "is_organization": false,
-        "analyzed": false
+        "name": "The Apache Software Foundation",
+        "is_organization": true,
+        "analyzed": true
     },
     {
         "homepage": "http://www.apcupsd.org/",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://www.adel.nursat.kz/apg/",
@@ -3277,21 +3277,21 @@
     },
     {
         "homepage": "http://www.apgdiff.com/",
-        "name": null,
-        "is_organization": false,
-        "analyzed": false
+        "name": "StartNet s.r.o.",
+        "is_organization": true,
+        "analyzed": true
     },
     {
         "homepage": "https://wiki.debian.org/AppArmor",
-        "name": null,
-        "is_organization": false,
-        "analyzed": false
+        "name": "Debian",
+        "is_organization": true,
+        "analyzed": true
     },
     {
         "homepage": "https://github.com/stsundermann/appindicator-sharp/",
-        "name": null,
+        "name": "Stephan Sundermann (stephansundermann@gmail.com)",
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://git.debian.org/?p=pkg-ocaml-maint/packages/approx.git",
