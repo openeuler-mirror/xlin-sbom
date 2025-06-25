@@ -3295,51 +3295,51 @@
     },
     {
         "homepage": "http://git.debian.org/?p=pkg-ocaml-maint/packages/approx.git",
-        "name": null,
-        "is_organization": false,
-        "analyzed": false
+        "name": "Debian",
+        "is_organization": true,
+        "analyzed": true
     },
     {
         "homepage": "https://www.freedesktop.org/wiki/Distributions/AppStream/",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://github.com/hughsie/appstream-glib",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://launchpad.net/aptdaemon",
-        "name": null,
+        "name": "Canonical Foundations Team",
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://wiki.debian.org/Aptitude",
-        "name": null,
-        "is_organization": false,
-        "analyzed": false
+        "name": "Debian",
+        "is_organization": true,
+        "analyzed": true
     },
     {
         "homepage": "https://github.com/elmar/aptitude-robot",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://launchpad.net/apt-clone",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://github.com/DE-IBH/apt-dater",
-        "name": null,
+        "name": "Thomas Liske (liske@ibh.de)",
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://www.ibh.de/apt-dater",
@@ -3349,15 +3349,15 @@
     },
     {
         "homepage": "https://salsa.debian.org/frx-guest/apt-listbugs",
-        "name": null,
-        "is_organization": false,
-        "analyzed": false
+        "name": "Debian",
+        "is_organization": true,
+        "analyzed": true
     },
     {
         "homepage": "http://sourceforge.net/projects/apt-move/",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://alioth.debian.org/projects/pkg-asv/",
