@@ -4705,9 +4705,52 @@
             "Creative Commons Attribution Non Commercial Share Alike 4.0 International",
             "CC-BY-NC-SA-4.0"
         ],
-        "must": [],
-        "can": [],
-        "cannot": []
+        "must": [
+            {
+                "name": "Include Copyright & License",
+                "cn_name": "包含版权和许可"
+            },
+            {
+                "name": "State Changes",
+                "cn_name": "列明修改"
+            },
+            {
+                "name": "Same License",
+                "cn_name": "许可证“传染性”"
+            }
+        ],
+        "can": [
+            {
+                "name": "Distribute",
+                "cn_name": "分发"
+            },
+            {
+                "name": "Modify",
+                "cn_name": "修改"
+            },
+            {
+                "name": "Private Use",
+                "cn_name": "私下使用"
+            }
+        ],
+        "cannot": [
+            {
+                "name": "Commercial Use",
+                "cn_name": "商业用途"
+            },
+            {
+                "name": "Patent Use",
+                "cn_name": "专利使用"
+            },
+            {
+                "name": "Hold Liable / Place Warranty",
+                "cn_name": "质量保证"
+            },
+            {
+                "name": "Use Trademark",
+                "cn_name": "商标使用"
+            }
+        ]
     },
     {
         "spdx_name": "CC-BY-ND-1.0",
@@ -4847,9 +4890,32 @@
             "Creative Commons Attribution No Derivatives 3.0 Germany",
             "CC-BY-ND-3.0-DE"
         ],
-        "must": [],
-        "can": [],
-        "cannot": []
+        "must": [
+            {
+                "name": "Include Copyright & License",
+                "cn_name": "包含版权和许可"
+            }
+        ],
+        "can": [
+            {
+                "name": "Distribute",
+                "cn_name": "分发"
+            },
+            {
+                "name": "Commercial Use",
+                "cn_name": "商业用途"
+            }
+        ],
+        "cannot": [
+            {
+                "name": "Hold Liable / Place Warranty",
+                "cn_name": "质量保证"
+            },
+            {
+                "name": "Modify",
+                "cn_name": "修改"
+            }
+        ]
     },
     {
         "spdx_name": "CC-BY-ND-4.0",
@@ -4881,9 +4947,44 @@
             "Creative Commons Attribution Share Alike 1.0 Generic",
             "CC-BY-SA-1.0"
         ],
-        "must": [],
-        "can": [],
-        "cannot": []
+        "must": [
+            {
+                "name": "Include Copyright & License",
+                "cn_name": "包含版权和许可"
+            },
+            {
+                "name": "Same License",
+                "cn_name": "许可证“传染性”"
+            }
+        ],
+        "can": [
+            {
+                "name": "Distribute",
+                "cn_name": "分发"
+            },
+            {
+                "name": "Modify",
+                "cn_name": "修改"
+            },
+            {
+                "name": "Commercial Use",
+                "cn_name": "商业用途"
+            },
+            {
+                "name": "Private Use",
+                "cn_name": "私下使用"
+            }
+        ],
+        "cannot": [
+            {
+                "name": "Hold Liable / Place Warranty",
+                "cn_name": "质量保证"
+            },
+            {
+                "name": "Use Trademark",
+                "cn_name": "商标使用"
+            }
+        ]
     },
     {
         "spdx_name": "CC-BY-SA-2.0",
@@ -4891,9 +4992,48 @@
             "Creative Commons Attribution Share Alike 2.0 Generic",
             "CC-BY-SA-2.0"
         ],
-        "must": [],
-        "can": [],
-        "cannot": []
+        "must": [
+            {
+                "name": "Include Copyright & License",
+                "cn_name": "包含版权和许可"
+            },
+            {
+                "name": "Same License",
+                "cn_name": "许可证“传染性”"
+            },
+            {
+                "name": "State Changes",
+                "cn_name": "列明修改"
+            }
+        ],
+        "can": [
+            {
+                "name": "Commercial Use",
+                "cn_name": "商业用途"
+            },
+            {
+                "name": "Distribute",
+                "cn_name": "分发"
+            },
+            {
+                "name": "Modify",
+                "cn_name": "修改"
+            },
+            {
+                "name": "Private Use",
+                "cn_name": "私下使用"
+            }
+        ],
+        "cannot": [
+            {
+                "name": "Hold Liable / Place Warranty",
+                "cn_name": "质量保证"
+            },
+            {
+                "name": "Use Trademark",
+                "cn_name": "商标使用"
+            }
+        ]
     },
     {
         "spdx_name": "CC-BY-SA-2.0-UK",
@@ -4901,9 +5041,48 @@
             "Creative Commons Attribution Share Alike 2.0 England and Wales",
             "CC-BY-SA-2.0-UK"
         ],
-        "must": [],
-        "can": [],
-        "cannot": []
+        "must": [
+            {
+                "name": "Include Copyright & License",
+                "cn_name": "包含版权和许可"
+            },
+            {
+                "name": "Same License",
+                "cn_name": "许可证“传染性”"
+            },
+            {
+                "name": "State Changes",
+                "cn_name": "列明修改"
+            }
+        ],
+        "can": [
+            {
+                "name": "Commercial Use",
+                "cn_name": "商业用途"
+            },
+            {
+                "name": "Distribute",
+                "cn_name": "分发"
+            },
+            {
+                "name": "Modify",
+                "cn_name": "修改"
+            },
+            {
+                "name": "Private Use",
+                "cn_name": "私下使用"
+            }
+        ],
+        "cannot": [
+            {
+                "name": "Hold Liable / Place Warranty",
+                "cn_name": "质量保证"
+            },
+            {
+                "name": "Use Trademark",
+                "cn_name": "商标使用"
+            }
+        ]
     },
     {
         "spdx_name": "CC-BY-SA-2.1-JP",
