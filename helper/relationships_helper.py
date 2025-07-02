@@ -12,7 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-def get_file_relationships(file_list, package_id):
+
+from typing import List, Dict, Any, Optional
+
+
+def get_file_relationships(
+    file_list: List[Dict[str, Any]],
+    package_id: str
+) -> List[Dict[str, Any]]:
     """
     生成文件与包之间的关系列表。
 
@@ -33,7 +40,11 @@ def get_file_relationships(file_list, package_id):
     return relationships
 
 
-def get_rpm_relationships(packages, provides_relationships, disable_tqdm):
+def get_rpm_relationships(
+    packages: List[Dict[str, Any]],
+    provides_relationships: List[Dict[str, Any]],
+    disable_tqdm: bool
+) -> List[Dict[str, Any]]:
     """
     生成 RPM 包之间的依赖关系列表。
 
@@ -50,7 +61,8 @@ def get_rpm_relationships(packages, provides_relationships, disable_tqdm):
 
     relationships = []
     # 根据 disable_tqdm 决定是否使用 tqdm
-    package_iter = tqdm(packages, desc="处理包依赖关系", unit="包") if not disable_tqdm else packages
+    package_iter = tqdm(packages, desc="处理包依赖关系",
+                        unit="包") if not disable_tqdm else packages
 
     for package in package_iter:
         added_relationships = []
