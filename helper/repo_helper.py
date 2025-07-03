@@ -17,6 +17,7 @@ from helper.data_helper import read_data_from_json, save_data_to_json, remove_du
 from helper.suppliers_helper import get_suppliers, RPM_SUPPLIERS
 from helper.originators_helper import extract_originator_name
 from helper.licenses_helper import rpm_licenses_scanner
+from typing import Any, Dict, List, Optional, Tuple, Union
 import os
 import logging
 import requests
@@ -24,7 +25,12 @@ import requests
 creators_file_path = os.path.join(ASSIST_DIR, 'creators.json')
 
 
-def repo_scanner(primary_xml_url, repo_url, created_time,disable_tqdm):
+def repo_scanner(
+    primary_xml_url: str,
+    repo_url: str,
+    created_time: str,
+    disable_tqdm: bool
+) -> Dict[str, Dict[str, Any]]:
     """
     扫描指定的 primary.xml.gz 文件并生成软件包和许可证的 SBOM。
 
@@ -45,7 +51,7 @@ def repo_scanner(primary_xml_url, repo_url, created_time,disable_tqdm):
     xml_data = _fetch_and_extract_xml(primary_xml_url)
     if xml_data:
         packages, licenses, originators = _parse_primary_xml(
-            xml_data, originators,disable_tqdm)
+            xml_data, originators, disable_tqdm)
 
     linx_sbom = {
         "packages_sbom": _add_header(packages, "packages", repo_url, created_time),
@@ -59,7 +65,7 @@ def repo_scanner(primary_xml_url, repo_url, created_time,disable_tqdm):
     return linx_sbom
 
 
-def find_primary_xml_in_repo(repo_url):
+def find_primary_xml_in_repo(repo_url: str) -> Optional[str]:
     """
     在给定的仓库URL中查找 primary.xml.gz 文件的URL。
 
@@ -98,7 +104,12 @@ def find_primary_xml_in_repo(repo_url):
         return None
 
 
-def _add_header(sbom_data, data_name, repo_url, created_time):
+def _add_header(
+    sbom_data: List[Dict[str, Any]],
+    data_name: str,
+    repo_url: str,
+    created_time: str
+) -> Dict[str, Any]:
     """
     为 SBOM 数据添加头部信息。
 
@@ -123,7 +134,19 @@ def _add_header(sbom_data, data_name, repo_url, created_time):
     return sbom
 
 
-def _fetch_and_extract_xml(primary_xml_url):
+def _fetch_and_extract_xml(primary_xml_url: str) -> Optional[bytes]:
+    """
+    根据提供的 URL 下载并解压 XML 文件，支持 .gz 和 .zst 压缩格式。
+
+    Args:
+        primary_xml_url (str): 指向 XML 文件的 URL，应以 .gz 或 .zst 结尾表示压缩格式；
+                               其他后缀将被视为未压缩的 XML 文件（目前不支持）。
+
+    Returns:
+        bytes or None: 如果成功下载并解压，则返回解压后的 XML 内容作为字节串；
+                       否则返回 None，例如网络错误、无效压缩格式或解压失败。
+    """
+
     import gzip
     from io import BytesIO
     import logging
@@ -169,7 +192,11 @@ def _fetch_and_extract_xml(primary_xml_url):
         return None
 
 
-def _parse_primary_xml(xml_data, originators, disable_tqdm=False):
+def _parse_primary_xml(
+    xml_data: bytes,
+    originators: List[Dict[str, Any]],
+    disable_tqdm: bool = False
+) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]], List[Dict[str, Any]]]:
     """
     解析 primary.xml 数据并提取软件包和许可证信息。
 
@@ -184,7 +211,7 @@ def _parse_primary_xml(xml_data, originators, disable_tqdm=False):
             - licenses (list): 许可证信息列表。
             - originators (list): 更新后的发起者信息列表。
     """
-    
+
     import xml.etree.ElementTree as ET
     from tqdm import tqdm
 
