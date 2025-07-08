@@ -1,3 +1,18 @@
+# Copyright 2025 Linx Software, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
 import tempfile
 import os
 import shutil
@@ -6,11 +21,12 @@ import hashlib
 from tqdm import tqdm
 from multiprocessing import Pool
 from fnmatch import fnmatch
+from typing import Any, Dict, List, Tuple, Optional, Union
 from helper.data_helper import calculate_md5, remove_duplicates
 from helper.licenses_helper import rpm_licenses_scanner
 
 
-def _extract_src_rpm(src_rpm_path):
+def _extract_src_rpm(src_rpm_path: str) -> str:
     """
     解压 .src.rpm 文件并提取其中的源代码压缩文件，返回解压后的源代码目录路径。
 
@@ -80,7 +96,7 @@ def _extract_src_rpm(src_rpm_path):
         shutil.rmtree(temp_dir)
 
 
-def _should_include(member_name, include_patterns, exclude_patterns):
+def _should_include(member_name: str, include_patterns: Optional[List[str]], exclude_patterns: Optional[List[str]]) -> bool:
     """
     判断一个文件或目录名是否应该被包含在处理范围内。
 
@@ -102,7 +118,7 @@ def _should_include(member_name, include_patterns, exclude_patterns):
     return True
 
 
-def _process_member(member_path):
+def _process_member(member_path: str) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
     """
     处理指定的文件成员，提取其许可证、版权信息以及其他元数据。
 
@@ -166,7 +182,13 @@ def _process_member(member_path):
     return file_info, licenses
 
 
-def scan_src_rpm(src_rpm_path, include, exclude, workers, disable_tqdm):
+def scan_src_rpm(
+    src_rpm_path: str,
+    include: Optional[List[str]],
+    exclude: Optional[List[str]],
+    workers: Optional[int],
+    disable_tqdm: bool
+) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
     """
     扫描 .src.rpm 文件中的源代码文件，提取每个文件的元数据和许可证信息。
 
