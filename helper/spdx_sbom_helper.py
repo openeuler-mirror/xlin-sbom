@@ -13,10 +13,16 @@
 # limitations under the License.
 
 from helper.data_helper import read_data_from_json
+from typing import Any, Dict, List, Tuple, Union
 import os
 
 
-def convert_to_spdx(linx_sbom, filename, created_time, package_type):
+def convert_to_spdx(
+    linx_sbom: Dict[str, Any],
+    filename: str,
+    created_time: str,
+    package_type: str
+) -> Dict[str, Any]:
     """
     将给定的 SBOM 数据转换为 SPDX 格式。
 
@@ -58,8 +64,8 @@ def convert_to_spdx(linx_sbom, filename, created_time, package_type):
         license = ' AND '.join(package.get('licenses', []))
         supplier = package['suppliers'][0].get(
             'name', 'NOASSERTION') if package.get('suppliers') else 'NOASSERTION'
-        
-        arch = package.get('architecture','')
+
+        arch = package.get('architecture', '')
         purl_arch = f"?arch={package['architecture']}" if arch else ""
         # 构建 SPDX 包元素
         spdx_package = {
