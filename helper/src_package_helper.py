@@ -19,7 +19,7 @@ import rpmfile
 import hashlib
 import io
 import logging
-from typing import Dict, Any, Tuple, List
+from typing import Dict, Any, Tuple, List, Callable, Optional, Union
 from helper.suppliers_helper import get_suppliers, RPM_SUPPLIERS
 from helper.originators_helper import extract_originator_name
 from helper.licenses_helper import rpm_licenses_scanner
@@ -174,7 +174,12 @@ def _detect_from_zip(zipf: zipfile.ZipFile, current_depth: int) -> Tuple[str, st
     )
 
 
-def _detect_from_members(members, extract_file, current_depth: int, is_zip=False) -> Tuple[str, str]:
+def _detect_from_members(
+    members: List[Any],
+    extract_file: Callable[[Any], bytes],
+    current_depth: int,
+    is_zip: bool = False
+) -> Tuple[str, str]:
     """
     从压缩文件成员中检测源码包类型并返回类型和对应文件内容。
 
@@ -234,7 +239,11 @@ def _detect_from_members(members, extract_file, current_depth: int, is_zip=False
     return ('other', '')
 
 
-def _process_spec(spec_content: str, md5_value: str, originators: Dict[str, Any]) -> Tuple[Dict[str, Any], List[Dict[str, Any]], Dict[str, Any]]:
+def _process_spec(
+    spec_content: str,
+    md5_value: str,
+    originators: Dict[str, Any]
+) -> Tuple[Dict[str, Any], List[Dict[str, Any]], Dict[str, Any]]:
     """
     处理RPM源码包的spec文件内容，并返回源码包的详细信息。
 
@@ -250,17 +259,7 @@ def _process_spec(spec_content: str, md5_value: str, originators: Dict[str, Any]
             - 第三个元素为字典，更新后的来源者信息。
     """
 
-    def _process_requires(requires: list[str]):
-        """
-        处理RPM依赖项。
-
-        Args:
-            requires (list[str]): 依赖项列表，每个依赖项为字符串形式。
-
-        Returns:
-            list[str]: 处理后的依赖项列表，替换掉宏变量（如 %{name}, %{version}, %{release}）。
-        """
-
+    def _process_requires(requires: List[str]) -> List[str]:
         operators = {'>=', '<=', '>', '<', '=', '!=', '~>'}  # 定义可能的操作符集合
         processed_requires = []
 
@@ -389,7 +388,8 @@ def _parse_spec_content(spec_content: str) -> Dict[str, Any]:
             elif stripped_line.lower().startswith('buildrequires:'):
                 buildrequires = [r.strip() for r in stripped_line.split(
                     ':', 1)[1].split(',') if r.strip()]
-                buildrequires = [_replace_macros(r, macros) for r in buildrequires]
+                buildrequires = [_replace_macros(
+                    r, macros) for r in buildrequires]
                 parsed.setdefault('buildrequires', []).extend(buildrequires)
             elif stripped_line.lower().startswith('requires:'):
                 requires = [r.strip() for r in stripped_line.split(
@@ -439,7 +439,11 @@ def _replace_macros(value: str, macros: Dict[str, str]) -> str:
     return re.sub(pattern, replace, value)
 
 
-def _process_control(control_content: str, md5_value: str, originators: Dict[str, Any]) -> Dict[str, Any]:
+def _process_control(
+    control_content: str,
+    md5_value: str,
+    originators: Dict[str, Any]
+) -> Tuple[Dict[str, Any], List[Dict[str, Any]], Dict[str, Any]]:
     """
     处理DEB源码包的占位函数
     """
@@ -461,7 +465,11 @@ def _process_control(control_content: str, md5_value: str, originators: Dict[str
     }, [], originators
 
 
-def _process_other_package(pkg_path: str, md5_value: str, originators: Dict[str, Any]) -> Dict[str, Any]:
+def _process_other_package(
+    pkg_path: str,
+    md5_value: str,
+    originators: Dict[str, Any]
+) -> Tuple[Dict[str, Any], List[Dict[str, Any]], Dict[str, Any]]:
     """
     处理其他类型源码包的占位函数
     """
