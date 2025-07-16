@@ -14,6 +14,7 @@
 
 from helper import ASSIST_DIR
 from helper.data_helper import read_data_from_json
+from typing import Any, Dict, List, Optional, Union
 import os
 
 
@@ -23,7 +24,12 @@ RPM_SUPPLIERS = [
     supplier for supplier in supplier_list if supplier.get('type') == 'rpm']
 
 
-def get_suppliers(direct_supplier, homepage, originator_name, supplier_dicts):
+def get_suppliers(
+    direct_supplier: str,
+    homepage: Optional[str],
+    originator_name: Optional[str],
+    supplier_dicts: List[Dict[str, Any]]
+) -> List[Dict[str, Any]]:
     """
     根据提供的参数获取供应商信息并分类。
 
@@ -41,14 +47,14 @@ def get_suppliers(direct_supplier, homepage, originator_name, supplier_dicts):
     suppliers = []
     current_tier = 0
 
-    def _contains_keyword(string, keywords):
+    def _contains_keyword(string: str, keywords: List[str]) -> bool:
         """检查字符串是否包含任意一个关键词。"""
         return any(keyword in string for keyword in keywords)
 
-    def _add_supplier(name, link, tire_increment=1):
+    def _add_supplier(name: str, link: Optional[str], tier_increment: int = 1) -> None:
         """添加供应商信息到列表中。"""
         nonlocal current_tier
-        current_tier += tire_increment
+        current_tier += tier_increment
         suppliers.append({
             "name": name,
             "tier": current_tier,
