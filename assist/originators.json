@@ -3361,21 +3361,21 @@
     },
     {
         "homepage": "http://alioth.debian.org/projects/pkg-asv/",
-        "name": null,
-        "is_organization": false,
-        "analyzed": false
+        "name": "Debian",
+        "is_organization": true,
+        "analyzed": true
     },
     {
         "homepage": "https://github.com/BashtonLtd/apt-transport-s3",
-        "name": null,
-        "is_organization": false,
-        "analyzed": false
+        "name": "Mayara Cloud Ltd.",
+        "is_organization": true,
+        "analyzed": true
     },
     {
         "homepage": "https://github.com/LeoIannacone/apt-venv",
-        "name": null,
+        "name": "Leo Iannacone (l3on@ubuntu.com)",
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://projects.archlinux.org/arch-install-scripts.git",
@@ -3399,25 +3399,25 @@
         "homepage": "http://arma.sourceforge.net/",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://github.com/opencollab/arpack-ng",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://ee.lbl.gov/",
-        "name": null,
-        "is_organization": false,
-        "analyzed": false
+        "name": "Lawrence Berkeley National Laboratory",
+        "is_organization": true,
+        "analyzed": true
     },
     {
         "homepage": "http://sourceforge.net/projects/array-info/",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://asm.objectweb.org",
@@ -3429,7 +3429,7 @@
         "homepage": "https://github.com/wbond/asn1crypto",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://www.cs.uni-potsdam.de/wv/aspcud/",
@@ -3439,15 +3439,15 @@
     },
     {
         "homepage": "http://www.steve.org.uk/Software/asql/",
-        "name": null,
+        "name": "Steve Kemp (steve@steve.fi)",
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://www.asterisk.org/",
-        "name": null,
-        "is_organization": false,
-        "analyzed": false
+        "name": "Asterisk",
+        "is_organization": true,
+        "analyzed": true
     },
     {
         "homepage": "https://zaf.github.com/Asterisk-eSpeak/",
