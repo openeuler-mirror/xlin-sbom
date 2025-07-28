@@ -3465,61 +3465,61 @@
         "homepage": "https://github.com/traud/asterisk-opus/",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://www.avatar.com.co/",
-        "name": null,
-        "is_organization": false,
-        "analyzed": false
+        "name": "AVATAR",
+        "is_organization": true,
+        "analyzed": true
     },
     {
         "homepage": "http://www.voip.ammdomus.it/voci-italiane-asterisk/",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://www.astrometry.net",
-        "name": null,
+        "name": "null",
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://astropy.org",
-        "name": null,
-        "is_organization": false,
-        "analyzed": false
+        "name": "Astropy",
+        "is_organization": true,
+        "analyzed": true
     },
     {
         "homepage": "http://javax-inject.github.io/javax-inject/",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://atoptool.nl/",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://projects.kde.org/attica",
-        "name": null,
-        "is_organization": false,
-        "analyzed": false
+        "name": "KDE e.V.",
+        "is_organization": true,
+        "analyzed": true
     },
     {
         "homepage": "https://github.com/overtone/at-at",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://aufs.sourceforge.net/",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://augeas.net/",
