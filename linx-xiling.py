@@ -21,6 +21,7 @@ import csv
 import logging
 import argparse
 import subprocess
+import shlex
 from typing import List
 from helper import PARENT_DIR, LOG_DIR
 from helper.data_helper import save_data_to_json, read_data_from_json
@@ -127,6 +128,7 @@ def setup_logging(formatted_utc_time):
 def mount_iso(iso_path, mnt_dir):
     """
     使用挂载命令将ISO镜像文件挂载到指定的目录。
+    首先尝试使用fuseiso（无需sudo），失败时回退到sudo mount命令。
 
     Args:
         iso_path (str): ISO镜像文件的路径。路径应指向一个有效的ISO文件。
@@ -136,18 +138,25 @@ def mount_iso(iso_path, mnt_dir):
         None: 函数不返回任何内容。
 
     Raises:
-        subprocess.CalledProcessError: 如果挂载命令执行失败，则会抛出此异常。
+        subprocess.CalledProcessError: 如果所有挂载方法都失败，则会抛出此异常。
     """
-
     try:
-        subprocess.run(["fuseiso", iso_path, mnt_dir], check=True)
-    except subprocess.CalledProcessError as e:
-        raise
+        # 首先尝试使用fuseiso（无需sudo）
+        subprocess.run(["fuseiso", iso_path, mnt_dir], check=True, stderr=subprocess.DEVNULL)
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        try:
+            # 回退到sudo mount命令
+            logging.warning("fuseiso挂载失败，尝试使用sudo mount")
+            mount_cmd = f"sudo mount -o loop,ro {shlex.quote(iso_path)} {shlex.quote(mnt_dir)}"
+            subprocess.run(mount_cmd, shell=True, check=True)
+        except subprocess.CalledProcessError as e:
+            raise RuntimeError(f"所有挂载方法均失败: {e}") from e
 
 
 def umount_iso(mnt_dir):
     """
     卸载指定目录挂载的ISO镜像。
+    首先尝试使用fusermount（无需sudo），失败时回退到sudo umount命令。
 
     Args:
         mnt_dir (str): 要卸载ISO镜像的挂载目录路径。
@@ -156,13 +165,19 @@ def umount_iso(mnt_dir):
         None: 函数不返回任何内容。
 
     Raises:
-        subprocess.CalledProcessError: 如果卸载命令执行失败，则会抛出此异常。
+        subprocess.CalledProcessError: 如果所有卸载方法都失败，则会抛出此异常。
     """
-
     try:
-        subprocess.run(["fusermount", "-u", mnt_dir], check=True)
-    except subprocess.CalledProcessError as e:
-        raise
+        # 首先尝试使用fusermount（无需sudo）
+        subprocess.run(["fusermount", "-u", mnt_dir], check=True, stderr=subprocess.DEVNULL)
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        try:
+            # 回退到sudo umount命令
+            logging.warning("fusermount卸载失败，尝试使用sudo umount")
+            umount_cmd = f"sudo umount {shlex.quote(mnt_dir)}"
+            subprocess.run(umount_cmd, shell=True, check=True)
+        except subprocess.CalledProcessError as e:
+            raise RuntimeError(f"所有卸载方法均失败: {e}") from e
 
 
 def load_category_dict(category_csv_path):
