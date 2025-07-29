@@ -5442,7 +5442,24 @@
             "CC-PDDC"
         ],
         "must": [],
-        "can": [],
+        "can": [
+            {
+                "name": "Commercial Use",
+                "cn_name": "商业用途"
+            },
+            {
+                "name": "Distribute",
+                "cn_name": "分发"
+            },
+            {
+                "name": "Modify",
+                "cn_name": "修改"
+            },
+            {
+                "name": "Private Use",
+                "cn_name": "私下使用"
+            }
+        ],
         "cannot": []
     },
     {
@@ -5620,9 +5637,48 @@
             "Common Documentation License 1.0",
             "CDL-1.0"
         ],
-        "must": [],
-        "can": [],
-        "cannot": []
+        "must": [
+            {
+                "name": "Include Copyright & License",
+                "cn_name": "包含版权和许可"
+            },
+            {
+                "name": "Same License",
+                "cn_name": "许可证“传染性”"
+            },
+            {
+                "name": "State Changes",
+                "cn_name": "列明修改"
+            }
+        ],
+        "can": [
+            {
+                "name": "Commercial Use",
+                "cn_name": "商业用途"
+            },
+            {
+                "name": "Distribute",
+                "cn_name": "分发"
+            },
+            {
+                "name": "Modify",
+                "cn_name": "修改"
+            },
+            {
+                "name": "Private Use",
+                "cn_name": "私下使用"
+            }
+        ],
+        "cannot": [
+            {
+                "name": "Hold Liable / Place Warranty",
+                "cn_name": "质量保证"
+            },
+            {
+                "name": "Use Trademark",
+                "cn_name": "商标使用"
+            }
+        ]
     },
     {
         "spdx_name": "CDLA-Permissive-1.0",
@@ -5630,9 +5686,40 @@
             "Community Data License Agreement Permissive 1.0",
             "CDLA-Permissive-1.0"
         ],
-        "must": [],
-        "can": [],
-        "cannot": []
+        "must": [
+            {
+                "name": "State Changes",
+                "cn_name": "列明修改"
+            },
+            {
+                "name": "Include Copyright & License",
+                "cn_name": "包含版权和许可"
+            }
+        ],
+        "can": [
+            {
+                "name": "Distribute",
+                "cn_name": "分发"
+            },
+            {
+                "name": "Modify",
+                "cn_name": "修改"
+            },
+            {
+                "name": "Commercial Use",
+                "cn_name": "商业用途"
+            },
+            {
+                "name": "Private Use",
+                "cn_name": "私下使用"
+            }
+        ],
+        "cannot": [
+            {
+                "name": "Hold Liable / Place Warranty",
+                "cn_name": "质量保证"
+            }
+        ]
     },
     {
         "spdx_name": "CDLA-Permissive-2.0",
@@ -5640,9 +5727,36 @@
             "Community Data License Agreement Permissive 2.0",
             "CDLA-Permissive-2.0"
         ],
-        "must": [],
-        "can": [],
-        "cannot": []
+        "must": [
+            {
+                "name": "Include Copyright & License",
+                "cn_name": "包含版权和许可"
+            }
+        ],
+        "can": [
+            {
+                "name": "Distribute",
+                "cn_name": "分发"
+            },
+            {
+                "name": "Modify",
+                "cn_name": "修改"
+            },
+            {
+                "name": "Commercial Use",
+                "cn_name": "商业用途"
+            },
+            {
+                "name": "Private Use",
+                "cn_name": "私下使用"
+            }
+        ],
+        "cannot": [
+            {
+                "name": "Hold Liable / Place Warranty",
+                "cn_name": "质量保证"
+            }
+        ]
     },
     {
         "spdx_name": "CDLA-Sharing-1.0",
@@ -5650,9 +5764,44 @@
             "Community Data License Agreement Sharing 1.0",
             "CDLA-Sharing-1.0"
         ],
-        "must": [],
-        "can": [],
-        "cannot": []
+        "must": [
+            {
+                "name": "Include Copyright & License",
+                "cn_name": "包含版权和许可"
+            },
+            {
+                "name": "Same License",
+                "cn_name": "许可证“传染性”"
+            },
+            {
+                "name": "State Changes",
+                "cn_name": "列明修改"
+            }
+        ],
+        "can": [
+            {
+                "name": "Commercial Use",
+                "cn_name": "商业用途"
+            },
+            {
+                "name": "Distribute",
+                "cn_name": "分发"
+            },
+            {
+                "name": "Modify",
+                "cn_name": "修改"
+            },
+            {
+                "name": "Private Use",
+                "cn_name": "私下使用"
+            }
+        ],
+        "cannot": [
+            {
+                "name": "Hold Liable / Place Warranty",
+                "cn_name": "质量保证"
+            }
+        ]
     },
     {
         "spdx_name": "CECILL-1.0",
