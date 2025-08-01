@@ -8913,61 +8913,61 @@
         "homepage": "https://metacpan.org/release/Algorithm-C3",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://aopalliance.sourceforge.net/",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://metacpan.org/release/App-Cmd",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://metacpan.org/release/Authen-Passphrase",
-        "name": null,
+        "name": "Andrew Main (zefram@fysh.org)",
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://metacpan.org/release/Authen-DecHpwd",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://metacpan.org/release/Authen-Radius",
-        "name": null,
-        "is_organization": false,
-        "analyzed": false
+        "name": "PortaOne, Inc.",
+        "is_organization": true,
+        "analyzed": true
     },
     {
         "homepage": "https://blake2.net/",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://github.com/libyal/libbde",
-        "name": null,
+        "name": "Joachim Metz (joachim.metz@gmail.com)",
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://github.com/libyal/libbfio",
-        "name": null,
+        "name": "Joachim Metz (joachim.metz@gmail.com)",
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://metacpan.org/release/Bit-Vector",
-        "name": null,
+        "name": "Steffen Beyer (STBEY@cpan.org)",
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://metacpan.org/release/boolean",
