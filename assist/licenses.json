@@ -5208,15 +5208,15 @@
                 "cn_name": "修改"
             },
             {
+                "name": "Commercial Use",
+                "cn_name": "商业用途"
+            },
+            {
                 "name": "Private Use",
                 "cn_name": "私下使用"
             }
         ],
         "cannot": [
-            {
-                "name": "Commercial Use",
-                "cn_name": "商业用途"
-            },
             {
                 "name": "Hold Liable / Place Warranty",
                 "cn_name": "质量保证"
@@ -5257,15 +5257,15 @@
                 "cn_name": "修改"
             },
             {
+                "name": "Commercial Use",
+                "cn_name": "商业用途"
+            },
+            {
                 "name": "Private Use",
                 "cn_name": "私下使用"
             }
         ],
         "cannot": [
-            {
-                "name": "Commercial Use",
-                "cn_name": "商业用途"
-            },
             {
                 "name": "Hold Liable / Place Warranty",
                 "cn_name": "质量保证"
@@ -5306,15 +5306,15 @@
                 "cn_name": "修改"
             },
             {
+                "name": "Commercial Use",
+                "cn_name": "商业用途"
+            },
+            {
                 "name": "Private Use",
                 "cn_name": "私下使用"
             }
         ],
         "cannot": [
-            {
-                "name": "Commercial Use",
-                "cn_name": "商业用途"
-            },
             {
                 "name": "Hold Liable / Place Warranty",
                 "cn_name": "质量保证"
@@ -13412,9 +13412,17 @@
             {
                 "name": "Disclose Source",
                 "cn_name": "源代码可获取"
+            },
+            {
+                "name": "Same License",
+                "cn_name": "许可证“传染性”"
             }
         ],
         "can": [
+            {
+                "name": "Commercial Use",
+                "cn_name": "商业用途"
+            },
             {
                 "name": "Distribute",
                 "cn_name": "分发"
@@ -13432,10 +13440,6 @@
             {
                 "name": "Hold Liable / Place Warranty",
                 "cn_name": "质量保证"
-            },
-            {
-                "name": "Commercial Use",
-                "cn_name": "商业用途"
             }
         ]
     },
@@ -14590,6 +14594,10 @@
                 "cn_name": "修改"
             },
             {
+                "name": "Commercial Use",
+                "cn_name": "商业用途"
+            },
+            {
                 "name": "Private Use",
                 "cn_name": "私下使用"
             }
@@ -14598,10 +14606,6 @@
             {
                 "name": "Hold Liable / Place Warranty",
                 "cn_name": "质量保证"
-            },
-            {
-                "name": "Commercial Use",
-                "cn_name": "商业用途"
             }
         ]
     },
