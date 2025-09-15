@@ -8971,63 +8971,63 @@
     },
     {
         "homepage": "https://metacpan.org/release/boolean",
-        "name": null,
+        "name": "Ingy döt Net <ingy@cpan.org>",
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://gitee.com/src-openeuler/libboundscheck.git",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://bs2b.sourceforge.net/",
-        "name": null,
+        "name": "Boris Mikhaylov",
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://libburnia-project.org",
-        "name": null,
+        "name": "Thomas Schmitt <scdbackup@gmx.net>",
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://metacpan.org/release/Bytes-Random-Secure",
-        "name": null,
+        "name": "David Oswald <davido@cpan.org>",
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://github.com/storaged-project/libbytesize",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://metacpan.org/release/B-Hooks-EndOfScope",
-        "name": null,
+        "name": "Karen Etheridge <ether@cpan.org>",
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://metacpan.org/release/B-Hooks-OP-Check",
-        "name": null,
+        "name": "Karen Etheridge <ether@cpan.org>",
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://metacpan.org/release/Cairo-GObject",
-        "name": null,
+        "name": "Brian Manning <xaoc@cpan.org>",
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://gtk2-perl.sourceforge.net/",
-        "name": null,
-        "is_organization": false,
-        "analyzed": false
+        "name": "The GNOME Foundation",
+        "is_organization": true,
+        "analyzed": true
     },
     {
         "homepage": "http://www.isdn4linux.de",
