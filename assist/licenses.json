@@ -6444,9 +6444,44 @@
             "CNRI Jython License",
             "CNRI-Jython"
         ],
-        "must": [],
-        "can": [],
-        "cannot": []
+        "must": [
+            {
+                "name": "Include Copyright & License",
+                "cn_name": "包含版权和许可"
+            },
+            {
+                "name": "State Changes",
+                "cn_name": "列明修改"
+            }
+        ],
+        "can": [
+            {
+                "name": "Distribute",
+                "cn_name": "分发"
+            },
+            {
+                "name": "Modify",
+                "cn_name": "修改"
+            },
+            {
+                "name": "Commercial Use",
+                "cn_name": "商业用途"
+            },
+            {
+                "name": "Private Use",
+                "cn_name": "私下使用"
+            }
+        ],
+        "cannot": [
+            {
+                "name": "Hold Liable / Place Warranty",
+                "cn_name": "质量保证"
+            },
+            {
+                "name": "Use Trademark",
+                "cn_name": "商标使用"
+            }
+        ]
     },
     {
         "spdx_name": "CNRI-Python",
@@ -6454,14 +6489,44 @@
             "CNRI Python License",
             "CNRI-Python"
         ],
-        "must": [],
+        "must": [
+            {
+                "name": "Include Copyright & License",
+                "cn_name": "包含版权和许可"
+            },
+            {
+                "name": "State Changes",
+                "cn_name": "列明修改"
+            }
+        ],
         "can": [
+            {
+                "name": "Distribute",
+                "cn_name": "分发"
+            },
+            {
+                "name": "Modify",
+                "cn_name": "修改"
+            },
+            {
+                "name": "Commercial Use",
+                "cn_name": "商业用途"
+            },
             {
                 "name": "Private Use",
                 "cn_name": "私下使用"
             }
         ],
-        "cannot": []
+        "cannot": [
+            {
+                "name": "Hold Liable / Place Warranty",
+                "cn_name": "质量保证"
+            },
+            {
+                "name": "Use Trademark",
+                "cn_name": "商标使用"
+            }
+        ]
     },
     {
         "spdx_name": "CNRI-Python-GPL-Compatible",
@@ -6469,9 +6534,44 @@
             "CNRI Python Open Source GPL Compatible License Agreement",
             "CNRI-Python-GPL-Compatible"
         ],
-        "must": [],
-        "can": [],
-        "cannot": []
+        "must": [
+            {
+                "name": "Include Copyright & License",
+                "cn_name": "包含版权和许可"
+            },
+            {
+                "name": "State Changes",
+                "cn_name": "列明修改"
+            }
+        ],
+        "can": [
+            {
+                "name": "Commercial Use",
+                "cn_name": "商业用途"
+            },
+            {
+                "name": "Distribute",
+                "cn_name": "分发"
+            },
+            {
+                "name": "Modify",
+                "cn_name": "修改"
+            },
+            {
+                "name": "Private Use",
+                "cn_name": "私下使用"
+            }
+        ],
+        "cannot": [
+            {
+                "name": "Hold Liable / Place Warranty",
+                "cn_name": "质量保证"
+            },
+            {
+                "name": "Use Trademark",
+                "cn_name": "商标使用"
+            }
+        ]
     },
     {
         "spdx_name": "COIL-0.3",
@@ -6516,9 +6616,40 @@
             "Copyfree Open Innovation License",
             "COIL-1.0"
         ],
-        "must": [],
-        "can": [],
-        "cannot": []
+        "must": [
+            {
+                "name": "Include Copyright & License",
+                "cn_name": "包含版权和许可"
+            }
+        ],
+        "can": [
+            {
+                "name": "Commercial Use",
+                "cn_name": "商业用途"
+            },
+            {
+                "name": "Distribute",
+                "cn_name": "分发"
+            },
+            {
+                "name": "Modify",
+                "cn_name": "修改"
+            },
+            {
+                "name": "Patent Use",
+                "cn_name": "专利使用"
+            },
+            {
+                "name": "Private Use",
+                "cn_name": "私下使用"
+            }
+        ],
+        "cannot": [
+            {
+                "name": "Hold Liable / Place Warranty",
+                "cn_name": "质量保证"
+            }
+        ]
     },
     {
         "spdx_name": "Community-Spec-1.0",
@@ -6526,9 +6657,44 @@
             "Community Specification License 1.0",
             "Community-Spec-1.0"
         ],
-        "must": [],
-        "can": [],
-        "cannot": []
+        "must": [
+            {
+                "name": "Include Copyright & License",
+                "cn_name": "包含版权和许可"
+            }
+        ],
+        "can": [
+            {
+                "name": "Commercial Use",
+                "cn_name": "商业用途"
+            },
+            {
+                "name": "Distribute",
+                "cn_name": "分发"
+            },
+            {
+                "name": "Modify",
+                "cn_name": "修改"
+            },
+            {
+                "name": "Patent Use",
+                "cn_name": "专利使用"
+            },
+            {
+                "name": "Private Use",
+                "cn_name": "私下使用"
+            }
+        ],
+        "cannot": [
+            {
+                "name": "Hold Liable / Place Warranty",
+                "cn_name": "质量保证"
+            },
+            {
+                "name": "Use Trademark",
+                "cn_name": "商标使用"
+            }
+        ]
     },
     {
         "spdx_name": "Condor-1.1",
