@@ -9033,31 +9033,31 @@
         "homepage": "http://www.isdn4linux.de",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://metacpan.org/release/Capture-Tiny",
-        "name": null,
+        "name": "David Golden <dagolden@cpan.org>",
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://metacpan.org/release/Carp-Clan",
-        "name": null,
+        "name": "Karen Etheridge <ether@cpan.org>",
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://www.gnu.org/software/ccrtp/",
-        "name": null,
-        "is_organization": false,
-        "analyzed": false
+        "name": "Free Software Foundation, Inc.",
+        "is_organization": true,
+        "analyzed": true
     },
     {
         "homepage": "https://github.com/PJK/libcbor",
-        "name": null,
+        "name": "Pavel Kalvoda <me@pavelkalvoda.com>",
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://www.perljax.us/",
