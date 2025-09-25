@@ -9073,33 +9073,33 @@
     },
     {
         "homepage": "https://metacpan.org/release/CGI",
-        "name": null,
+        "name": "Lee Johnson <lee@payprop.com>",
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://metacpan.org/release/CGI-Session",
-        "name": null,
+        "name": "Mark Stosberg <markstos+bouncing@cpan.org>",
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "http://libcg.sourceforge.net/",
         "name": null,
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://metacpan.org/release/Class-Accessor",
-        "name": null,
+        "name": "Marty Pauley <kasei@cpan.org>",
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://metacpan.org/release/Class-C3",
-        "name": null,
+        "name": "Graham Knop <haarg@haarg.org>",
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://metacpan.org/release/Class-Data-Inheritable",
