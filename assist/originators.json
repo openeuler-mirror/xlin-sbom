@@ -9103,33 +9103,33 @@
     },
     {
         "homepage": "https://metacpan.org/release/Class-Data-Inheritable",
-        "name": null,
+        "name": "Ryan Sherer <rsherer@cpan.org>",
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://metacpan.org/release/Class-ErrorHandler",
-        "name": null,
+        "name": "MATSUNO Tokuhiro <tokuhirom+cpan@gmail.com>",
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://metacpan.org/release/Class-Factory-Util",
-        "name": null,
+        "name": "Dave Rolsky <autarch@urth.org>",
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://metacpan.org/release/Class-Inspector",
-        "name": null,
+        "name": "Graham Ollis <plicease@cpan.org>",
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://metacpan.org/release/Class-Load",
-        "name": null,
+        "name": "Karen Etheridge <ether@cpan.org>",
         "is_organization": false,
-        "analyzed": false
+        "analyzed": true
     },
     {
         "homepage": "https://metacpan.org/release/Class-MakeMethods",
