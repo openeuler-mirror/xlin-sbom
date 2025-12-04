@@ -22,6 +22,8 @@ suppliers_file_path = os.path.join(ASSIST_DIR, 'suppliers.json')
 supplier_list = read_data_from_json(suppliers_file_path)
 RPM_SUPPLIERS = [
     supplier for supplier in supplier_list if supplier.get('type') == 'rpm']
+DEB_SUPPLIERS = [
+    supplier for supplier in supplier_list if supplier.get('type') == 'deb']
 
 
 def get_suppliers(

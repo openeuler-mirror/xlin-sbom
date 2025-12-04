@@ -14,18 +14,25 @@
 
 from helper import ASSIST_DIR
 from helper.data_helper import read_data_from_json, save_data_to_json, remove_duplicates
-from helper.suppliers_helper import get_suppliers, RPM_SUPPLIERS
+from helper.suppliers_helper import get_suppliers, RPM_SUPPLIERS, DEB_SUPPLIERS
 from helper.originators_helper import extract_originator_name
 from helper.licenses_helper import rpm_licenses_scanner
 from typing import Any, Dict, List, Optional, Tuple, Union
+from bs4 import BeautifulSoup
+from urllib.parse import urljoin    
+import xml.etree.ElementTree as ET
+from tqdm import tqdm
+import gzip
+from io import BytesIO
+import requests
+import zstandard
 import os
 import logging
-import requests
 
 creators_file_path = os.path.join(ASSIST_DIR, 'creators.json')
 
 
-def repo_scanner(
+def rpm_repo_scanner(
     primary_xml_url: str,
     repo_url: str,
     created_time: str,
@@ -48,10 +55,10 @@ def repo_scanner(
     originators_file_path = os.path.join(ASSIST_DIR, 'originators.json')
     originators = read_data_from_json(originators_file_path)
 
-    xml_data = _fetch_and_extract_xml(primary_xml_url)
-    if xml_data:
+    metadata = _fetch_and_extract_metadata(primary_xml_url)
+    if metadata:
         packages, licenses, originators = _parse_primary_xml(
-            xml_data, originators, disable_tqdm)
+            metadata, originators, disable_tqdm)
 
     linx_sbom = {
         "packages_sbom": _add_header(packages, "packages", repo_url, created_time),
@@ -65,6 +72,47 @@ def repo_scanner(
     return linx_sbom
 
 
+def deb_repo_scanner(
+    sources_url_list: List[str],
+    repo_url: str,
+    created_time: str,
+    disable_tqdm: bool
+) -> Dict[str, Dict[str, Any]]:
+    """
+    扫描指定的 Sources 文件并生成软件包和许可证的 SBOM。
+
+    Args:
+        sources_url (str): Sources 文件的URL。
+        repo_url (str): 仓库的URL。
+        created_time (str): 创建时间的字符串。
+
+    Returns:
+        dict: 包含软件包和许可证的 SBOM 的字典。
+    """
+    packages = []
+    licenses = []
+    originators_file_path = os.path.join(ASSIST_DIR, 'originators.json')
+    originators = read_data_from_json(originators_file_path)
+
+    for sources_url in sources_url_list:
+        metadata = _fetch_and_extract_metadata(sources_url)
+        if metadata:
+            packages_, licenses_, originators = _parse_sources(
+                metadata, originators, disable_tqdm)
+            packages.extend(packages_)
+            licenses.extend(licenses_)
+    
+    linx_sbom = {
+        "packages_sbom": _add_header(packages, "packages", repo_url, created_time),
+        "licenses_sbom": _add_header(licenses, "licenses", repo_url, created_time),
+    }
+
+    # 保存更新后的发起者信息
+    save_data_to_json(originators, originators_file_path)
+    
+    return linx_sbom
+
+
 def find_primary_xml_in_repo(repo_url: str) -> Optional[str]:
     """
     在给定的仓库URL中查找 primary.xml.gz 文件的URL。
@@ -75,8 +123,6 @@ def find_primary_xml_in_repo(repo_url: str) -> Optional[str]:
     Returns:
         str or None: 如果找到 primary.xml.gz 文件，则返回其URL；否则返回 None。
     """
-
-    from bs4 import BeautifulSoup
 
     try:
         response = requests.get(repo_url)
@@ -101,6 +147,91 @@ def find_primary_xml_in_repo(repo_url: str) -> Optional[str]:
 
     except requests.exceptions.RequestException as e:
         logging.error(f"获取repodata时发生错误: {e}")
+        return None
+    
+
+def find_deb_sources_in_repo(repo_url: str) -> Optional[str]:
+    """
+    在给定的Debian仓库URL中查找Sources文件或其压缩包的URL。
+
+    Args:
+        repo_url (str): Debian更新源的URL，指向dists目录下的发行版目录，
+                        例如: "http://ftp.cn.debian.org/debian/dists/Debian11.11/"
+
+    Returns:
+        List[str] or None: 如果找到Sources文件，则返回包含其URL的列表；否则返回None。
+    """
+
+    try:
+        # 确保repo_url以斜杠结尾
+        if not repo_url.endswith('/'):
+            repo_url += '/'
+        
+        # Debian仓库的三个主要组件目录
+        components = ["contrib", "main", "non-free"]
+        sources_urls = []
+        
+        for component in components:
+            try:
+                # 构建组件目录的URL
+                component_url = urljoin(repo_url, f"{component}/")
+                
+                # 尝试访问组件目录
+                response = requests.get(component_url, timeout=10)
+                response.raise_for_status()
+                
+                # 如果组件目录存在，查找其中的source目录
+                soup = BeautifulSoup(response.text, "html.parser")
+                source_link = None
+                
+                for link in soup.find_all("a", href=True):
+                    href = link['href']
+                    # 查找source目录（可能以'source/'或'source/'开头）
+                    if 'source/' in href and href.rstrip('/').endswith('source'):
+                        source_link = urljoin(component_url, href)
+                        break
+                
+                if source_link:
+                    # 访问source目录，查找Sources文件
+                    source_response = requests.get(source_link, timeout=10)
+                    source_response.raise_for_status()
+                    source_soup = BeautifulSoup(source_response.text, "html.parser")
+                    
+                    # Sources文件可能的扩展名（按优先级排序）
+                    possible_extensions = ['.gz', '.bz2', '.xz']
+                    
+                    for ext in possible_extensions:
+                        sources_filename = f"Sources{ext}"
+                        
+                        for link in source_soup.find_all("a", href=True):
+                            href = link['href']
+                            # 检查是否匹配Sources文件（考虑可能的查询参数）
+                            if href.startswith(sources_filename) or f"/{sources_filename}" in href:
+                                sources_url = urljoin(source_link, href.split('?')[0])  # 去除查询参数
+                                sources_urls.append(sources_url)
+                                logging.info(f"在组件 {component} 中找到Sources文件: {sources_url}")
+                                break
+                        
+                        # 如果找到该扩展名的文件，跳出扩展名循环
+                        if any(sources_filename in url for url in sources_urls[-1:] if sources_urls):
+                            break
+            
+            except requests.exceptions.RequestException as e:
+                logging.debug(f"跳过组件 {component}: {e}")
+                continue
+        
+        # 检查是否找到了至少一个Sources文件
+        if sources_urls:
+            return sources_urls
+        else:
+            logging.error(f"在仓库 {repo_url} 中未找到任何Sources文件")
+            return None
+    
+    except requests.exceptions.RequestException as e:
+        logging.error(f"获取仓库目录时发生错误: {e}")
+        return None
+    except Exception as e:
+        logging.error(f"处理仓库时发生意外错误: {e}")
         return None
 
 
@@ -134,32 +265,15 @@ def _add_header(
     return sbom
 
 
-def _fetch_and_extract_xml(primary_xml_url: str) -> Optional[bytes]:
-    """
-    根据提供的 URL 下载并解压 XML 文件，支持 .gz 和 .zst 压缩格式。
-
-    Args:
-        primary_xml_url (str): 指向 XML 文件的 URL，应以 .gz 或 .zst 结尾表示压缩格式；
-                               其他后缀将被视为未压缩的 XML 文件（目前不支持）。
-
-    Returns:
-        bytes or None: 如果成功下载并解压，则返回解压后的 XML 内容作为字节串；
-                       否则返回 None，例如网络错误、无效压缩格式或解压失败。
-    """
-
-    import gzip
-    from io import BytesIO
-    import logging
-    import requests
-    import zstandard
+def _fetch_and_extract_metadata(metadata_url: str) -> Optional[bytes]:
 
     try:
-        response = requests.get(primary_xml_url)
+        response = requests.get(metadata_url)
         response.raise_for_status()
 
         content = response.content
 
-        if primary_xml_url.endswith('.gz'):
+        if metadata_url.endswith('.gz'):
             try:
                 with gzip.GzipFile(fileobj=BytesIO(content)) as f:
                     return f.read()
@@ -167,7 +281,7 @@ def _fetch_and_extract_xml(primary_xml_url: str) -> Optional[bytes]:
                 logging.error(f"解压gzip失败: {e}")
                 return None
 
-        elif primary_xml_url.endswith('.zst'):
+        elif metadata_url.endswith('.zst'):
             try:
                 # 流式解压
                 dctx = zstandard.ZstdDecompressor()
@@ -184,7 +298,7 @@ def _fetch_and_extract_xml(primary_xml_url: str) -> Optional[bytes]:
                 return None
 
         else:
-            logging.error(f"不支持的格式: {primary_xml_url}")
+            logging.error(f"不支持的格式: {metadata_url}")
             return None
 
     except requests.exceptions.RequestException as e:
@@ -211,9 +325,6 @@ def _parse_primary_xml(
             - licenses (list): 许可证信息列表。
             - originators (list): 更新后的发起者信息列表。
     """
-
-    import xml.etree.ElementTree as ET
-    from tqdm import tqdm
 
     tree = ET.ElementTree(ET.fromstring(xml_data))
     root = tree.getroot()
@@ -276,3 +387,109 @@ def _parse_primary_xml(
 
     licenses = remove_duplicates(licenses)
     return packages, licenses, originators
+
+
+def _parse_sources(
+    sources_data: bytes,
+    originators: List[Dict[str, Any]],
+    disable_tqdm: bool = False
+) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]], List[Dict[str, Any]]]:
+    
+    # 将bytes转换为字符串
+    text_data = sources_data.decode('utf-8')
+    
+    packages = []
+    
+    # 按空行分割不同的包信息
+    package_blocks = text_data.strip().split('\n\n')
+    
+    for block in tqdm(package_blocks, disable=disable_tqdm):
+        try:
+            package_info = {}
+            
+            # 解析块中的字段
+            lines = block.split('\n')
+            current_field = None
+            field_data = {}
+            
+            for line in lines:
+                # 检查是否是字段开始（不以空格开头）
+                if line and not line.startswith(' '):
+                    # 处理多行字段的累积
+                    if current_field and current_field in field_data:
+                        if isinstance(field_data[current_field], list):
+                            field_data[current_field] = '\n'.join(field_data[current_field])
+                    
+                    # 解析新字段
+                    if ':' in line:
+                        field_name, field_value = line.split(':', 1)
+                        field_name = field_name.strip()
+                        field_value = field_value.strip()
+                        
+                        # 对于多行字段，初始化为列表
+                        if field_name in ['Files', 'Checksums-Sha256', 'Package-List']:
+                            field_data[field_name] = [field_value] if field_value else []
+                        else:
+                            field_data[field_name] = field_value
+                        
+                        current_field = field_name
+                elif current_field and line.strip():
+                    # 多行字段的延续
+                    if current_field in field_data and isinstance(field_data[current_field], list):
+                        field_data[current_field].append(line.strip())
+            
+            # 处理最后一个字段
+            if current_field and current_field in field_data:
+                if isinstance(field_data[current_field], list):
+                    field_data[current_field] = '\n'.join(field_data[current_field])
+            
+            # 提取所需信息
+            name = field_data.get('Package', '')
+            version = field_data.get('Version', '')
+            homepage = field_data.get('Homepage', '')
+            
+            # 使用与primary.xml相同的逻辑处理originator
+            originator_name, is_organization, originators = extract_originator_name(
+                homepage, originators
+            )
+            
+            # 获取suppliers，使用DEB_SUPPLIERS
+            suppliers = get_suppliers(
+                "debian", homepage, originator_name, DEB_SUPPLIERS
+            )
+            
+            # 提取orig.tar包的SHA256哈希值
+            checksum_value = ''
+            if 'Checksums-Sha256' in field_data:
+                checksum_lines = field_data['Checksums-Sha256'].split('\n')
+                for line in checksum_lines:
+                    parts = line.strip().split()
+                    if len(parts) >= 3 and '.orig.tar.' in parts[2]:
+                        checksum_value = parts[0]
+                        break
+            
+            # 构建package_info字典
+            package_info = {
+                "id": f"Package-{name}-{checksum_value[:12] if checksum_value else 'unknown'}",
+                "name": name,
+                "version": version,
+                "architecture": "source",
+                "package_type": "source",
+                "depends": [],
+                "licenses": [],
+                "suppliers": suppliers,
+                "description": "",
+                "checksum": {
+                    "value": checksum_value,
+                    "algorithm": "Sha256",
+                }
+            }
+            
+            packages.append(package_info)
+            
+        except Exception as e:
+            logging.error(f"解析包 {field_data.get('Package', 'unknown')} 时发生错误: {e}")
+            continue
+    
+    # 返回结果，licenses始终为空列表
+    return packages, [], originators
