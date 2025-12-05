@@ -27,7 +27,7 @@ from helper import PARENT_DIR, LOG_DIR
 from helper.data_helper import save_data_to_json, read_data_from_json
 from helper.iso_helper import rpm_packages_scanner
 from helper.package_helper import package_scanner
-from helper.repo_helper import repo_scanner, find_primary_xml_in_repo
+from helper.repo_helper import rpm_repo_scanner, deb_repo_scanner, find_primary_xml_in_repo, find_deb_sources_in_repo
 from helper.spdx_sbom_helper import convert_to_spdx
 
 
@@ -84,11 +84,12 @@ def setup_logging(formatted_utc_time):
     os.makedirs(LOG_DIR, exist_ok=True)
 
     # 获取所有日志文件
-    log_files = [f for f in os.listdir(LOG_DIR) if f.startswith('log_') and f.endswith('.log')]
-    
+    log_files = [f for f in os.listdir(
+        LOG_DIR) if f.startswith('log_') and f.endswith('.log')]
+
     # 按创建时间排序（旧文件在前）
     log_files.sort(key=lambda x: os.path.getctime(os.path.join(LOG_DIR, x)))
-    
+
     # 删除超出的旧日志文件
     max_log_files = 200
     if len(log_files) + 1 > max_log_files:
@@ -101,7 +102,7 @@ def setup_logging(formatted_utc_time):
             except Exception as e:
                 logging.error(f"删除 {file_to_delete} 时失败: {str(e)}")
 
-    # 创建新日志文件           
+    # 创建新日志文件
     log_file = os.path.join(LOG_DIR, f'log_{formatted_utc_time}.log')
 
     # 创建日志记录器
@@ -142,7 +143,8 @@ def mount_iso(iso_path, mnt_dir):
     """
     try:
         # 首先尝试使用fuseiso（无需sudo）
-        subprocess.run(["fuseiso", iso_path, mnt_dir], check=True, stderr=subprocess.DEVNULL)
+        subprocess.run(["fuseiso", iso_path, mnt_dir],
+                       check=True, stderr=subprocess.DEVNULL)
     except (subprocess.CalledProcessError, FileNotFoundError):
         try:
             # 回退到mount命令
@@ -169,7 +171,8 @@ def umount_iso(mnt_dir):
     """
     try:
         # 首先尝试使用fusermount（无需sudo）
-        subprocess.run(["fusermount", "-u", mnt_dir], check=True, stderr=subprocess.DEVNULL)
+        subprocess.run(["fusermount", "-u", mnt_dir],
+                       check=True, stderr=subprocess.DEVNULL)
     except (subprocess.CalledProcessError, FileNotFoundError):
         try:
             # 回退到umount命令
@@ -437,12 +440,16 @@ def main():
         # 查找 primary.xml.gz 文件
         repo_url = args.repo.rstrip('/') + '/'
         primary_xml_url = find_primary_xml_in_repo(repo_url)
-        if not primary_xml_url:
+        sources_file_url = find_deb_sources_in_repo(repo_url)
+        if primary_xml_url:
+            linx_sbom = rpm_repo_scanner(
+                primary_xml_url, repo_url, spdx_utc_time, args.disable_tqdm)
+        elif sources_file_url:
+            linx_sbom = deb_repo_scanner(
+                sources_file_url, repo_url, spdx_utc_time, args.disable_tqdm)
+        else:
             logging.error(f"未侦测到有效的更新源地址")
             sys.exit(1)
-
-        linx_sbom = repo_scanner(
-            primary_xml_url, repo_url, spdx_utc_time, args.disable_tqdm)
 
     # 保存SBOM
     save_sbom(linx_sbom, package_type, filename,

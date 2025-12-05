@@ -22,5 +22,11 @@
         "name": "Linx Software, Inc.",
         "url": "https://www.linx-info.com/",
         "type":"rpm"
+    },
+    {
+        "keywords": ["debian"],
+        "name": "Debian",
+        "url": "http://ftp.cn.debian.org/debian/",
+        "type":"deb"
     }
 ]
