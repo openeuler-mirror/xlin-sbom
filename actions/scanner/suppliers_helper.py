@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from helper import ASSIST_DIR
-from helper.data_helper import read_data_from_json
-from typing import Any, Dict, List, Optional, Union
+from actions import ASSIST_DIR
+from actions.data_helper import read_data_from_json
+from typing import Any, Dict, List, Optional
 import os
 
 
@@ -74,7 +74,6 @@ def get_suppliers(
         _add_supplier(supplier_name, supplier_link)
     if homepage:
         _add_supplier(originator_name, homepage)
-
 
     # 返回供应商列表和软件包类型
     return suppliers

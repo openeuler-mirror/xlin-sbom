@@ -12,14 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from helper import ASSIST_DIR
-from helper.relationships_helper import get_rpm_relationships
-from helper.data_helper import save_data_to_json, read_data_from_json,remove_duplicates
-from helper.package_helper import process_rpm_package
+from actions import ASSIST_DIR
+from actions.scanner.relationships_helper import get_rpm_relationships
+from actions.data_helper import (
+    save_data_to_json,
+    read_data_from_json,
+    remove_duplicates
+)
+from actions.scanner.package_helper import process_rpm_package
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import os
 import logging
-from typing import Any, Dict, List, Tuple, Optional, Union
+from typing import Any, Dict, List, Optional
 
 
 creators_file_path = os.path.join(ASSIST_DIR, 'creators.json')

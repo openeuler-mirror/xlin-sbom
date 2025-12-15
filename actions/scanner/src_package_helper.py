@@ -19,10 +19,13 @@ import rpmfile
 import hashlib
 import io
 import logging
-from typing import Dict, Any, Tuple, List, Callable, Optional, Union
-from helper.suppliers_helper import get_suppliers, RPM_SUPPLIERS
-from helper.originators_helper import extract_originator_name
-from helper.licenses_helper import rpm_licenses_scanner
+from typing import Dict, Any, Tuple, List, Callable
+from actions.scanner.suppliers_helper import (
+    get_suppliers,
+    RPM_SUPPLIERS
+)
+from actions.scanner.originators_helper import extract_originator_name
+from actions.licenses_helper import rpm_licenses_scanner
 
 
 def process_src_package(pkg_path: str, originators: Dict[str, Any]) -> Tuple[Dict[str, Any], List[Dict[str, Any]], Dict[str, Any]]:

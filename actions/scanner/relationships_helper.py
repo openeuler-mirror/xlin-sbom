@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any
 
 
 def get_file_relationships(

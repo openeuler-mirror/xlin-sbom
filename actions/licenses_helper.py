@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from helper import ASSIST_DIR
-from helper.data_helper import read_data_from_json
-from typing import List, Dict, Optional, Any
+from actions import ASSIST_DIR
+from actions.data_helper import read_data_from_json
+from typing import List, Dict
 import os
 import re
 import hashlib

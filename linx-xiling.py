@@ -23,12 +23,23 @@ import argparse
 import subprocess
 import shlex
 from typing import List
-from helper import PARENT_DIR, LOG_DIR
-from helper.data_helper import save_data_to_json, read_data_from_json
-from helper.iso_helper import rpm_packages_scanner
-from helper.package_helper import package_scanner
-from helper.repo_helper import rpm_repo_scanner, deb_repo_scanner, find_primary_xml_in_repo, find_deb_sources_in_repo
-from helper.spdx_sbom_helper import convert_to_spdx
+from actions import (
+    PARENT_DIR,
+    LOG_DIR
+)
+from actions.data_helper import (
+    save_data_to_json,
+    read_data_from_json
+)
+from actions.scanner.iso_helper import rpm_packages_scanner
+from actions.scanner.package_helper import package_scanner
+from actions.scanner.repo_helper import (
+    rpm_repo_scanner,
+    deb_repo_scanner,
+    find_primary_xml_in_repo,
+    find_deb_sources_in_repo
+)
+from actions.scanner.spdx_sbom_helper import convert_to_spdx
 
 
 def parse_arguments():
