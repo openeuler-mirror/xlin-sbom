@@ -21,9 +21,12 @@ import hashlib
 from tqdm import tqdm
 from multiprocessing import Pool
 from fnmatch import fnmatch
-from typing import Any, Dict, List, Tuple, Optional, Union
-from helper.data_helper import calculate_md5, remove_duplicates
-from helper.licenses_helper import rpm_licenses_scanner
+from typing import Any, Dict, List, Tuple, Optional
+from actions.data_helper import (
+    calculate_md5,
+    remove_duplicates
+)
+from actions.licenses_helper import rpm_licenses_scanner
 
 
 def _extract_src_rpm(src_rpm_path: str) -> str:

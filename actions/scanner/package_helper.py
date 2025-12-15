@@ -12,15 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from helper import ASSIST_DIR
-from helper.package_files_helper import rpm_files_scanner
-from helper.licenses_helper import rpm_licenses_scanner
-from helper.data_helper import calculate_sha1, save_data_to_json, read_data_from_json
-from helper.suppliers_helper import get_suppliers, RPM_SUPPLIERS
-from helper.originators_helper import extract_originator_name
-from helper.relationships_helper import get_file_relationships
-from helper.src_package_helper import process_src_package
-from helper.scancode_helper import scan_src_rpm
+from actions import ASSIST_DIR
+from actions.scanner.package_files_helper import rpm_files_scanner
+from actions.licenses_helper import rpm_licenses_scanner
+from actions.data_helper import calculate_sha1, save_data_to_json, read_data_from_json
+from actions.scanner.suppliers_helper import get_suppliers, RPM_SUPPLIERS
+from actions.scanner.originators_helper import extract_originator_name
+from actions.scanner.relationships_helper import get_file_relationships
+from actions.scanner.src_package_helper import process_src_package
+from actions.scanner.scancode_helper import scan_src_rpm
 import logging
 import rpmfile
 import os
