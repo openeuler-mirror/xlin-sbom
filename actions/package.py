@@ -13,20 +13,25 @@
 # See the Mulan PSL v2 for more details.
 
 class Package:
-    def __init__(self, name: str, version: str, release: str, arch: str, package_type: str, sha1: str):
-        self.id = f"Package-{name}-{sha1[:12]}"
+    def __init__(self, name: str, version: str, release: str, arch: str,
+                 package_type: str, checksum_algorithm: str, checksum_value: str):
+        self.id = f"Package-{name}-{checksum_value[:12]}"
         self.name = name
         self.version = version
         self.release = release
         self.arch = arch
         self.package_type = package_type
-        self.sha1 = sha1
+        self.checksum_algorithm = checksum_algorithm
+        self.checksum_value = checksum_value
         self.licenses = []
         self.category = "NOASSERTION"
         self.vulnerabilities = []
         self.files = []
         self.concluded_dependencies = []
         self.declared_dependencies = []
+        self.source = "NOASSERTION"
+        self.suppliers = []
+        self.description = "NOASSERTION"
 
     def set_category(self, category: str) -> None:
         self.category = category
@@ -58,3 +63,11 @@ class Package:
     def add_declared_dep(self, dependency: object) -> None:
         self.declared_dependencies.append(dependency)
 
+    def set_source(self, source: str) -> None:
+        self.source = source
+
+    def add_supplier(self, supplier: dict) -> None:
+        self.suppliers.append(supplier)
+
+    def set_description(self, description: str) -> None:
+        self.description = description
