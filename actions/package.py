@@ -71,3 +71,24 @@ class Package:
 
     def set_description(self, description: str) -> None:
         self.description = description
+
+    def get_json(self) -> dict:
+        full_version = f"{self.version}-{self.release}" if self.release else self.version
+        depends = [
+            dep.name for dep in self.declared_dependencies] if self.declared_dependencies else self.concluded_dependencies
+        return {
+            "id": self.id,
+            "name": self.name,
+            "version": full_version,
+            "architecture": self.arch,
+            "package_type": self.package_type,
+            "depends": depends,
+            "source": self.source,
+            "licenses": self.licenses,
+            "suppliers": self.suppliers,
+            "description": self.description,
+            "checksum": {
+                "value": self.checksum_value,
+                "algorithm": self.checksum_algorithm
+            }
+        }

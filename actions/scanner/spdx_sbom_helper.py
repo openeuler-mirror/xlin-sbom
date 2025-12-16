@@ -14,6 +14,7 @@
 
 from actions.data_helper import read_data_from_json
 from typing import Any, Dict
+from actions import ASSIST_DIR
 import os
 
 
@@ -41,10 +42,7 @@ def convert_to_spdx(
     spdx_relationships = []
     spdx_licenses = []
 
-    parent_dir = os.path.abspath(os.path.join(
-        os.path.dirname(__file__), os.pardir))
-    assist_dir = os.path.join(parent_dir, 'assist')
-    creators_file_path = os.path.join(assist_dir, 'creators.json')
+    creators_file_path = os.path.join(ASSIST_DIR, 'creators.json')
 
     def replace_none_value(str):
         if str == None or str == "":

@@ -60,9 +60,11 @@ def rpm_repo_scanner(
     if metadata:
         packages, licenses, originators = _parse_primary_xml(
             metadata, originators, disable_tqdm)
+    
+    packages_sbom = [package.get_json() for package in packages]
 
     linx_sbom = {
-        "packages_sbom": _add_header(packages, "packages", repo_url, created_time),
+        "packages_sbom": _add_header(packages_sbom, "packages", repo_url, created_time),
         "licenses_sbom": _add_header(licenses, "licenses", repo_url, created_time),
     }
 
@@ -102,9 +104,11 @@ def deb_repo_scanner(
                 metadata, originators, disable_tqdm)
             packages.extend(packages_)
             licenses.extend(licenses_)
+    
+    packages_sbom = [pakcage.get_json() for pakcage in packages]
 
     linx_sbom = {
-        "packages_sbom": _add_header(packages, "packages", repo_url, created_time),
+        "packages_sbom": _add_header(packages_sbom, "packages", repo_url, created_time),
         "licenses_sbom": _add_header(licenses, "licenses", repo_url, created_time),
     }
 
@@ -377,7 +381,6 @@ def _parse_primary_xml(
                 "ns0:format/rpm:license", namespaces=namespaces))
             for license in licenses_:
                 package.add_license(license.get("id"))
-                package.add_license(license)
             licenses.extend(licenses_)
 
             # 设置供应商信息
@@ -389,7 +392,7 @@ def _parse_primary_xml(
                 "ns0:description", namespaces=namespaces))
             
             # 获取依赖信息
-            for require in package.findall("ns0:format/rpm:requires/rpm:entry", namespaces):
+            for require in package_metadata.findall("ns0:format/rpm:requires/rpm:entry", namespaces):
                 package.add_concluded_dep(require.attrib.get("name", None))
 
             packages.append(package)
