@@ -393,7 +393,7 @@ def _parse_primary_xml(
             
             # 获取依赖信息
             for require in package_metadata.findall("ns0:format/rpm:requires/rpm:entry", namespaces):
-                package.add_concluded_dep(require.attrib.get("name", None))
+                package.add_declared_dep(require.attrib.get("name", None))
 
             packages.append(package)
 
