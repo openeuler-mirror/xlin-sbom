@@ -13,12 +13,12 @@
 # limitations under the License.
 
 from actions import ASSIST_DIR
+from actions.package import Package
 from actions.scanner.package_files_helper import rpm_files_scanner
 from actions.licenses_helper import rpm_licenses_scanner
 from actions.data_helper import calculate_sha1, save_data_to_json, read_data_from_json
 from actions.scanner.suppliers_helper import get_suppliers, RPM_SUPPLIERS
 from actions.scanner.originators_helper import extract_originator_name
-from actions.scanner.relationships_helper import get_file_relationships
 from actions.scanner.src_package_helper import process_src_package
 from actions.scanner.scancode_helper import scan_src_rpm
 import logging
@@ -47,26 +47,25 @@ def package_scanner(pkg_path, pkg_type, created_time, checksum_values, include, 
         dict: 包含处理后的软件包信息列表，包括 `packages_sbom`, `files_sbom`, `file_relationships_sbom`, `licenses_sbom`。
     """
 
-    packages = []
-    licenses = []
-    files = []
-    file_relationships = []
     originators_file_path = os.path.join(ASSIST_DIR, 'originators.json')
     originators = read_data_from_json(originators_file_path)
     pkg_name = os.path.basename(pkg_path)
 
     if pkg_type == "rpm":
-        package, licenses, files, file_relationships, originators, provides = process_rpm_package(
+        package, licenses, originators, provides = process_rpm_package(
             pkg_path, originators, checksum_values)
+
     elif pkg_type == "source":
         package, licenses, files, file_relationships, originators = process_source_package(
             pkg_path, originators, include, exclude, workers, disable_tqdm, brief_mode)
 
-    packages.append(package)
+    packages_sbom = [package.get_json()]
+    file_relationships_sbom = package.get_file_relationships()
+
     linx_sbom = {
-        "packages_sbom": _add_header(packages, "packages", pkg_name, created_time),
-        "files_sbom": _add_header(files, "files", pkg_name, created_time),
-        "file_relationships_sbom": _add_header(file_relationships, "file_relationships", pkg_name, created_time),
+        "packages_sbom": _add_header(packages_sbom, "packages", pkg_name, created_time),
+        "files_sbom": _add_header(package.files, "files", pkg_name, created_time),
+        "file_relationships_sbom": _add_header(file_relationships_sbom, "file_relationships", pkg_name, created_time),
         "licenses_sbom": _add_header(licenses, "licenses", pkg_name, created_time),
     }
 
@@ -78,24 +77,6 @@ def package_scanner(pkg_path, pkg_type, created_time, checksum_values, include, 
 
 
 def process_rpm_package(pkg_path, originators, checksum_values):
-    """
-    处理单个 RPM 包，提取相关信息并生成相应的数据结构。
-
-    Args:
-        pkg_path (str): RPM 包的完整路径。
-        originators (dict): 发起者信息字典。
-        checksum_values (list): 校验值列表，用于增量更新。
-
-    Returns:
-        tuple: 包含以下元素的元组：
-            - package_info (dict): 软件包信息。
-            - licenses (list): 许可证列表。
-            - files (list): 文件列表。
-            - file_relationships (list): 文件关系列表。
-            - originators (dict): 更新后的发起者信息字典。
-            - provides (dict): 提供的文件列表及其关系。
-        None: 如果校验失败或发生异常，则返回 None。
-    """
 
     with open(pkg_path, 'rb') as f:
         package_sha1 = calculate_sha1(f)
@@ -106,7 +87,6 @@ def process_rpm_package(pkg_path, originators, checksum_values):
             name = _safe_decode(rpm.headers.get('name'))
             version = _safe_decode(rpm.headers.get('version'))
             release = _safe_decode(rpm.headers.get('release'))
-            full_version = f"{version}-{release}"
             homepage = _safe_decode(rpm.headers.get('url'))
             architecture = _safe_decode(rpm.headers.get('arch'))
             src_rpm = _safe_decode(rpm.headers.get('sourcerpm'))
@@ -118,35 +98,42 @@ def process_rpm_package(pkg_path, originators, checksum_values):
             suppliers = get_suppliers(
                 release, homepage, originator_name, RPM_SUPPLIERS)
 
-            id_md5 = _safe_decode(rpm.headers.get('md5'))[:12]
+            # 创建Package对象
+            package = Package(name, version, release,
+                              architecture, "rpm", "SHA1", package_sha1)
+
+            # 设置源码包名
+            package.set_source(src_rpm)
+
+            # 获取许可证信息
             licenses = rpm_licenses_scanner(
                 _safe_decode(rpm.headers.get('copyright')))
-            license_id_list = [license.get("id") for license in licenses]
+            for license in licenses:
+                package.add_license(license.get("id"))
+
+            # 设置供应商信息
+            for supplier in suppliers:
+                package.add_supplier(supplier)
+
+            # 设置描述信息
+            package.set_description(_safe_decode(
+                rpm.headers.get('description')))
+
+            # 获取依赖信息
+            for dep in rpm.headers.get('requirename'):
+                package.add_declared_dep(_safe_decode(dep))
+
+            # 获取文件信息
             files = rpm_files_scanner(pkg_path)
-            package_info = {
-                "id": f"Package-{name}-{id_md5}",
-                "name": name,
-                "version": full_version,
-                "architecture": architecture,
-                "package_type": "rpm",
-                "depends": list(set(_safe_decode(dep) for dep in rpm.headers.get('requirename'))),
-                "sourcerpm": src_rpm,
-                "licenses": license_id_list,
-                "suppliers": suppliers,
-                "description": _safe_decode(rpm.headers.get('description')),
-                "checksum": {
-                    "value": package_sha1,
-                    "algorithm": "SHA1"
-                }
-            }
-            file_relationships = get_file_relationships(
-                files, package_info["id"])
+            for file in files:
+                package.add_file(file)
+
             provides = {
-                "id": package_info.get('id'),
+                "id": package.id,
                 "provides": list(set(_safe_decode(file) for file in rpm.headers.get('provides'))),
             }
 
-        return package_info, licenses, files, file_relationships, originators, provides
+        return package, licenses, originators, provides
 
     except Exception as e:
         logging.error(f'跳过 {pkg_path} 由于读取错误: {e}')

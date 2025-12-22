@@ -16,30 +16,6 @@
 from typing import List, Dict, Any
 
 
-def get_file_relationships(
-    file_list: List[Dict[str, Any]],
-    package_id: str
-) -> List[Dict[str, Any]]:
-    """
-    生成文件与包之间的关系列表。
-
-    Args:
-        file_list (list): 包含文件信息的列表，每个元素是一个字典，包含 "id" 键。
-        package_id (str): 包的唯一标识符。
-
-    Returns:
-        list: 包含文件与包之间关系的列表，每个元素是一个字典，包含 "id"、"related_element" 和 "relationship_type" 键。
-    """
-    relationships = []
-    for file in file_list:
-        relationships.append({
-            "id": package_id,
-            "related_element": file['id'],
-            "relationship_type": "CONTAINS"
-        })
-    return relationships
-
-
 def get_rpm_relationships(
     packages: List[Dict[str, Any]],
     provides_relationships: List[Dict[str, Any]],

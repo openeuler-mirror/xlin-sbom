@@ -57,11 +57,11 @@ class Package:
     def add_files(self, files: list) -> None:
         self.files.extend(files)
 
-    def add_concluded_dep(self, dependency: str) -> None:
-        self.concluded_dependencies.append(dependency)
-
-    def add_declared_dep(self, dependency: object) -> None:
+    def add_declared_dep(self, dependency: str) -> None:
         self.declared_dependencies.append(dependency)
+
+    def add_concluded_dep(self, dependency: object) -> None:
+        self.concluded_dependencies.append(dependency)
 
     def set_source(self, source: str) -> None:
         self.source = source
@@ -71,11 +71,21 @@ class Package:
 
     def set_description(self, description: str) -> None:
         self.description = description
+    
+    def get_file_relationships(self) -> list:
+        relationships = []
+        for file in self.files:
+            relationships.append({
+                "id": self.id,
+                "related_element": file['id'],
+                "relationship_type": "CONTAINS"
+            })
+        return relationships
 
     def get_json(self) -> dict:
         full_version = f"{self.version}-{self.release}" if self.release else self.version
         depends = [
-            dep.name for dep in self.declared_dependencies] if self.declared_dependencies else self.concluded_dependencies
+            dep.name for dep in self.concluded_dependencies] if self.concluded_dependencies else self.declared_dependencies
         return {
             "id": self.id,
             "name": self.name,
