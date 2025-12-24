@@ -20,6 +20,7 @@ import hashlib
 import io
 import logging
 from typing import Dict, Any, Tuple, List, Callable
+from actions.package import Package
 from actions.scanner.suppliers_helper import (
     get_suppliers,
     RPM_SUPPLIERS
@@ -246,22 +247,7 @@ def _process_spec(
     spec_content: str,
     md5_value: str,
     originators: Dict[str, Any]
-) -> Tuple[Dict[str, Any], List[Dict[str, Any]], Dict[str, Any]]:
-    """
-    处理RPM源码包的spec文件内容，并返回源码包的详细信息。
-
-    Args:
-        spec_content (str): spec文件的内容，以字符串形式表示。
-        md5_value (str): 源码包的MD5校验和，以十六进制字符串形式表示。
-        originators (Dict[str, Any]): 包含来源者信息的字典，用于在后续处理中提取和更新来源者信息。
-
-    Returns:
-        Tuple[Dict[str, Any], List[Dict[str, Any]], Dict[str, Any]]: 返回一个包含三个元素的元组：
-            - 第一个元素为字典，包含源码包的详细信息，如包名、版本、依赖、许可证、供应商等。
-            - 第二个元素为列表，包含解析后的许可证信息。
-            - 第三个元素为字典，更新后的来源者信息。
-    """
-
+):
     def _process_requires(requires: List[str]) -> List[str]:
         operators = {'>=', '<=', '>', '<', '=', '!=', '~>'}  # 定义可能的操作符集合
         processed_requires = []
@@ -301,26 +287,28 @@ def _process_spec(
         homepage, originators)
     suppliers = get_suppliers(
         release, homepage, originator_name, RPM_SUPPLIERS)
+
+    # 创建Package对象
+    package = Package(name, version, release,
+                      "source", "source", "MD5", md5_value)
+
+    # 获取许可证信息
     licenses = rpm_licenses_scanner(spec_data.get('license', ''))
-    license_id_list = [license.get("id") for license in licenses]
+    for license in licenses:
+        package.add_license(license.get("id"))
 
-    package_info = {
-        "id": f"Package-{name}-{md5_value[:12]}",
-        "name": name,
-        "version": f"{version}-{release}",
-        "architecture": spec_data.get('architecture', 'source'),
-        "package_type": "generic",
-        "depends": requires,
-        "licenses": license_id_list,
-        "suppliers": suppliers,
-        "description": spec_data.get('description', ''),
-        "checksum": {
-            "value": md5_value,
-            "algorithm": "MD5"
-        }
-    }
+    # 设置供应商信息
+    for supplier in suppliers:
+        package.add_supplier(supplier)
 
-    return package_info, licenses, originators
+    # 设置描述信息
+    package.set_description(spec_data.get('description', ''))
+
+    # 获取依赖信息
+    for dep in requires:
+        package.add_declared_dep(dep)
+
+    return package, licenses, originators
 
 
 def _parse_spec_content(spec_content: str) -> Dict[str, Any]:
