@@ -56,7 +56,7 @@ def package_scanner(pkg_path, pkg_type, created_time, checksum_values, include, 
             pkg_path, originators, checksum_values)
 
     elif pkg_type == "source":
-        package, licenses, files, file_relationships, originators = process_source_package(
+        package, licenses, originators = process_source_package(
             pkg_path, originators, include, exclude, workers, disable_tqdm, brief_mode)
 
     packages_sbom = [package.get_json()]
@@ -141,28 +141,7 @@ def process_rpm_package(pkg_path, originators, checksum_values):
 
 
 def process_source_package(pkg_path, originators, include, exclude, workers, disable_tqdm, brief_mode):
-    """
-    处理源码包，提取相关信息并生成相应的数据结构。
-
-    Args:
-        pkg_path (str): 源码包的完整路径。
-        originators (dict): 发起者信息字典。
-        include (list): 包含的文件模式列表。
-        exclude (list): 排除的文件模式列表。
-        workers (int): 并行处理的工作线程数。
-        disable_tqdm (bool): 是否禁用进度条显示。
-        brief_mode (bool): 是否启用简要模式，若为 True 则跳过文件扫描。
-
-    Returns:
-        tuple: 包含以下元素的元组：
-            - package_info (dict): 软件包信息。
-            - licenses (list): 许可证列表。
-            - files (list): 文件列表。
-            - file_relationships (list): 文件关系列表。
-            - originators (dict): 更新后的发起者信息字典。
-    """
-
-    package_info, licenses, originators = process_src_package(
+    package, licenses, originators = process_src_package(
         pkg_path, originators)
     files = []
     file_relationships = []
@@ -170,9 +149,9 @@ def process_source_package(pkg_path, originators, include, exclude, workers, dis
         files, file_licenses = scan_src_rpm(
             pkg_path, include, exclude, workers, disable_tqdm)
         licenses.extend(file_licenses)
-        file_relationships = get_file_relationships(
-            files, package_info["id"])
-    return package_info, licenses, files, file_relationships, originators
+        for file in files:
+            package.add_file(file)
+    return package, licenses, originators
 
 
 def _safe_decode(value):
