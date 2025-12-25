@@ -99,11 +99,11 @@ def rpm_packages_scanner(
         for future in as_completed(futures):
             if not future.result():
                 continue
-            package_info, package_licenses, package_files, package_file_relationships, updated_originators, provides = future.result()
-            if package_info:
-                packages.append(package_info)
-                files.extend(package_files)
-                file_relationships.extend(package_file_relationships)
+            package, package_licenses, updated_originators, provides = future.result()
+            if package:
+                packages.append(package)
+                files.extend(package.files)
+                file_relationships.extend(package.get_file_relationships())
                 licenses.extend(package_licenses)
                 originators = updated_originators
                 provides_relationships.append(provides)
@@ -120,14 +120,15 @@ def rpm_packages_scanner(
     licenses = remove_duplicates(licenses)
 
     # 对结果按软件包名称排序
-    packages.sort(key=lambda x: x.get("name", ""))
+    packages_sbom = [package.get_json() for package in packages]
+    packages_sbom.sort(key=lambda x: x.get("name", ""))
 
     # 处理组件依赖关系
     package_relationships = get_rpm_relationships(
-        packages, provides_relationships, disable_tqdm)
+        packages_sbom, provides_relationships, disable_tqdm)
 
     linx_sbom = {
-        "packages_sbom": _add_header(packages, "packages", iso_filename, os_arch, created_time),
+        "packages_sbom": _add_header(packages_sbom, "packages", iso_filename, os_arch, created_time),
         "files_sbom": _add_header(files, "files", iso_filename, os_arch, created_time),
         "file_relationships_sbom": _add_header(file_relationships, "file_relationships", iso_filename, os_arch, created_time),
         "licenses_sbom": _add_header(licenses, "licenses", iso_filename, os_arch, created_time),
