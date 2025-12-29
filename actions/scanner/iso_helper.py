@@ -13,20 +13,117 @@
 # limitations under the License.
 
 from actions import ASSIST_DIR
-from actions.scanner.relationships_helper import get_rpm_relationships
+from actions.scanner.relationships_helper import (
+    get_rpm_relationships,
+    get_deb_relationships
+)
 from actions.data_helper import (
     save_data_to_json,
     read_data_from_json,
     remove_duplicates
 )
-from actions.scanner.package_helper import process_rpm_package
+from actions.scanner.package_helper import (
+    process_rpm_package,
+    process_deb_package
+)
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import os
 import logging
 from typing import Any, Dict, List, Optional
-
+from tqdm import tqdm
 
 creators_file_path = os.path.join(ASSIST_DIR, 'creators.json')
+
+
+def deb_packages_scanner(mnt_dir, iso_filename, created_time, disable_tqdm, workers, checksum_values):
+    """
+    扫描并处理 DEB 包，生成软件物料清单（SBOM）。
+
+    Args:
+        mnt_dir (str): 挂载目录的路径。
+        iso_filename (str): ISO 文件的名称。
+        created_time (str): 创建时间的字符串。
+
+    Returns:
+        dict: 包含处理后的软件包信息的 SBOM 字典，包括软件包、文件、文件关系、许可证和组件依赖关系。
+    """
+
+    packages = []
+    files = []
+    file_relationships = []
+    licenses = []
+
+    # 定位必要的目录和文件
+    originators_file_path = os.path.join(ASSIST_DIR, 'originators.json')
+    originators = read_data_from_json(originators_file_path)
+    pool_path = os.path.join(mnt_dir, 'pool')
+
+    # 收集所有DEB文件的路径
+    deb_files = [os.path.join(root, f) for root, _, files in os.walk(
+        pool_path) for f in files if f.endswith('.deb')]
+
+    os_arch = _get_os_arch(mnt_dir)
+
+    # 并发处理DEB文件以提高效率
+    if workers is None:
+        logging.info("使用默认的线程数进行扫描")
+    else:
+        logging.info(f"使用 {workers} 个线程进行扫描")
+
+    with ThreadPoolExecutor(max_workers=workers) as executor:
+        futures = {
+            executor.submit(process_deb_package, full_path, originators, checksum_values): full_path
+            for full_path in deb_files
+        }
+
+        # 根据 disable_tqdm 决定是否使用 tqdm
+        progress_iter = (
+            tqdm(total=len(futures), desc="扫描 DEB 包",
+                 unit="包") if not disable_tqdm else None
+        )
+
+        for future in as_completed(futures):
+            if not future.result():
+                continue
+            package, package_licenses, updated_originators = future.result()
+            if package:
+                packages.append(package)
+                files.extend(package.files)
+                file_relationships.extend(package.get_file_relationships())
+                licenses.extend(package_licenses)
+                originators = updated_originators
+            if not disable_tqdm:
+                progress_iter.update(1)
+
+        if not disable_tqdm:
+            progress_iter.close()
+
+    # files去重
+    files = remove_duplicates(files)
+
+    # licenses去重
+    licenses = remove_duplicates(licenses)
+
+    # 对结果按软件包名称排序
+    packages_sbom = [package.get_json() for package in packages]
+    packages_sbom.sort(key=lambda x: x.get("name", ""))
+
+    # 处理组件依赖关系
+    package_relationships = get_deb_relationships(packages_sbom, disable_tqdm)
+
+    linx_sbom = {
+        "packages_sbom": _add_header(packages_sbom, "packages", iso_filename, os_arch, created_time),
+        "files_sbom": _add_header(files, "files", iso_filename, os_arch, created_time),
+        "file_relationships_sbom": _add_header(file_relationships, "file_relationships", iso_filename, os_arch, created_time),
+        "licenses_sbom": _add_header(licenses, "licenses", iso_filename, os_arch, created_time),
+        "package_relationships_sbom": _add_header(package_relationships, "package_relationships", iso_filename, os_arch, created_time),
+    }
+
+
+    # 保存更新后的发起者信息
+    save_data_to_json(originators, originators_file_path)
+
+    return linx_sbom
 
 
 def rpm_packages_scanner(
@@ -51,8 +148,6 @@ def rpm_packages_scanner(
     Returns:
         dict: 包含处理后的软件包信息的 SBOM 字典，包括软件包、文件、文件关系、许可证和组件依赖关系。
     """
-
-    from tqdm import tqdm
 
     packages = []
     files = []

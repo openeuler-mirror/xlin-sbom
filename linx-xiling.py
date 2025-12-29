@@ -31,7 +31,10 @@ from actions.data_helper import (
     save_data_to_json,
     read_data_from_json
 )
-from actions.scanner.iso_helper import rpm_packages_scanner
+from actions.scanner.iso_helper import (
+    rpm_packages_scanner,
+    deb_packages_scanner
+)
 from actions.scanner.package_helper import package_scanner
 from actions.scanner.repo_helper import (
     rpm_repo_scanner,
@@ -237,29 +240,35 @@ def load_category_dict(category_csv_path):
 
 def detect_package_system(mnt_dir):
     """
-    检测给定挂载目录中是否存在`.rpm`包。
+    检测给定挂载目录中是否存在`.deb`和`.rpm`包。
 
     Args:
         mnt_dir (str): 要检测的挂载目录路径。
 
     Returns:
-        rpm_found: 布尔值，表示是否找到`.rpm`包。
+        tuple: 一个包含两个布尔值的元组，第一个布尔值表示是否找到`.deb`包，
+               第二个布尔值表示是否找到`.rpm`包。
     """
 
+    deb_found = False
     rpm_found = False
 
     # 遍历挂载目录及其子目录
     for root, dirs, files in os.walk(mnt_dir):
         for file in files:
+            # 检查文件是否以`.deb`结尾
+            if file.endswith('.deb'):
+                deb_found = True
+                break
             # 检查文件是否以`.rpm`结尾
-            if file.endswith('.rpm'):
+            elif file.endswith('.rpm'):
                 rpm_found = True
                 break
         # 如果找到任何一种类型的包，则停止搜索
-        if rpm_found:
+        if deb_found or rpm_found:
             break
 
-    return rpm_found
+    return deb_found, rpm_found
 
 
 def save_sbom(linx_sbom, package_type, filename, utc_timestamp, spdx_timestamp, output_dir):
@@ -403,9 +412,14 @@ def main():
             iso_path = args.iso.replace(' ', '\\ ')
             mount_iso(iso_path, mnt_dir)
 
-            is_rpm = detect_package_system(mnt_dir)
+            is_deb,is_rpm = detect_package_system(mnt_dir)
             package_type = "unknown"
-            if is_rpm:
+            if is_deb:
+                package_type = "deb"
+                logging.info("侦测到DEB包系统")
+                linx_sbom = deb_packages_scanner(
+                    mnt_dir, filename, spdx_utc_time, args.disable_tqdm, args.max_workers, checksum_values)
+            elif is_rpm:
                 package_type = "rpm"
                 logging.info("侦测到RPM包系统")
                 linx_sbom = rpm_packages_scanner(
