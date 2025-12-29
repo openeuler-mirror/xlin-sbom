@@ -28,5 +28,11 @@
         "name": "Debian",
         "url": "http://ftp.cn.debian.org/debian/",
         "type":"deb"
+    },
+    {
+        "keywords": ["ubuntu"],
+        "name": "Ubuntu",
+        "url": "https://archive.ubuntu.com/ubuntu/",
+        "type":"deb"
     }
 ]

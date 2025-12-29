@@ -433,6 +433,9 @@ def main():
         if package_path.endswith(('.src.rpm', '.tar.gz', '.tgz', '.tar.bz2', '.tar.xz', '.tar', '.zip')):
             package_type = "source"
             logging.info("侦测到源码包")
+        elif package_path.endswith('.deb'):
+            package_type = "deb"
+            logging.info("侦测到DEB包")
         elif package_path.endswith('.rpm'):
             package_type = "rpm"
             logging.info("侦测到RPM包")

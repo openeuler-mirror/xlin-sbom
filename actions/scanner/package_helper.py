@@ -14,10 +14,24 @@
 
 from actions import ASSIST_DIR
 from actions.package import Package
-from actions.scanner.package_files_helper import rpm_files_scanner
-from actions.licenses_helper import rpm_licenses_scanner
-from actions.data_helper import calculate_sha1, save_data_to_json, read_data_from_json
-from actions.scanner.suppliers_helper import get_suppliers, RPM_SUPPLIERS
+from actions.scanner.package_files_helper import (
+    rpm_files_scanner,
+    deb_files_scanner
+)
+from actions.licenses_helper import (
+    rpm_licenses_scanner,
+    deb_licenses_scanner
+)
+from actions.data_helper import (
+    calculate_sha1,
+    save_data_to_json,
+    read_data_from_json
+)
+from actions.scanner.suppliers_helper import (
+    get_suppliers,
+    RPM_SUPPLIERS,
+    DEB_SUPPLIERS
+)
 from actions.scanner.originators_helper import extract_originator_name
 from actions.scanner.src_package_helper import process_src_package
 from actions.scanner.scancode_helper import scan_src_rpm
@@ -51,7 +65,10 @@ def package_scanner(pkg_path, pkg_type, created_time, checksum_values, include, 
     originators = read_data_from_json(originators_file_path)
     pkg_name = os.path.basename(pkg_path)
 
-    if pkg_type == "rpm":
+    if pkg_type == "deb":
+        package, licenses, originators = process_deb_package(
+            pkg_path, originators, checksum_values)
+    elif pkg_type == "rpm":
         package, licenses, originators, provides = process_rpm_package(
             pkg_path, originators, checksum_values)
 
@@ -74,6 +91,57 @@ def package_scanner(pkg_path, pkg_type, created_time, checksum_values, include, 
 
     # 返回处理后的软件包信息列表
     return linx_sbom
+
+
+def process_deb_package(pkg_path, originators, checksum_values):
+    with open(pkg_path, 'rb') as f:
+        package_sha1 = calculate_sha1(f)
+        if package_sha1 in checksum_values:
+            return None
+
+    try:
+        control_info = _get_deb_info(pkg_path)
+    except OSError as e:
+        logging.error(f'跳过 {pkg_path} 由于读取错误: {e}')
+        return None, originators
+
+    # 提取发起者名称、判断是否为组织及更新发起者列表
+    originator_name, is_organization, originators = extract_originator_name(
+        control_info.get("Homepage"), originators)
+
+    # 创建Package对象
+    name = control_info.get("Package")
+    version = control_info.get("Version")
+    architecture = control_info.get("Architecture")
+    package = Package(name, version, None,
+                        architecture, "deb", "SHA1", package_sha1)
+    
+    # 获取文件信息
+    deb, files = deb_files_scanner(pkg_path)
+    for file in files:
+        package.add_file(file)
+
+    # 获取许可证信息
+    licenses = deb_licenses_scanner(deb, files)
+    for license in licenses:
+        package.add_license(license.get("id"))
+
+    # 设置供应商信息
+    suppliers = get_suppliers(control_info.get('Maintainer', ''), control_info.get(
+        'Homepage', ''), originator_name, DEB_SUPPLIERS)
+    for supplier in suppliers:
+        package.add_supplier(supplier)
+
+    # 设置描述信息
+    package.set_description(control_info.get("Description"))
+
+    # 获取依赖信息
+    depends = _convert_to_list(control_info.get(
+        "Depends")) + _convert_to_list(control_info.get("Pre-Depends"))
+    for depend in depends:
+        package.add_declared_dep(depend)
+
+    return package, licenses, originators
 
 
 def process_rpm_package(pkg_path, originators, checksum_values):
@@ -152,6 +220,38 @@ def process_source_package(pkg_path, originators, include, exclude, workers, dis
         for file in files:
             package.add_file(file)
     return package, licenses, originators
+
+
+def _convert_to_list(dependencies_str):
+    """
+    将依赖项字符串转换为列表。
+
+    Args:
+        dependencies_str (str): 依赖项字符串，各依赖项之间用逗号分隔。
+
+    Returns:
+        list: 包含依赖项的列表。如果输入字符串为空，则返回空列表。
+    """
+
+    return [dependency.strip() for dependency in dependencies_str.split(",")] if dependencies_str else []
+
+
+def _get_deb_info(deb_package):
+    """
+    获取 DEB 包的控制信息。
+
+    Args:
+        deb_package (str): DEB 包的路径。
+
+    Returns:
+        dict: 包含 DEB 包控制信息的字典。
+    """
+
+    import debian.debfile
+
+    deb = debian.debfile.DebFile(deb_package)
+    control_info = deb.control.debcontrol()
+    return control_info
 
 
 def _safe_decode(value):
