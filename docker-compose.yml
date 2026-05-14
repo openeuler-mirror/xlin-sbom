@@ -1,0 +1,18 @@
+services:
+  linx-xiling:
+    image: linx-xiling:1.0.0
+    build: .
+    security_opt:
+      - seccomp:unconfined
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - .:/app/data
+      - ./output:/app/output
+    devices:
+      - /dev/fuse:/dev/fuse
+    cap_add:
+      - SYS_ADMIN
+
+    entrypoint: ["python3", "/app/linx-xiling.py"]
+    
