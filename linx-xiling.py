@@ -21,7 +21,6 @@ import csv
 import logging
 import argparse
 import subprocess
-import shlex
 from typing import List
 from actions import (
     PARENT_DIR,
@@ -163,8 +162,8 @@ def mount_iso(iso_path, mnt_dir):
         try:
             # 回退到mount命令
             logging.warning("fuseiso挂载失败，尝试使用mount")
-            mount_cmd = f"mount -o loop,ro {shlex.quote(iso_path)} {shlex.quote(mnt_dir)}"
-            subprocess.run(mount_cmd, shell=True, check=True)
+            subprocess.run(["mount", "-o", "loop,ro", iso_path, mnt_dir],
+                           check=True)
         except subprocess.CalledProcessError as e:
             raise RuntimeError(f"所有挂载方法均失败: {e}") from e
 
@@ -191,8 +190,7 @@ def umount_iso(mnt_dir):
         try:
             # 回退到umount命令
             logging.warning("fusermount卸载失败，尝试使用umount")
-            umount_cmd = f"umount {shlex.quote(mnt_dir)}"
-            subprocess.run(umount_cmd, shell=True, check=True)
+            subprocess.run(["umount", mnt_dir], check=True)
         except subprocess.CalledProcessError as e:
             raise RuntimeError(f"所有卸载方法均失败: {e}") from e
 
@@ -408,9 +406,7 @@ def main():
             logging.error(f"异常抛出: {e}")
 
         try:
-            # 将args.iso中的所有空格前添加转义字符"\"
-            iso_path = args.iso.replace(' ', '\\ ')
-            mount_iso(iso_path, mnt_dir)
+            mount_iso(args.iso, mnt_dir)
 
             is_deb,is_rpm = detect_package_system(mnt_dir)
             package_type = "unknown"
@@ -440,7 +436,7 @@ def main():
 
     # 处理软件包
     elif args.package is not None:
-        package_path = args.package.replace(' ', '\\ ')
+        package_path = args.package
         filename = os.path.splitext(os.path.basename(package_path))[0]
 
         package_type = "unknown"
