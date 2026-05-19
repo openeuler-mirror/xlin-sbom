@@ -1,90 +1,147 @@
-# XiLing SBOM Tool
-The XiLing SBOM Tool scans ISO images, a software package, or a repository URL to generate an SBOM (Software Bill of Materials) list.
+# XiLing SBOM Tool User Manual
+
+## Overview
+
+The XiLing SBOM Tool is designed to scan ISO images, software packages (`.rpm` / `.deb` / `.src.rpm`), or software repository URLs. It automatically generates Software Bill of Materials (SBOM) manifests that comply with both the Linx format and the international SPDX standard. Delivered as a containerized application, the tool can be run with a single command via Docker Compose, eliminating the need for manual dependency management and environment configuration.
 
 ## System Requirements
-- OS: Linx OS V6.0 series or Linux distributions
 
-## Hardware Requirements
-- x86_64 CPU
-- At least 4GB of RAM
-- At least 10GB of available disk space (sufficient space required for ISO image mounting)
+| Item | Minimum Requirements | Recommended Requirements |
+| --- | --- | --- |
+| Docker | 18.09.1+ | 20.10+ |
+| Docker Compose | 1.27.0+ | 2.0+ |
+| RAM | 4 GB | 8 GB |
+| Disk Space | 10 GB (Including ISO mounts & output files) | 20 GB |
 
-## Runtime Dependencies
-- fuseiso
-- Python (>=3.7)
-- glibc (>=2.28)
+> **Additional Requirements**: When running ISO scans, the container requires file system mount permissions. Please ensure that the Docker host kernel supports FUSE.
 
-## Installation
-### Install the .rpm package
-#### Install via yum with automatic dependency handling
-```
-$ sudo yum install RPM_PACKAGE
-```
-For example:
-```
-$ sudo yum install ./linx-xiling-1.0-1.x86_64.rpm
+## Image Acquisition and Loading
+
+```bash
+docker load -i linx-xiling-1.0.0.tar
+docker images | grep linx-xiling      # Verify loading
+
 ```
 
-#### Install via dnf with automatic dependency handling
-```
-$ sudo dnf install RPM_PACKAGE
-```
-For example:
-```
-$ sudo dnf install ./linx-xiling-1.0-1.x86_64.rpm
+## Quick Start
+
+Before running any scan tasks, please ensure you are in the directory containing the `docker-compose.yml` file. All scan tasks are executed using the following standard format:
+
+```bash
+docker compose run --rm linx-xiling [options]
+
 ```
 
-#### Install via rpm
-```
-$ sudo rpm -ivh RPM_PACKAGE
-```
-For example:
-```
-$ sudo rpm -ivh ./linx-xiling-1.0-1.x86_64.rpm
-```
-Note: Using rpm does not handle dependencies automatically, so you need to install them manually.
+---
 
-## Usage Instructions
-### Running the Command
-Scan a Linux ISO image file, a software package, or a repository url to generate both a Condensed Thinking-format SBOM and an SPDX-format SBOM:
-```
-$ linx-xiling [-h] (--iso ISO | --package PACKAGE | --repo REPOSITORY) --output OUTPUT [--disable-tqdm] [--max-workers MAX_WORKERS] [--sbom SBOM]
-```
+## Scan Modes in Detail
 
-#### Required Parameters
-| Parameter                     | Description                          |
-| ----------------------------- | ------------------------------------ |
-| --iso ISO, -i ISO             | Path to the ISO image file.          |
-| --package PACKAGE, -p PACKAGE | Path to the software package.        |
-| --repo REPOSITORY, -r REPOSITORY| Repository URL.                    |
-| --output OUTPUT, -o OUTPUT    | Output directory for the SBOM files. |
+The tool provides three scanning modes. You must select one, and only one, mode per run.
 
-#### Optional Parameters
-| Parameter                 | Description                           |
-| ------------------------- | ------------------------------------- |
-| --help, -h                | Show help message and exit.           |
-| --disable-tqdm            | Disable progress bar display.         |
-| --max-workers MAX_WORKERS | Maximum number of concurrent threads. |
-| --sbom SBOM               | Specify an existing SBOM file (JSON format) for incremental updates.|
+### 1. ISO Image Scan (`--iso` / `-i`)
 
-### Running from Source
-Install required dependencies:
-```
-$ pip install -r requirements.txt
+Performs a complete scan of a local ISO image file, extracts information for all software packages within it, and generates an SBOM.
+
+**Command Format**:
+
+```bash
+docker compose run --rm linx-xiling -i /app/data/<image_file.iso> -o output/ [optional parameters]
+
 ```
 
-Run the tool:
-```
-$ python3 linx-xiling.py [-h] (--iso ISO | --package PACKAGE | --repo REPOSITORY) --output OUTPUT [--disable-tqdm] [--max-workers MAX_WORKERS] [--sbom SBOM]
+**Example**:
+
+```bash
+docker compose run --rm linx-xiling -i /app/data/centos-8-stream.iso -o output/
+
 ```
 
-### Notes
-#### How to Run the Tool via Docker?
-The following command uses the ```--privileged``` option to grant additional privileges to the container and enables access to FUSE via the ```--cap-add SYS_ADMIN``` and ```--device /dev/fuse``` options, ensuring ISO images can be mounted inside the container:
-```
-$ docker run -it --privileged --cap-add SYS_ADMIN --device /dev/fuse IMAGE [ARG...]
+### 2. Software Package Scan (`--package` / `-p`)
+
+Scans a single software package file (supports formats like `.rpm`, `.deb`, `.src.rpm`, etc.) and generates its SBOM manifest.
+
+**Command Format**:
+
+```bash
+docker compose run --rm linx-xiling -p /app/data/<package_file> -o output/ [optional parameters]
+
 ```
 
-#### Log File Paths
-- In production environments, logs are saved in the ```~/.linx-xiling/logs/``` directory.
-- In development environments, logs are saved in the ```logs/``` directory under the project root.
+**Example**:
+
+```bash
+docker compose run --rm linx-xiling -p /app/data/zvbi-0.2.35-8.oe2203sp4.src.rpm -o output/
+
+```
+
+### 3. Repository Scan (`--repo` / `-r`)
+
+Scans a specified software repository URL (such as a YUM/APT repository), recursively analyzes all software packages within the repository, and generates a comprehensive SBOM.
+
+**Command Format**:
+
+```bash
+docker compose run --rm linx-xiling -r <repository_URL> -o output/ [optional parameters]
+
+```
+
+**Example**:
+
+```bash
+docker compose run --rm linx-xiling -r [https://mirrors.example.com/centos/8-stream/BaseOS/x86_64/os/](https://mirrors.example.com/centos/8-stream/BaseOS/x86_64/os/) -o output/
+
+```
+
+---
+
+## Optional Parameters
+
+In addition to the required mode parameters mentioned above, you can use the following options to adjust the scanning behavior:
+
+| Parameter | Description |
+| --- | --- |
+| `--help`, `-h` | Show help message and exit |
+| `--disable-tqdm` | Disable progress bar display (suitable for logging environments) |
+| `--max-workers MAX_WORKERS` | Maximum number of concurrent threads; defaults to the number of CPU cores |
+| `--sbom SBOM` | Specify an existing SBOM file (JSON format) for incremental updates to avoid redundant parsing |
+
+---
+
+## Troubleshooting
+
+### 1. `docker compose` Execution Error or Parsing Failure
+
+* **Symptom**: Prompts `docker: 'compose' is not a docker command` or `The Compose file is invalid`.
+* **Solution**:
+* Check the `docker-compose.yml` file version. For older Docker environments, ensure the file starts with `version: '2.2'`.
+* If your system only supports Docker Compose V1, replace `docker compose` with `docker-compose` in your commands.
+
+
+
+### 2. Network Connection Failure During Repository Scan
+
+* **Cause**: Incorrect DNS or proxy configuration within the container, or the repository URL is unreachable.
+* **Solution**:
+* Check if the host machine can access the URL.
+* Add `network_mode: host` to the service in `docker-compose.yml` or configure DNS (`dns: 8.8.8.8`).
+* If a proxy is required, set the `HTTP_PROXY` / `HTTPS_PROXY` environment variables.
+
+
+
+### 3. No Files Generated in the Output Directory
+
+* **Cause**: The `./output` directory on the host does not exist or lacks write permissions.
+* **Solution**: Manually create the directory and grant permissions:
+```bash
+mkdir -p ./output
+chmod 755 ./output
+
+```
+
+
+
+---
+
+*XiLing SBOM Tool — Making software supply chain assets clear at a glance.*
+
+```
