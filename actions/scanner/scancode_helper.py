@@ -23,10 +23,38 @@ from multiprocessing import Pool
 from fnmatch import fnmatch
 from typing import Any, Dict, List, Tuple, Optional
 from actions.data_helper import (
-    calculate_md5,
+    calculate_sha256,
     remove_duplicates
 )
 from actions.licenses_helper import rpm_licenses_scanner
+
+
+def _safe_join(base_dir: str, member_path: str) -> str:
+    """
+    将归档成员路径安全地拼接到目标目录下，防止路径穿越攻击。
+
+    Args:
+        base_dir (str): 解压的目标根目录。
+        member_path (str): 归档成员的原始路径。
+
+    Returns:
+        str: 经过校验、解析后的绝对路径。
+
+    Raises:
+        ValueError: 如果解析后的路径逃逸出目标目录。
+    """
+    # 解析成员路径：去掉可能的前导分隔符，规范化
+    normalized = os.path.normpath(member_path)
+    # 去除前导 / 或 ..，避免逃出 base_dir
+    while normalized.startswith(('/', os.sep)):
+        normalized = normalized[1:]
+    target = os.path.normpath(os.path.join(base_dir, normalized))
+    # 校验目标路径仍在 base_dir 内
+    base_real = os.path.realpath(base_dir)
+    target_real = os.path.realpath(target)
+    if target_real != base_real and not target_real.startswith(base_real + os.sep):
+        raise ValueError(f"检测到路径穿越，已拒绝: {member_path}")
+    return target
 
 
 def _extract_src_rpm(src_rpm_path: str) -> str:
@@ -49,10 +77,10 @@ def _extract_src_rpm(src_rpm_path: str) -> str:
     temp_dir = tempfile.mkdtemp()
 
     try:
-        # 解压 .src.rpm 文件
+        # 解压 .src.rpm 文件（每个成员路径都经过防穿越校验）
         with libarchive.file_reader(src_rpm_path) as archive:
             for entry in archive:
-                pathname = os.path.join(temp_dir, entry.pathname)
+                pathname = _safe_join(temp_dir, entry.pathname)
                 if entry.isdir:
                     os.makedirs(pathname, exist_ok=True)
                 elif entry.isfile:
@@ -78,10 +106,10 @@ def _extract_src_rpm(src_rpm_path: str) -> str:
         # 创建一个临时目录用于解压源代码压缩文件
         source_dir = tempfile.mkdtemp()
 
-        # 解压源代码压缩文件
+        # 解压源代码压缩文件（每个成员路径都经过防穿越校验）
         with libarchive.file_reader(source_archive) as archive:
             for entry in archive:
-                pathname = os.path.join(source_dir, entry.pathname)
+                pathname = _safe_join(source_dir, entry.pathname)
                 if entry.isdir:
                     os.makedirs(pathname, exist_ok=True)
                 elif entry.isfile:
@@ -112,11 +140,19 @@ def _should_include(member_name: str, include_patterns: Optional[List[str]], exc
         bool: 如果文件或目录名符合包含模式且不符合排除模式，则返回True；否则返回False。
     """
 
+    normalized_name = member_name.replace("\\", "/")
+
     if include_patterns:
-        if not any(fnmatch(member_name, pattern) for pattern in include_patterns):
+        if not any(
+            fnmatch(normalized_name, pattern) or fnmatch(os.path.basename(normalized_name), pattern)
+            for pattern in include_patterns
+        ):
             return False
     if exclude_patterns:
-        if any(fnmatch(member_name, pattern) for pattern in exclude_patterns):
+        if any(
+            fnmatch(normalized_name, pattern) or fnmatch(os.path.basename(normalized_name), pattern)
+            for pattern in exclude_patterns
+        ):
             return False
     return True
 
@@ -147,8 +183,12 @@ def _process_member(member_path: str) -> Tuple[Dict[str, Any], List[Dict[str, An
 
     detected_license_expression_spdx = licenses.get(
         'detected_license_expression_spdx')
-    holders = list(set(item['holder']
-                   for item in copyright_data.get('holders', [])))
+    holders = set()
+    for item in copyright_data.get('holders', []):
+        holder = item.get('holder') if isinstance(item, dict) else None
+        if isinstance(holder, str) and holder.strip():
+            holders.add(holder.strip())
+    holders = list(holders)
 
     # 处理 member_path
     parts = member_path.split('/')
@@ -158,7 +198,7 @@ def _process_member(member_path: str) -> Tuple[Dict[str, Any], List[Dict[str, An
         new_parts = parts[3:]
     processed_file_path = '/'.join(new_parts)
 
-    id_md5 = hashlib.md5(processed_file_path.encode()).hexdigest()[:12]
+    id_hash = hashlib.sha256(processed_file_path.encode()).hexdigest()[:12]
     name = os.path.basename(member_path)
     if detected_license_expression_spdx:
         licenses = rpm_licenses_scanner(detected_license_expression_spdx)
@@ -168,17 +208,17 @@ def _process_member(member_path: str) -> Tuple[Dict[str, Any], List[Dict[str, An
         license_id_list = []
 
     with open(member_path, 'rb') as f:
-        file_md5 = calculate_md5(f)
+        file_sha256 = calculate_sha256(f)
 
     file_info = {
-        "id": f"File-{name}-{id_md5}",
+        "id": f"File-{name}-{id_hash}",
         "name": name,
         "path": processed_file_path,
         "licenses": license_id_list,
         "holders": holders,
         "checksums": {
-            "algorithm": "MD5",
-            "value": file_md5
+            "algorithm": "SHA256",
+            "value": file_sha256
         }
     }
 
@@ -222,7 +262,8 @@ def scan_src_rpm(
     for root, dirs, files in os.walk(source_dir):
         for file in files:
             file_path = os.path.join(root, file)
-            if _should_include(file_path, include, exclude):
+            rel_path = os.path.relpath(file_path, source_dir)
+            if _should_include(rel_path, include, exclude):
                 members.append(file_path)
     total_files = len(members)
 

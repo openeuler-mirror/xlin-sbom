@@ -59,6 +59,27 @@ def calculate_md5(file: Any) -> str:
     return md5.hexdigest()
 
 
+def calculate_sha256(file: Any) -> str:
+    """
+    计算文件的 SHA-256 哈希值。
+
+    Args:
+        file (file-like object): 要计算哈希值的文件对象。该对象应该支持 `read` 方法。
+
+    Returns:
+        str: 文件的 SHA-256 哈希值（以十六进制字符串形式表示）。
+    """
+
+    sha256 = hashlib.sha256()
+
+    chunk = file.read(8192)
+    while chunk:
+        sha256.update(chunk)
+        chunk = file.read(8192)
+
+    return sha256.hexdigest()
+
+
 def read_data_from_json(json_file_path: str) -> Union[Dict[str, Any], List[Any]]:
     """
     从 JSON 文件中读取数据。

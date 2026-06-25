@@ -16,6 +16,7 @@ from actions.data_helper import read_data_from_json
 from typing import Any, Dict
 from actions import ASSIST_DIR
 import os
+import uuid
 
 
 def convert_to_spdx(
@@ -58,8 +59,9 @@ def convert_to_spdx(
 
     # 遍历每个软件包并创建 SPDX 包元素
     for package in linx_sbom.get('packages_sbom').get('packages'):
-        # 处理每个软件包的许可证
-        license = ' AND '.join(package.get('licenses', []))
+        # 处理每个软件包的许可证；为空时使用 SPDX 规范的 NOASSERTION
+        license_expr = ' AND '.join(package.get('licenses', []))
+        license_declared = replace_none_value(license_expr) if license_expr else 'NOASSERTION'
         supplier = package['suppliers'][0].get(
             'name', 'NOASSERTION') if package.get('suppliers') else 'NOASSERTION'
 
@@ -74,7 +76,7 @@ def convert_to_spdx(
             "packageHomePage": replace_none_value(package['suppliers'][-1].get('link', 'NOASSERTION')) if package['suppliers'] else 'NOASSERTION',
             "packageDescription": replace_none_value(package['description']),
             "licenseConcluded": "NOASSERTION",
-            "licenseDeclared": replace_none_value(license),
+            "licenseDeclared": license_declared,
             "externalRefs": [
                 {
                     "referenceCategory": "PACKAGE_MANAGER",
@@ -136,12 +138,14 @@ def convert_to_spdx(
         spdx_licenses.append(spdx_license)
 
     # 构建最终的 SPDX SBOM 字典
+    # documentNamespace 必须为合法 URI，附加 UUID 以保证唯一性
+    document_namespace = f"https://openeuler.org/spdx/{filename}/{created_time}-{uuid.uuid4()}"
     spdx_sbom = {
         "spdxVersion": "SPDX-2.3",
         "dataLicense": "CC0-1.0",
         "SPDXID": "SPDXRef-DOCUMENT",
         "name": filename,
-        "documentNamespace": filename,
+        "documentNamespace": document_namespace,
         "creationInfo": {
             "licenseListVersion": "3.23",
             "creators": read_data_from_json(creators_file_path),

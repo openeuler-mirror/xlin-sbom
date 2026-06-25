@@ -27,10 +27,39 @@ from actions.scanner.package_helper import (
     process_deb_package
 )
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import copy
 import os
 import logging
 from typing import Any, Dict, List, Optional
 from tqdm import tqdm
+
+
+def _merge_originators(base_originators: List[Dict[str, Any]], new_originators: List[Dict[str, Any]]) -> None:
+    """
+    将 new_originators 中未出现的新 originator 合并到 base_originators，按 homepage 去重。
+    """
+    if not new_originators:
+        return
+
+    existing_homepages = {
+        originator.get("homepage")
+        for originator in base_originators
+        if isinstance(originator, dict) and originator.get("homepage")
+    }
+
+    for originator in new_originators:
+        if not isinstance(originator, dict):
+            continue
+
+        homepage = originator.get("homepage")
+        if not homepage:
+            continue
+
+        if homepage in existing_homepages:
+            continue
+
+        base_originators.append(originator)
+        existing_homepages.add(homepage)
 
 creators_file_path = os.path.join(ASSIST_DIR, 'creators.json')
 
@@ -43,6 +72,9 @@ def deb_packages_scanner(mnt_dir, iso_filename, created_time, disable_tqdm, work
         mnt_dir (str): 挂载目录的路径。
         iso_filename (str): ISO 文件的名称。
         created_time (str): 创建时间的字符串。
+        disable_tqdm (bool): 是否禁用进度条显示。
+        workers (int or None): 最大并发线程数。
+        checksum_values (list): 校验值列表，用于增量更新。
 
     Returns:
         dict: 包含处理后的软件包信息的 SBOM 字典，包括软件包、文件、文件关系、许可证和组件依赖关系。
@@ -70,9 +102,10 @@ def deb_packages_scanner(mnt_dir, iso_filename, created_time, disable_tqdm, work
     else:
         logging.info(f"使用 {workers} 个线程进行扫描")
 
+    # 每个线程传入 originators 的独立副本，避免并发修改共享可变状态
     with ThreadPoolExecutor(max_workers=workers) as executor:
         futures = {
-            executor.submit(process_deb_package, full_path, originators, checksum_values): full_path
+            executor.submit(process_deb_package, full_path, copy.deepcopy(originators), checksum_values): full_path
             for full_path in deb_files
         }
 
@@ -83,15 +116,28 @@ def deb_packages_scanner(mnt_dir, iso_filename, created_time, disable_tqdm, work
         )
 
         for future in as_completed(futures):
-            if not future.result():
+            try:
+                result = future.result()
+            except Exception as e:
+                logging.error(f"处理包时发生异常: {e}")
+                if not disable_tqdm:
+                    progress_iter.update(1)
                 continue
-            package, package_licenses, updated_originators = future.result()
+
+            # process_deb_package 返回 None 表示包已在 SBOM 中（跳过）
+            if result is None:
+                if not disable_tqdm:
+                    progress_iter.update(1)
+                continue
+
+            package, package_licenses, updated_originators = result
             if package:
                 packages.append(package)
                 files.extend(package.files)
                 file_relationships.extend(package.get_file_relationships())
                 licenses.extend(package_licenses)
-                originators = updated_originators
+                # 合并并去重 worker 上新增的 originators
+                _merge_originators(originators, updated_originators)
             if not disable_tqdm:
                 progress_iter.update(1)
 
@@ -169,7 +215,11 @@ def rpm_packages_scanner(
         rpm_files = [os.path.join(root, f) for root, _, files in os.walk(rpm_dir)
                      for f in files if f.endswith('.rpm')]
     else:
-        logging.error("未找到 Packages 目录。")
+        logging.error("未找到 Packages 目录，无法扫描 RPM 包。")
+        rpm_files = []
+
+    if not rpm_files:
+        logging.warning("未找到任何 RPM 文件。")
 
     os_arch = _get_os_arch(mnt_dir)
 
@@ -179,9 +229,10 @@ def rpm_packages_scanner(
     else:
         logging.info(f"使用 {workers} 个线程进行扫描")
 
+    # 每个线程传入 originators 的独立副本，避免并发修改共享可变状态
     with ThreadPoolExecutor(max_workers=workers) as executor:
         futures = {
-            executor.submit(process_rpm_package, full_path, originators, checksum_values): full_path
+            executor.submit(process_rpm_package, full_path, copy.deepcopy(originators), checksum_values): full_path
             for full_path in rpm_files
         }
 
@@ -192,15 +243,28 @@ def rpm_packages_scanner(
         )
 
         for future in as_completed(futures):
-            if not future.result():
+            try:
+                result = future.result()
+            except Exception as e:
+                logging.error(f"处理包时发生异常: {e}")
+                if not disable_tqdm:
+                    progress_iter.update(1)
                 continue
-            package, package_licenses, updated_originators, provides = future.result()
+
+            # process_rpm_package 返回 None 表示包已在 SBOM 中（跳过）
+            if result is None:
+                if not disable_tqdm:
+                    progress_iter.update(1)
+                continue
+
+            package, package_licenses, updated_originators, provides = result
             if package:
                 packages.append(package)
                 files.extend(package.files)
                 file_relationships.extend(package.get_file_relationships())
                 licenses.extend(package_licenses)
-                originators = updated_originators
+                # 合并并去重 worker 上新增的 originators
+                _merge_originators(originators, updated_originators)
                 provides_relationships.append(provides)
             if not disable_tqdm:
                 progress_iter.update(1)

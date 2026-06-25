@@ -12,10 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import threading
 from typing import List, Dict, Optional, Tuple, Any
 
+# 模块级锁，保护 originators 列表的并发读写
+_originators_lock = threading.Lock()
+
+
 def extract_originator_name(
-    homepage: str, 
+    homepage: str,
     originators: List[Dict[str, Any]]
 ) -> Tuple[Optional[str], bool, List[Dict[str, Any]]]:
     """
@@ -35,23 +40,24 @@ def extract_originator_name(
     if not homepage:
         return homepage, False, originators
 
-    # 尝试从originators中找到与homepage匹配的项
-    matched_originator = next((originator for originator in originators
-                               if originator.get('homepage') == homepage), None)
+    with _originators_lock:
+        # 尝试从originators中找到与homepage匹配的项
+        matched_originator = next((originator for originator in originators
+                                   if originator.get('homepage') == homepage), None)
 
-    if matched_originator:
-        # 如果找到匹配项，返回其名称、是否为组织及原originators列表
-        name = matched_originator.get('name')
-        is_organization = matched_originator.get('is_organization')
-        return name, is_organization, originators
-    else:
-        # 未找到匹配时，创建新originator条目并添加至列表
-        new_originator = {
-            "homepage": homepage,
-            "name": None,
-            "is_organization": False,
-            "file_analyzed": False
-        }
-        originators.append(new_originator)
+        if matched_originator:
+            # 如果找到匹配项，返回其名称、是否为组织及原originators列表
+            name = matched_originator.get('name')
+            is_organization = matched_originator.get('is_organization')
+            return name, is_organization, originators
+        else:
+            # 未找到匹配时，创建新originator条目并添加至列表
+            new_originator = {
+                "homepage": homepage,
+                "name": None,
+                "is_organization": False,
+                "file_analyzed": False
+            }
+            originators.append(new_originator)
 
-        return None, False, originators
+            return None, False, originators
