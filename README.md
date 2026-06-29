@@ -1,8 +1,12 @@
-# 析灵SBOM生成工具用户手册
+# 析灵 SBOM 生成工具用户手册
 
 ## 概述
 
-析灵SBOM生成工具用于对ISO镜像、单个软件包（.rpm / .deb / .src.rpm）或软件更新源URL进行扫描，自动生成符合凝思格式和SPDX国际标准的SBOM（Software Bill of Materials，软件物料清单）清单。工具以容器化方式交付，通过Docker Compose一键运行，无需手动处理依赖和环境配置。
+析灵 SBOM 生成工具用于扫描 ISO 镜像、单个软件包（`.rpm`、`.deb`、`.src.rpm`、源码压缩包、Debian 源码描述文件）或软件更新源 URL，并生成软件物料清单（Software Bill of Materials，SBOM）。
+
+工具支持输出 Linx 格式和 SPDX 2.3 格式的 SBOM 清单。运行时可以通过 `--format` 参数指定一种或多种输出格式；如果不指定，则默认同时输出 Linx 和 SPDX 两种格式。
+
+项目以容器化方式交付，可通过 Docker Compose 运行，避免手动配置运行环境。
 
 ## 系统要求
 
@@ -11,114 +15,115 @@
 | Docker | 18.09.1+ | 20.10+ |
 | Docker Compose | 1.27.0+ | 2.0+ |
 | 内存 | 4 GB | 8 GB |
-| 磁盘空间 | 10 GB（含ISO挂载及输出文件） | 20 GB |
+| 磁盘空间 | 10 GB（含 ISO 挂载及输出文件） | 20 GB |
 
-> **额外要求**：运行ISO扫描时，容器需要具备挂载文件系统的权限。请确保Docker宿主机内核支持FUSE。
+> 运行 ISO 扫描时，容器需要具备挂载文件系统的权限，并且 Docker 宿主机内核需要支持 FUSE。
 
 ## 镜像获取与加载
 
 ```bash
-docker load -i linx-xiling-1.0.0.tar
-docker images | grep linx-xiling      # 验证加载
+docker load -i linx-xiling-1.1.0.tar
+docker images | grep linx-xiling
 ```
 
 ## 快速开始
 
-在运行任何扫描任务前，请确保您位于包含 `docker-compose.yml` 的目录下。所有扫描任务均通过以下固定格式执行：
+请在包含 `docker-compose.yml` 的目录下执行扫描命令：
 
 ```bash
 docker compose run --rm linx-xiling [参数]
 ```
 
----
+## 扫描模式
 
-## 扫描模式详解
+每次运行必须且只能选择一种扫描模式。
 
-工具提供三种扫描模式，每次运行必须且只能选择一种。
+### 1. ISO 镜像扫描（`--iso` / `-i`）
 
-### 1. ISO镜像扫描 (`--iso` / `-i`)
+扫描本地 ISO 镜像，识别其中的 RPM 或 DEB 软件包，并生成 SBOM。
 
-对本地ISO镜像文件进行完整扫描，提取其中所有软件包信息并生成SBOM。
-
-**命令格式**：
 ```bash
-docker compose run --rm linx-xiling -i /app/data/<镜像文件.iso> -o output/ [可选参数]
+docker compose run --rm linx-xiling -i /app/data/<镜像文件.iso> -o /app/output
 ```
 
-**示例**：
+### 2. 单个软件包扫描（`--package` / `-p`）
+
+扫描单个软件包文件。当前支持：
+
+- 二进制包：`.rpm`、`.deb`
+- RPM 源码包：`.src.rpm`
+- 源码归档：`.tar.gz`、`.tgz`、`.tar.bz2`、`.tar.xz`、`.tar`、`.zip`
+- Debian 源码描述文件：`.dsc`
+
 ```bash
-docker compose run --rm linx-xiling -i /app/data/centos-8-stream.iso -o output/
+docker compose run --rm linx-xiling -p /app/data/<软件包文件> -o /app/output
 ```
 
-### 2. 软件包扫描 (`--package` / `-p`)
+源码包在 v1.1.0 中已经拆分为独立处理策略。其中 `.src.rpm` 会继续使用 RPM spec 信息并支持源码文件级扫描；tar、zip、Debian source 会生成基础包级 SBOM，文件级许可证扫描将在后续版本完善。
 
-扫描单个软件包文件（支持 `.rpm`, `.deb`, `.src.rpm` 等格式），生成该包的SBOM清单。
+### 3. 软件源扫描（`--repo` / `-r`）
 
-**命令格式**：
+扫描指定的 YUM/DNF 或 APT 软件源 URL，解析仓库元数据并生成包级 SBOM。
+
 ```bash
-docker compose run --rm linx-xiling -p /app/data/<软件包文件> -o output/ [可选参数]
+docker compose run --rm linx-xiling -r https://mirrors.example.com/centos/8-stream/BaseOS/x86_64/os/ -o /app/output
 ```
 
-**示例**：
+软件源元数据通常只能提供包和许可证等包级信息，无法可靠提供包内文件、文件关系和包间依赖关系，因此 repo 扫描仅输出可从仓库元数据获取的清单内容。
+
+## 输出格式
+
+默认同时输出 Linx 和 SPDX：
+
 ```bash
-docker compose run --rm linx-xiling -p /app/data/zvbi-0.2.35-8.oe2203sp4.src.rpm -o output/
+docker compose run --rm linx-xiling -p /app/data/example.rpm -o /app/output
 ```
 
-### 3. 更新源扫描 (`--repo` / `-r`)
+仅输出 SPDX：
 
-扫描指定的软件更新源URL（如YUM/APT仓库），递归分析仓库中所有软件包并生成完整SBOM。
-
-**命令格式**：
 ```bash
-docker compose run --rm linx-xiling -r <更新源URL> -o output/ [可选参数]
+docker compose run --rm linx-xiling -p /app/data/example.rpm -o /app/output --format spdx
 ```
 
-**示例**：
+显式同时输出 Linx 和 SPDX：
+
 ```bash
-docker compose run --rm linx-xiling -r https://mirrors.example.com/centos/8-stream/BaseOS/x86_64/os/ -o output/
+docker compose run --rm linx-xiling -p /app/data/example.rpm -o /app/output --format linx --format spdx
 ```
 
----
+Linx 格式会输出到一个目录中，并按清单类型拆分为 `packages`、`files`、`licenses`、`package_relationships`、`file_relationships` 等 JSON 文件。SPDX 格式会输出为一个 SPDX 2.3 JSON 文件。
 
 ## 可选参数
 
-除上述必选模式参数外，您还可使用以下选项调整扫描行为：
-
 | 参数 | 说明 |
 | --- | --- |
-| `--help`, `-h` | 显示帮助消息并退出 |
-| `--disable-tqdm` | 禁用进度条显示（适合日志记录环境） |
-| `--max-workers MAX_WORKERS` | 最大并发线程数，默认为CPU核心数 |
-| `--sbom SBOM` | 指定已存在的SBOM文件（JSON格式）进行增量更新，避免重复解析 |
-
----
+| `--help`, `-h` | 显示帮助信息并退出 |
+| `--disable-tqdm` | 禁用进度条显示，适合日志记录环境 |
+| `--max-workers MAX_WORKERS` | 最大并发线程数或进程数 |
+| `--include PATTERN` | 源码包文件级扫描时要包含的文件模式，可重复指定 |
+| `--exclude PATTERN` | 源码包文件级扫描时要排除的文件模式，可重复指定 |
+| `--brief` | 源码包扫描时仅生成包级信息，跳过文件级扫描 |
+| `--format {linx,spdx}` | 指定输出格式，可重复指定；默认同时输出 Linx 和 SPDX |
 
 ## 故障排除
 
-### 1. 执行 `docker compose` 报错或解析失败
+### 1. `docker compose` 执行错误或解析失败
 
-- **现象**：提示 `docker: 'compose' is not a docker command` 或 `The Compose file is invalid`。  
-- **解决方法**：
-  - 检查 `docker-compose.yml` 文件版本。对于较老版本的Docker环境，请确保文件开头包含 `version: '2.2'`。
-  - 若系统仅支持Docker Compose V1，请将命令中的 `docker compose` 替换为 `docker-compose`。
+如果系统提示 `docker: 'compose' is not a docker command`，说明当前 Docker 环境可能只支持 Docker Compose V1。请将命令中的 `docker compose` 替换为 `docker-compose`。
 
-### 2. 扫描更新源时网络连接失败
+### 2. 扫描软件源时网络连接失败
 
-- **原因**：容器内DNS或代理配置不正确，或更新源URL不可达。  
-- **解决方法**：
-  - 检查宿主机能否访问该URL。
-  - 在 `docker-compose.yml` 中为服务添加 `network_mode: host` 或配置DNS (`dns: 8.8.8.8`)。
-  - 若需使用代理，设置环境变量 `HTTP_PROXY` / `HTTPS_PROXY`。
+请检查宿主机是否可以访问目标 URL。必要时可在 `docker-compose.yml` 中配置 DNS、代理环境变量，或根据运行环境使用 `network_mode: host`。
 
 ### 3. 输出目录未生成文件
 
-- **原因**：主机 `./output` 目录不存在或无写入权限。  
-- **解决方法**：手动创建目录并赋予权限：
-  ```bash
-  mkdir -p ./output
-  chmod 755 ./output
-  ```
+请确认宿主机上的 `./output` 目录存在并具有写入权限：
+
+```bash
+mkdir -p ./output
+chmod 755 ./output
+```
 
 ---
 
-*析灵SBOM生成工具 —— 让软件供应链资产一目了然*
+析灵 SBOM 生成工具，让软件供应链资产一目了然。
