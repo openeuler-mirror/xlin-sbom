@@ -314,17 +314,149 @@ Checksums-Sha256:
 
 
 class IsoScannerTests(unittest.TestCase):
-    def test_rpm_iso_scan_without_packages_dir_returns_empty_lists(self):
-        with tempfile.TemporaryDirectory() as tmpdir, \
+    class FakeIsoReader:
+        def __init__(self, entries):
+            self.entries = entries
+            self.extracted_paths = []
+            self.closed = False
+
+        def list_entries(self):
+            return self.entries
+
+        def extract_file(self, entry, target_path):
+            self.extracted_paths.append(target_path)
+            Path(target_path).write_bytes(b"package")
+
+        def close(self):
+            self.closed = True
+
+    def test_select_iso_path_type_uses_ranked_fallback(self):
+        class FakeIso:
+            def has_udf(self):
+                return False
+
+            def has_rock_ridge(self):
+                return True
+
+            def has_joliet(self):
+                return True
+
+        self.assertEqual(iso_helper._select_iso_path_type(FakeIso()), "rockridge")
+
+    def test_scan_iso_detects_deb_and_extracts_temp_package(self):
+        entries = [
+            iso_helper.IsoEntry("/README.TXT", "README.TXT", "rockridge"),
+            iso_helper.IsoEntry("/pool/main/demo.deb", "pool/main/demo.deb", "rockridge"),
+        ]
+        reader = self.FakeIsoReader(entries)
+        package = Package("demo", "1.0", None, "amd64", "deb", "SHA1", "abcdef123456")
+
+        def fake_process(path, originators):
+            self.assertTrue(Path(path).exists())
+            return package, [], originators
+
+        with mock.patch.object(iso_helper, "PyCdlibIsoReader", return_value=reader), \
                 mock.patch.object(iso_helper, "read_data_from_json", return_value=[]), \
-                mock.patch.object(iso_helper, "save_data_to_json"):
-            result = iso_helper.rpm_packages_scanner(
-                tmpdir, "demo-1.0-x86_64.iso", "2026-06-16T00:00:00Z",
+                mock.patch.object(iso_helper, "save_data_to_json"), \
+                mock.patch.object(iso_helper, "process_deb_package", side_effect=fake_process):
+            result, package_type = iso_helper.scan_iso(
+                "demo.iso", "demo-1.0-amd64.iso", "2026-06-16T00:00:00Z",
                 True, None)
 
-        self.assertEqual(result["packages_sbom"]["packages"], [])
-        self.assertEqual(result["files_sbom"]["files"], [])
-        self.assertEqual(result["package_relationships_sbom"]["package_relationships"], [])
+        self.assertEqual(package_type, "deb")
+        self.assertTrue(reader.closed)
+        self.assertEqual(len(reader.extracted_paths), 1)
+        self.assertFalse(Path(reader.extracted_paths[0]).exists())
+        self.assertEqual(result["packages_sbom"]["packages"][0]["name"], "demo")
+        self.assertEqual(result["packages_sbom"]["os_arch"], "x86_64")
+
+    def test_scan_iso_keeps_deb_precedence_when_both_package_types_exist(self):
+        entries = [
+            iso_helper.IsoEntry("/pool/main/demo.deb", "pool/main/demo.deb", "rockridge"),
+            iso_helper.IsoEntry("/Packages/demo.rpm", "Packages/demo.rpm", "rockridge"),
+        ]
+        reader = self.FakeIsoReader(entries)
+        package = Package("demo", "1.0", None, "amd64", "deb", "SHA1", "abcdef123456")
+
+        with mock.patch.object(iso_helper, "PyCdlibIsoReader", return_value=reader), \
+                mock.patch.object(iso_helper, "read_data_from_json", return_value=[]), \
+                mock.patch.object(iso_helper, "save_data_to_json"), \
+                mock.patch.object(iso_helper, "process_deb_package", return_value=(package, [], [])), \
+                mock.patch.object(iso_helper, "process_rpm_package") as process_rpm:
+            _, package_type = iso_helper.scan_iso(
+                "demo.iso", "demo-1.0-amd64.iso", "2026-06-16T00:00:00Z",
+                True, None)
+
+        self.assertEqual(package_type, "deb")
+        process_rpm.assert_not_called()
+
+    def test_scan_iso_detects_rpm_package(self):
+        entries = [
+            iso_helper.IsoEntry("/Packages/demo.x86_64.rpm", "Packages/demo.x86_64.rpm", "rockridge"),
+        ]
+        reader = self.FakeIsoReader(entries)
+        package = Package("demo", "1.0", "1", "x86_64", "rpm", "SHA1", "abcdef123456")
+
+        with mock.patch.object(iso_helper, "PyCdlibIsoReader", return_value=reader), \
+                mock.patch.object(iso_helper, "read_data_from_json", return_value=[]), \
+                mock.patch.object(iso_helper, "save_data_to_json"), \
+                mock.patch.object(iso_helper, "process_rpm_package",
+                                  return_value=(package, [], [], {"id": package.id, "provides": ["demo"]})):
+            result, package_type = iso_helper.scan_iso(
+                "demo.iso", "demo-1.0-x86_64.iso", "2026-06-16T00:00:00Z",
+                True, None)
+
+        self.assertEqual(package_type, "rpm")
+        self.assertEqual(result["packages_sbom"]["packages"][0]["package_type"], "rpm")
+
+    def test_scan_iso_without_packages_raises_existing_error(self):
+        reader = self.FakeIsoReader([
+            iso_helper.IsoEntry("/README.TXT", "README.TXT", "rockridge"),
+        ])
+
+        with mock.patch.object(iso_helper, "PyCdlibIsoReader", return_value=reader):
+            with self.assertRaisesRegex(ValueError, "未侦测到有效的包系统"):
+                iso_helper.scan_iso(
+                    "demo.iso", "demo-1.0-x86_64.iso", "2026-06-16T00:00:00Z",
+                    True, None)
+
+        self.assertTrue(reader.closed)
+
+    def test_detect_iso_arch_prefers_debian_repo_paths(self):
+        entries = [
+            iso_helper.IsoEntry(
+                "/dists/buster/main/binary-ppc64el/Packages.gz",
+                "dists/buster/main/binary-ppc64el/Packages.gz",
+                "rockridge"),
+            iso_helper.IsoEntry(
+                "/pool/main/demo_1.0_all.deb",
+                "pool/main/demo_1.0_all.deb",
+                "rockridge"),
+        ]
+
+        self.assertEqual(iso_helper.detect_iso_arch(entries, [], "demo.iso"), "ppc64el")
+
+    def test_detect_iso_arch_normalizes_amd64_repo_path(self):
+        self.assertEqual(
+            iso_helper.detect_iso_arch(["dists/stable/main/binary-amd64/Packages.gz"], [], "demo.iso"),
+            "x86_64")
+
+    def test_detect_iso_arch_uses_package_metadata_before_filenames(self):
+        entries = ["pool/main/demo_1.0_ppc64el.deb"]
+        packages = [
+            {"architecture": "all"},
+            {"architecture": "amd64"},
+            {"architecture": "amd64"},
+        ]
+
+        self.assertEqual(iso_helper.detect_iso_arch(entries, packages, "demo.iso"), "x86_64")
+
+    def test_detect_iso_arch_keeps_efi_fallbacks(self):
+        self.assertEqual(iso_helper.detect_iso_arch(["EFI/BOOT/BOOTX64.EFI"], [], "demo.iso"), "x86_64")
+        self.assertEqual(iso_helper.detect_iso_arch(["EFI/BOOT/BOOTAA64.EFI"], [], "demo.iso"), "aarch64")
+        self.assertEqual(
+            iso_helper.detect_iso_arch(["EFI/BOOT/BOOTLOONGARCH64.EFI"], [], "demo.iso"),
+            "loongarch64")
 
 
 class SourcePackageStrategyTests(unittest.TestCase):
