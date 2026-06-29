@@ -19,17 +19,14 @@ import sys
 import time
 import logging
 import argparse
-import subprocess
 from actions import (
-    PARENT_DIR,
     LOG_DIR
 )
 from actions.data_helper import (
     save_data_to_json
 )
 from actions.scanner.iso_helper import (
-    rpm_packages_scanner,
-    deb_packages_scanner
+    scan_iso
 )
 from actions.scanner.package_helper import package_scanner
 from actions.scanner.repo_helper import (
@@ -137,62 +134,6 @@ def setup_logging(formatted_utc_time):
     logger.addHandler(console_handler)
 
 
-def mount_iso(iso_path, mnt_dir):
-    """
-    使用挂载命令将ISO镜像文件挂载到指定的目录。
-    首先尝试使用fuseiso（无需sudo），失败时回退到mount命令。
-
-    Args:
-        iso_path (str): ISO镜像文件的路径。路径应指向一个有效的ISO文件。
-        mnt_dir (str): 挂载点目录的路径。该目录用于挂载ISO镜像文件。
-
-    Returns:
-        None: 函数不返回任何内容。
-
-    Raises:
-        subprocess.CalledProcessError: 如果所有挂载方法都失败，则会抛出此异常。
-    """
-    try:
-        # 首先尝试使用fuseiso（无需sudo）
-        subprocess.run(["fuseiso", iso_path, mnt_dir],
-                       check=True, stderr=subprocess.DEVNULL)
-    except (subprocess.CalledProcessError, FileNotFoundError):
-        try:
-            # 回退到mount命令
-            logging.warning("fuseiso挂载失败，尝试使用mount")
-            subprocess.run(["mount", "-o", "loop,ro", iso_path, mnt_dir],
-                           check=True)
-        except subprocess.CalledProcessError as e:
-            raise RuntimeError(f"所有挂载方法均失败: {e}") from e
-
-
-def umount_iso(mnt_dir):
-    """
-    卸载指定目录挂载的ISO镜像。
-    首先尝试使用fusermount（无需sudo），失败时回退到umount命令。
-
-    Args:
-        mnt_dir (str): 要卸载ISO镜像的挂载目录路径。
-
-    Returns:
-        None: 函数不返回任何内容。
-
-    Raises:
-        subprocess.CalledProcessError: 如果所有卸载方法都失败，则会抛出此异常。
-    """
-    try:
-        # 首先尝试使用fusermount（无需sudo）
-        subprocess.run(["fusermount", "-u", mnt_dir],
-                       check=True, stderr=subprocess.DEVNULL)
-    except (subprocess.CalledProcessError, FileNotFoundError):
-        try:
-            # 回退到umount命令
-            logging.warning("fusermount卸载失败，尝试使用umount")
-            subprocess.run(["umount", mnt_dir], check=True)
-        except subprocess.CalledProcessError as e:
-            raise RuntimeError(f"所有卸载方法均失败: {e}") from e
-
-
 def load_category_dict(category_csv_path):
     """
     从指定路径加载软件包类型CSV文件，并将其内容转换为字典。
@@ -232,39 +173,6 @@ def load_category_dict(category_csv_path):
     except ValueError as e:
         logging.error(f"异常抛出：{e}")
         sys.exit(1)
-
-
-def detect_package_system(mnt_dir):
-    """
-    检测给定挂载目录中是否存在`.deb`和`.rpm`包。
-
-    Args:
-        mnt_dir (str): 要检测的挂载目录路径。
-
-    Returns:
-        tuple: 一个包含两个布尔值的元组，第一个布尔值表示是否找到`.deb`包，
-               第二个布尔值表示是否找到`.rpm`包。
-    """
-
-    deb_found = False
-    rpm_found = False
-
-    # 遍历挂载目录及其子目录
-    for root, dirs, files in os.walk(mnt_dir):
-        for file in files:
-            # 检查文件是否以`.deb`结尾
-            if file.endswith('.deb'):
-                deb_found = True
-                break
-            # 检查文件是否以`.rpm`结尾
-            elif file.endswith('.rpm'):
-                rpm_found = True
-                break
-        # 如果找到任何一种类型的包，则停止搜索
-        if deb_found or rpm_found:
-            break
-
-    return deb_found, rpm_found
 
 
 def save_sbom(linx_sbom, package_type, filename, utc_timestamp, spdx_timestamp, output_dir, output_formats):
@@ -350,41 +258,13 @@ def main():
     # 处理ISO镜像
     if args.iso is not None:
         filename = os.path.splitext(os.path.basename(args.iso))[0]
-        mnt_dir = os.path.join(PARENT_DIR, 'mnt', str(formatted_utc_time))
-
         try:
-            os.makedirs(mnt_dir, exist_ok=True)
+            linx_sbom, package_type = scan_iso(
+                args.iso, filename, spdx_utc_time,
+                args.disable_tqdm, args.max_workers)
         except Exception as e:
             logging.error(f"异常抛出: {e}")
-
-        try:
-            mount_iso(args.iso, mnt_dir)
-
-            is_deb,is_rpm = detect_package_system(mnt_dir)
-            package_type = "unknown"
-            if is_deb:
-                package_type = "deb"
-                logging.info("侦测到DEB包系统")
-                linx_sbom = deb_packages_scanner(
-                    mnt_dir, filename, spdx_utc_time, args.disable_tqdm, args.max_workers)
-            elif is_rpm:
-                package_type = "rpm"
-                logging.info("侦测到RPM包系统")
-                linx_sbom = rpm_packages_scanner(
-                    mnt_dir, filename, spdx_utc_time, args.disable_tqdm, args.max_workers)
-            else:
-                logging.error("未侦测到有效的包系统")
-                sys.exit(1)
-
-        except Exception as e:
-            logging.error(f"异常抛出: {e}")
-
-        finally:
-            try:
-                umount_iso(mnt_dir)
-                os.rmdir(mnt_dir)
-            except Exception as e:
-                logging.error(f"异常抛出: {e}")
+            sys.exit(1)
 
     # 处理软件包
     elif args.package is not None:
