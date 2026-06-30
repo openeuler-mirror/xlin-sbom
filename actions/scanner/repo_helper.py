@@ -21,12 +21,9 @@ from actions.licenses_helper import rpm_licenses_scanner
 from typing import Any, Dict, List, Optional, Tuple
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
-from urllib.parse import urlparse
 import xml.etree.ElementTree as ET
 from tqdm import tqdm
 import gzip
-import bz2
-import lzma
 from io import BytesIO
 import requests
 import zstandard
@@ -108,7 +105,7 @@ def deb_repo_scanner(
             packages.extend(packages_)
             licenses.extend(licenses_)
     
-    packages_sbom = [package.get_json() for package in packages]
+    packages_sbom = [pakcage.get_json() for pakcage in packages]
 
     linx_sbom = {
         "packages_sbom": _add_header(packages_sbom, "packages", repo_url, created_time),
@@ -133,35 +130,48 @@ def find_primary_xml_in_repo(repo_url: str) -> Optional[str]:
     """
 
     try:
-        response = requests.get(repo_url, timeout=30)
+        if not repo_url.endswith('/'):
+            repo_url += '/'
+
+        repomd_url = urljoin(repo_url, "repodata/repomd.xml")
+        response = requests.get(repomd_url, timeout=10)
+        if response.ok:
+            root = ET.fromstring(response.content)
+            namespaces = {"repo": "http://linux.duke.edu/metadata/repo"}
+            for data in root.findall("repo:data", namespaces):
+                if data.attrib.get("type") != "primary":
+                    continue
+                location = data.find("repo:location", namespaces)
+                href = location.attrib.get("href") if location is not None else None
+                if href:
+                    return urljoin(repo_url, href)
+
+        response = requests.get(repo_url, timeout=10)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, "html.parser")
 
-        # 查找包含 repodata 文件夹的链接
         repodata_link = None
         for link in soup.find_all("a", href=True):
             if "repodata/" in link['href']:
-                repodata_link = repo_url + link['href']
+                repodata_link = urljoin(repo_url, link['href'])
                 break
 
-        # 未找到 repodata 链接时提前返回，避免对 None 发起请求
         if not repodata_link:
-            logging.error(f"在仓库 {repo_url} 中未找到 repodata 目录")
+            logging.error(f"未在仓库 {repo_url} 中找到 repodata 目录")
             return None
 
-        # 访问 repodata 目录，查找 primary.xml.gz
-        response = requests.get(repodata_link, timeout=30)
+        response = requests.get(repodata_link, timeout=10)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, "html.parser")
 
         for link in soup.find_all("a", href=True):
             if "primary.xml" in link['href']:
-                return repodata_link + link['href']
+                return urljoin(repodata_link, link['href'])
 
-        logging.error(f"在 {repodata_link} 中未找到 primary.xml 文件")
+        logging.error(f"未在 {repodata_link} 中找到 primary.xml 元数据")
         return None
 
-    except requests.exceptions.RequestException as e:
+    except (ET.ParseError, requests.exceptions.RequestException) as e:
         logging.error(f"获取repodata时发生错误: {e}")
         return None
 
@@ -285,24 +295,14 @@ def _add_header(
 
 
 def _fetch_and_extract_metadata(metadata_url: str) -> Optional[bytes]:
-    """
-    下载并解压仓库元数据文件。支持 .gz/.bz2/.xz/.zst 压缩格式以及未压缩文本。
 
-    Args:
-        metadata_url (str): 元数据文件的 URL。
-
-    Returns:
-        bytes or None: 解压后的文件内容；下载或解压失败时返回 None。
-    """
     try:
-        response = requests.get(metadata_url, timeout=30)
+        response = requests.get(metadata_url)
         response.raise_for_status()
 
         content = response.content
-        metadata_path = urlparse(metadata_url).path.lower()
-        content_type = (response.headers.get("Content-Type") or "").lower()
 
-        if metadata_path.endswith('.gz') or 'gzip' in content_type:
+        if metadata_url.endswith('.gz'):
             try:
                 with gzip.GzipFile(fileobj=BytesIO(content)) as f:
                     return f.read()
@@ -310,21 +310,7 @@ def _fetch_and_extract_metadata(metadata_url: str) -> Optional[bytes]:
                 logging.error(f"解压gzip失败: {e}")
                 return None
 
-        elif metadata_path.endswith('.bz2') or 'bzip2' in content_type:
-            try:
-                return bz2.decompress(content)
-            except OSError as e:
-                logging.error(f"解压bz2失败: {e}")
-                return None
-
-        elif metadata_path.endswith('.xz') or 'x-xz' in content_type or 'application/xz' in content_type:
-            try:
-                return lzma.decompress(content)
-            except lzma.LZMAError as e:
-                logging.error(f"解压xz失败: {e}")
-                return None
-
-        elif metadata_path.endswith('.zst') or 'zstd' in content_type:
+        elif metadata_url.endswith('.zst'):
             try:
                 # 流式解压
                 dctx = zstandard.ZstdDecompressor()
@@ -341,9 +327,8 @@ def _fetch_and_extract_metadata(metadata_url: str) -> Optional[bytes]:
                 return None
 
         else:
-            # 未识别为压缩格式，按未压缩文本直接返回
-            logging.debug(f"未识别的压缩格式，按原始内容处理: {metadata_url}")
-            return content
+            logging.error(f"不支持的格式: {metadata_url}")
+            return None
 
     except requests.exceptions.RequestException as e:
         logging.error(f"下载失败: {e}")
@@ -448,11 +433,7 @@ def _parse_sources(
 ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]], List[Dict[str, Any]]]:
 
     # 将bytes转换为字符串
-    try:
-        text_data = sources_data.decode('utf-8')
-    except UnicodeDecodeError:
-        logging.warning("Sources 文件非 UTF-8 编码，尝试使用 errors='replace' 解码")
-        text_data = sources_data.decode('utf-8', errors='replace')
+    text_data = sources_data.decode('utf-8')
 
     packages = []
 

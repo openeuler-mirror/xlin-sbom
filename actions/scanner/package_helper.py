@@ -23,7 +23,7 @@ from actions.licenses_helper import (
     deb_licenses_scanner
 )
 from actions.data_helper import (
-    calculate_sha256,
+    calculate_sha1,
     save_data_to_json,
     read_data_from_json
 )
@@ -43,7 +43,7 @@ import os
 creators_file_path = os.path.join(ASSIST_DIR, 'creators.json')
 
 
-def package_scanner(pkg_path, pkg_type, created_time, checksum_values, include, exclude, workers, disable_tqdm, brief_mode):
+def package_scanner(pkg_path, pkg_type, created_time, include, exclude, workers, disable_tqdm, brief_mode):
     """
     扫描指定路径下的软件包，并根据软件包类型提取相关信息。
 
@@ -51,7 +51,6 @@ def package_scanner(pkg_path, pkg_type, created_time, checksum_values, include, 
         pkg_path (str): 软件包的文件路径。
         pkg_type (str): 软件包的类型。
         created_time (str): 创建时间，用于记录 SBOM 中的时间戳。
-        checksum_values (list): 校验值列表，用于增量更新。
         include (list): 包含的文件模式列表，用于源码扫描。
         exclude (list): 排除的文件模式列表，用于源码扫描。
         workers (int): 并行处理的工作线程数，用于源码扫描。
@@ -66,45 +65,23 @@ def package_scanner(pkg_path, pkg_type, created_time, checksum_values, include, 
     pkg_name = os.path.basename(pkg_path)
 
     if pkg_type == "deb":
-        result = process_deb_package(pkg_path, originators, checksum_values)
-        if result is None:
-            logging.info(f"跳过已存在的DEB包: {pkg_path}")
-            linx_sbom = {
-                "packages_sbom": _add_header([], "packages", pkg_name, created_time),
-                "files_sbom": _add_header([], "files", pkg_name, created_time),
-                "file_relationships_sbom": _add_header([], "file_relationships", pkg_name, created_time),
-                "licenses_sbom": _add_header([], "licenses", pkg_name, created_time),
-            }
-            save_data_to_json(originators, originators_file_path)
-            return linx_sbom
-        package, licenses, originators = result
+        package, licenses, originators = process_deb_package(
+            pkg_path, originators)
     elif pkg_type == "rpm":
-        result = process_rpm_package(pkg_path, originators, checksum_values)
-        if result is None:
-            logging.info(f"跳过已存在的RPM包: {pkg_path}")
-            linx_sbom = {
-                "packages_sbom": _add_header([], "packages", pkg_name, created_time),
-                "files_sbom": _add_header([], "files", pkg_name, created_time),
-                "file_relationships_sbom": _add_header([], "file_relationships", pkg_name, created_time),
-                "licenses_sbom": _add_header([], "licenses", pkg_name, created_time),
-            }
-            save_data_to_json(originators, originators_file_path)
-            return linx_sbom
-        package, licenses, originators, _provides = result
+        package, licenses, originators, provides = process_rpm_package(
+            pkg_path, originators)
 
     elif pkg_type == "source":
         package, licenses, originators = process_source_package(
             pkg_path, originators, include, exclude, workers, disable_tqdm, brief_mode)
-    else:
-        logging.error(f"不支持的软件包类型: {pkg_type}")
-        raise ValueError(f"不支持的软件包类型: {pkg_type}")
 
-    packages_sbom = [package.get_json()]
-    file_relationships_sbom = package.get_file_relationships()
+    packages_sbom = [package.get_json()] if package else []
+    package_files = package.files if package else []
+    file_relationships_sbom = package.get_file_relationships() if package else []
 
     linx_sbom = {
         "packages_sbom": _add_header(packages_sbom, "packages", pkg_name, created_time),
-        "files_sbom": _add_header(package.files, "files", pkg_name, created_time),
+        "files_sbom": _add_header(package_files, "files", pkg_name, created_time),
         "file_relationships_sbom": _add_header(file_relationships_sbom, "file_relationships", pkg_name, created_time),
         "licenses_sbom": _add_header(licenses, "licenses", pkg_name, created_time),
     }
@@ -116,29 +93,15 @@ def package_scanner(pkg_path, pkg_type, created_time, checksum_values, include, 
     return linx_sbom
 
 
-def process_deb_package(pkg_path, originators, checksum_values):
-    """
-    处理 DEB 包，提取元数据并返回 Package 对象及关联信息。
-
-    Args:
-        pkg_path (str): DEB 包的文件路径。
-        originators (list): 发起者信息列表。
-        checksum_values (list): 已有校验值列表，用于增量更新跳过。
-
-    Returns:
-        tuple: (Package, licenses, originators) 三元组。
-               若包已在 SBOM 中存在则返回 None。
-    """
+def process_deb_package(pkg_path, originators):
     with open(pkg_path, 'rb') as f:
-        package_sha256 = calculate_sha256(f)
-        if package_sha256 in checksum_values:
-            return None
+        package_sha1 = calculate_sha1(f)
 
     try:
         control_info = _get_deb_info(pkg_path)
     except OSError as e:
         logging.error(f'跳过 {pkg_path} 由于读取错误: {e}')
-        return None
+        return None, [], originators
 
     # 提取发起者名称、判断是否为组织及更新发起者列表
     originator_name, is_organization, originators = extract_originator_name(
@@ -149,7 +112,7 @@ def process_deb_package(pkg_path, originators, checksum_values):
     version = control_info.get("Version")
     architecture = control_info.get("Architecture")
     package = Package(name, version, None,
-                        architecture, "deb", "SHA256", package_sha256)
+                        architecture, "deb", "SHA1", package_sha1)
     
     # 获取文件信息
     deb, files = deb_files_scanner(pkg_path)
@@ -179,25 +142,10 @@ def process_deb_package(pkg_path, originators, checksum_values):
     return package, licenses, originators
 
 
-def process_rpm_package(pkg_path, originators, checksum_values):
-    """
-    处理 RPM 包，提取元数据并返回 Package 对象及关联信息。
-
-    Args:
-        pkg_path (str): RPM 包的文件路径。
-        originators (list): 发起者信息列表。
-        checksum_values (list): 已有校验值列表，用于增量更新跳过。
-
-    Returns:
-        tuple: (Package, licenses, originators, provides) 四元组。
-               若包已在 SBOM 中存在则返回 None。
-    """
+def process_rpm_package(pkg_path, originators):
 
     with open(pkg_path, 'rb') as f:
-        package_sha256 = calculate_sha256(f)
-        if package_sha256 in checksum_values:
-            return None
-
+        package_sha1 = calculate_sha1(f)
     try:
         with rpmfile.open(pkg_path) as rpm:
             name = _safe_decode(rpm.headers.get('name'))
@@ -216,7 +164,7 @@ def process_rpm_package(pkg_path, originators, checksum_values):
 
             # 创建Package对象
             package = Package(name, version, release,
-                              architecture, "rpm", "SHA256", package_sha256)
+                              architecture, "rpm", "SHA1", package_sha1)
 
             # 设置源码包名
             package.set_source(src_rpm)
@@ -236,43 +184,38 @@ def process_rpm_package(pkg_path, originators, checksum_values):
                 rpm.headers.get('description')))
 
             # 获取依赖信息
-        requirename_values = rpm.headers.get('requirename')
-        if isinstance(requirename_values, (str, bytes)):
-            requirename_values = [requirename_values]
-        for dep in requirename_values or []:
-            package.add_declared_dep(_safe_decode(dep))
+            for dep in rpm.headers.get('requirename'):
+                package.add_declared_dep(_safe_decode(dep))
 
-        # 获取文件信息
-        files = rpm_files_scanner(pkg_path)
-        for file in files:
-            package.add_file(file)
+            # 获取文件信息
+            files = rpm_files_scanner(pkg_path)
+            for file in files:
+                package.add_file(file)
 
-        provides_values = rpm.headers.get('provides')
-        if isinstance(provides_values, (str, bytes)):
-            provides_values = [provides_values]
-        provides = {
-            "id": package.id,
-            "provides": list(set(_safe_decode(file) for file in provides_values or [])),
-        }
+            provides = {
+                "id": package.id,
+                "provides": list(set(_safe_decode(file) for file in rpm.headers.get('provides'))),
+            }
 
         return package, licenses, originators, provides
 
     except Exception as e:
         logging.error(f'跳过 {pkg_path} 由于读取错误: {e}')
-        return None
+        return None, [], originators, None
 
 
 def process_source_package(pkg_path, originators, include, exclude, workers, disable_tqdm, brief_mode):
     package, licenses, originators = process_src_package(
         pkg_path, originators)
     files = []
-    file_relationships = []
-    if not brief_mode:
+    if not brief_mode and pkg_path.endswith('.src.rpm'):
         files, file_licenses = scan_src_rpm(
             pkg_path, include, exclude, workers, disable_tqdm)
         licenses.extend(file_licenses)
         for file in files:
             package.add_file(file)
+    elif not brief_mode:
+        logging.info("当前版本仅对 .src.rpm 执行源码文件级扫描，其他源码包格式已按独立策略生成包级SBOM")
     return package, licenses, originators
 
 
@@ -319,11 +262,7 @@ def _safe_decode(value):
         str: 解码后的字符串。如果输入值为 `None`，则返回空字符串。
     """
 
-    if value is None:
-        return ''
-    if isinstance(value, str):
-        return value
-    return value.decode('utf-8', errors='replace')
+    return value.decode('utf-8') if value is not None else ''
 
 
 def _add_header(sbom_data, data_name, pkg_name, created_time):
