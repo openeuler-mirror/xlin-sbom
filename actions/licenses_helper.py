@@ -111,8 +111,13 @@ def _decode_content(file_content):
     except UnicodeDecodeError:
         # 使用chardet检测文件内容的编码
         result = chardet.detect(file_content)
-        encoding = result['encoding']
-        return file_content.decode(encoding, errors='replace')
+        encoding = result.get('encoding') if isinstance(result, dict) else None
+        if not isinstance(encoding, str) or not encoding:
+            encoding = "utf-8"
+        try:
+            return file_content.decode(encoding, errors='replace')
+        except Exception:
+            return file_content.decode("utf-8", errors='replace')
     
 def _extract_deb_license_list(content):
     # 查找是否有特定格式指示行
@@ -214,7 +219,7 @@ def _scancode_scanner(deb, copyright_path):
         tar = deb.data.tgz()  # 获取 tarfile 对象
         try:
             member = tar.getmember(copyright_path)
-            tar.extract(member, path=tmpdir)
+            tar.extract(member, path=tmpdir, filter='data')
             tmp_path = os.path.join(tmpdir, copyright_path)
             scan_result = scancode.get_licenses(
                 location=tmp_path, include_text=True)

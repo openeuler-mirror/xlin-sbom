@@ -390,6 +390,7 @@ def main():
 
     # 配置输出目录
     output_dir = args.output
+    linx_sbom = None
 
     # 处理ISO镜像
     if args.iso is not None:
@@ -474,6 +475,10 @@ def main():
         else:
             logging.error(f"未侦测到有效的更新源地址")
             sys.exit(1)
+
+    if linx_sbom is None:
+        logging.error("未生成有效SBOM数据，任务中止")
+        sys.exit(1)
 
     # 保存SBOM
     save_sbom(linx_sbom, package_type, filename,

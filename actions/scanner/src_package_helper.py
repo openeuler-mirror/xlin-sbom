@@ -23,7 +23,8 @@ from typing import Dict, Any, Tuple, List, Callable
 from actions.package import Package
 from actions.scanner.suppliers_helper import (
     get_suppliers,
-    RPM_SUPPLIERS
+    RPM_SUPPLIERS,
+    DEB_SUPPLIERS
 )
 from actions.scanner.originators_helper import extract_originator_name
 from actions.licenses_helper import rpm_licenses_scanner
@@ -43,33 +44,33 @@ def process_src_package(pkg_path: str, originators: Dict[str, Any]) -> Tuple[Dic
         - 第三个元素为字典，更新后的来源者信息。
     """
 
-    md5_value = _calculate_package_md5(pkg_path)
+    checksum_value = _calculate_package_md5(pkg_path)
     package_type, content = _detect_package_type(pkg_path)
 
     if package_type == 'rpm':
-        return _process_spec(content, md5_value, originators)
+        return _process_spec(content, checksum_value, originators)
     elif package_type == 'deb':
-        return _process_control(content, md5_value, originators)
+        return _process_control(content, checksum_value, originators)
     else:
-        return _process_other_package(pkg_path, md5_value, originators)
+        return _process_other_package(pkg_path, checksum_value, originators)
 
 
 def _calculate_package_md5(file_path: str) -> str:
     """
-    计算文件的MD5校验和。
+    计算文件的SHA-256校验和。
 
     Args:
         file_path (str): 文件的绝对路径或相对路径。
 
     Returns:
-        str: 文件的MD5校验和，以十六进制字符串形式返回。
+        str: 文件的SHA-256校验和，以十六进制字符串返回。
     """
 
-    hash_md5 = hashlib.md5()
+    hash_sha256 = hashlib.sha256()
     with open(file_path, "rb") as f:
         for chunk in iter(lambda: f.read(4096), b""):
-            hash_md5.update(chunk)
-    return hash_md5.hexdigest()
+            hash_sha256.update(chunk)
+    return hash_sha256.hexdigest()
 
 
 def _detect_package_type(pkg_path: str) -> Tuple[str, str]:
@@ -203,6 +204,17 @@ def _detect_from_members(
     if current_depth > MAX_DEPTH:
         return ('other', '')
 
+    archive_suffixes = (
+        '.tar.gz',
+        '.tar.bz2',
+        '.tbz2',
+        '.tar.xz',
+        '.txz',
+        '.tgz',
+        '.tar',
+        '.zip',
+    )
+
     # 优先检测spec文件
     for member in members:
         member_name = member.name if not is_zip else member
@@ -226,12 +238,17 @@ def _detect_from_members(
     # 最后检测嵌套压缩包
     for member in members:
         member_name = member.name if not is_zip else member
-        ext = os.path.splitext(member_name)[1].lower()
+        member_name_lower = member_name.lower()
+        matched_ext = None
+        for suffix in archive_suffixes:
+            if member_name_lower.endswith(suffix):
+                matched_ext = suffix
+                break
 
-        if ext in ('.tar.gz', '.tgz', '.tar.bz2', '.tar.xz', '.tar', '.zip'):
+        if matched_ext is not None:
             try:
                 data = extract_file(member)
-                if ext == '.zip':
+                if matched_ext == '.zip':
                     with zipfile.ZipFile(io.BytesIO(data)) as nested_zip:
                         return _detect_from_zip(nested_zip, current_depth+1)
                 else:
@@ -245,7 +262,7 @@ def _detect_from_members(
 
 def _process_spec(
     spec_content: str,
-    md5_value: str,
+    checksum_value: str,
     originators: Dict[str, Any]
 ):
     def _process_requires(requires: List[str]) -> List[str]:
@@ -290,7 +307,7 @@ def _process_spec(
 
     # 创建Package对象
     package = Package(name, version, release,
-                      "source", "source", "MD5", md5_value)
+                      "source", "source", "SHA256", checksum_value)
 
     # 获取许可证信息
     licenses = rpm_licenses_scanner(spec_data.get('license', ''))
@@ -353,11 +370,16 @@ def _parse_spec_content(spec_content: str) -> Dict[str, Any]:
                 macros[macro_name] = macro_value
             continue
 
-        if stripped_line.startswith('%package') and in_preamble:
-            in_preamble = False
-
         if stripped_line.startswith('%'):
             current_section = stripped_line.split()[0].lower()
+            if stripped_line.startswith('%package'):
+                in_preamble = False
+            if current_section == '%description':
+                continue
+            continue
+
+        if current_section == '%description':
+            description_lines.append(stripped_line)
             continue
 
         if in_preamble:
@@ -390,9 +412,6 @@ def _parse_spec_content(spec_content: str) -> Dict[str, Any]:
             elif stripped_line.lower().startswith('buildarch:'):
                 arch = stripped_line.split(':', 1)[1].strip()
                 parsed['architecture'] = _replace_macros(arch, macros)
-
-            if current_section == '%description':
-                description_lines.append(stripped_line)
 
     if description_lines:
         parsed['description'] = ' '.join(
@@ -432,51 +451,86 @@ def _replace_macros(value: str, macros: Dict[str, str]) -> str:
 
 def _process_control(
     control_content: str,
-    md5_value: str,
+    checksum_value: str,
     originators: Dict[str, Any]
-) -> Tuple[Dict[str, Any], List[Dict[str, Any]], Dict[str, Any]]:
+) -> Tuple[Package, List[Dict[str, Any]], Dict[str, Any]]:
     """
-    处理DEB源码包的占位函数
+    处理DEB源码包。
+
+    解析 debian/control 文件内容，提取包名、版本等元数据，
+    并构造 Package 对象返回（与 _process_spec 保持一致的返回类型）。
     """
-    # TODO: 实现DEB包处理逻辑
-    return {
-        "id": "",
-        "name": "",
-        "version": "",
-        "architecture": "",
-        "package_type": "generic",
-        "depends": [],
-        "licenses": [],
-        "suppliers": [],
-        "description": "",
-        "checksum": {
-            "value": md5_value,
-            "algorithm": "MD5"
-        }
-    }, [], originators
+    parsed = _parse_control_content(control_content)
+
+    name = parsed.get('Source', '') or ''
+    version = parsed.get('Version', '')
+    homepage = parsed.get('Homepage', '')
+
+    originator_name, is_organization, originators = extract_originator_name(
+        homepage, originators)
+    suppliers = get_suppliers(
+        "debian", homepage, originator_name, DEB_SUPPLIERS)
+
+    # 创建 Package 对象
+    package = Package(name, version, "", "source", "source", "SHA256", checksum_value)
+
+    # 设置供应商信息
+    for supplier in suppliers:
+        package.add_supplier(supplier)
+
+    # 设置描述信息
+    package.set_description(parsed.get('Description', ''))
+
+    return package, [], originators
+
+
+def _parse_control_content(control_content: str) -> Dict[str, Any]:
+    """
+    解析 debian/control 文件内容，提取 Source/Version/Homepage/Description 等字段。
+
+    Args:
+        control_content (str): debian/control 文件内容。
+
+    Returns:
+        Dict[str, Any]: 解析出的字段字典。
+    """
+    parsed: Dict[str, Any] = {}
+    current_field = None
+
+    for line in control_content.splitlines():
+        if not line:
+            # 字段间空行，重置当前字段上下文
+            current_field = None
+            continue
+        if not line.startswith((' ', '\t')):
+            # 新字段
+            if ':' in line:
+                field_name, field_value = line.split(':', 1)
+                field_name = field_name.strip()
+                parsed[field_name] = field_value.strip()
+                current_field = field_name
+        elif current_field:
+            # 多行字段的延续（如 Description）
+            parsed[current_field] = (parsed.get(current_field, '') + '\n' + line.strip()).strip()
+
+    return parsed
 
 
 def _process_other_package(
     pkg_path: str,
-    md5_value: str,
+    checksum_value: str,
     originators: Dict[str, Any]
-) -> Tuple[Dict[str, Any], List[Dict[str, Any]], Dict[str, Any]]:
+) -> Tuple[Package, List[Dict[str, Any]], Dict[str, Any]]:
     """
-    处理其他类型源码包的占位函数
+    处理其他类型源码包。
+
+    无法识别为 RPM/DEB 的源码包，使用文件名作为包名，
+    构造 Package 对象返回（与 _process_spec 保持一致的返回类型）。
     """
-    # TODO: 实现其他类型处理逻辑
-    return {
-        "id": "",
-        "name": "",
-        "version": "",
-        "architecture": "",
-        "package_type": "generic",
-        "depends": [],
-        "licenses": [],
-        "suppliers": [],
-        "description": "",
-        "checksum": {
-            "value": md5_value,
-            "algorithm": "MD5"
-        }
-    }, [], originators
+    import os
+
+    name = os.path.basename(pkg_path)
+    # 创建 Package 对象
+    package = Package(name, "", "", "source", "source", "SHA256", checksum_value)
+
+    return package, [], originators
