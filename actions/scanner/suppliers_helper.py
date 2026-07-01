@@ -63,9 +63,9 @@ def get_suppliers(
             "link": link
         })
 
+    supplier_name = direct_supplier
+    supplier_link = None
     for supplier in supplier_dicts:
-        supplier_name = direct_supplier
-        supplier_link = None
         if _contains_keyword(direct_supplier, supplier.get('keywords')):
             supplier_name = supplier.get('name')
             supplier_link = supplier.get('url')

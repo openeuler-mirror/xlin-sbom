@@ -23,7 +23,8 @@ from typing import Dict, Any, Tuple, List, Callable
 from actions.package import Package
 from actions.scanner.suppliers_helper import (
     get_suppliers,
-    RPM_SUPPLIERS
+    RPM_SUPPLIERS,
+    DEB_SUPPLIERS
 )
 from actions.scanner.originators_helper import extract_originator_name
 from actions.licenses_helper import rpm_licenses_scanner
@@ -514,7 +515,7 @@ def _build_debian_source_package(
         package.add_declared_dep(dependency)
 
     suppliers = get_suppliers(
-        fields.get("Maintainer", ""), homepage, originator_name, [])
+        fields.get("Maintainer", ""), homepage, originator_name, DEB_SUPPLIERS)
     for supplier in suppliers:
         package.add_supplier(supplier)
 
