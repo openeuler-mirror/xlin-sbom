@@ -18,7 +18,6 @@ RUN apt-get update && \
     pkg-config \
     libicu-dev \
     libarchive-dev \
-    fuseiso \
     gcc \
     g++ \
     && apt-get clean \
