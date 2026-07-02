@@ -14,6 +14,7 @@
 
 from actions import ASSIST_DIR
 from actions.package import Package
+from actions.sbom_helper import build_sbom_header
 from actions.data_helper import read_data_from_json, save_data_to_json, remove_duplicates
 from actions.scanner.suppliers_helper import get_suppliers, RPM_SUPPLIERS, DEB_SUPPLIERS
 from actions.scanner.originators_helper import extract_originator_name
@@ -30,7 +31,7 @@ import zstandard
 import os
 import logging
 
-creators_file_path = os.path.join(ASSIST_DIR, 'creators.json')
+REQUEST_TIMEOUT = 10
 
 
 def rpm_repo_scanner(
@@ -64,8 +65,8 @@ def rpm_repo_scanner(
     packages_sbom = [package.get_json() for package in packages]
 
     linx_sbom = {
-        "packages_sbom": _add_header(packages_sbom, "packages", repo_url, created_time),
-        "licenses_sbom": _add_header(licenses, "licenses", repo_url, created_time),
+        "packages_sbom": build_sbom_header(packages_sbom, "packages", repo_url, created_time),
+        "licenses_sbom": build_sbom_header(licenses, "licenses", repo_url, created_time),
     }
 
     # 保存更新后的发起者信息
@@ -105,11 +106,11 @@ def deb_repo_scanner(
             packages.extend(packages_)
             licenses.extend(licenses_)
     
-    packages_sbom = [pakcage.get_json() for pakcage in packages]
+    packages_sbom = [package.get_json() for package in packages]
 
     linx_sbom = {
-        "packages_sbom": _add_header(packages_sbom, "packages", repo_url, created_time),
-        "licenses_sbom": _add_header(licenses, "licenses", repo_url, created_time),
+        "packages_sbom": build_sbom_header(packages_sbom, "packages", repo_url, created_time),
+        "licenses_sbom": build_sbom_header(licenses, "licenses", repo_url, created_time),
     }
 
     # 保存更新后的发起者信息
@@ -134,7 +135,7 @@ def find_primary_xml_in_repo(repo_url: str) -> Optional[str]:
             repo_url += '/'
 
         repomd_url = urljoin(repo_url, "repodata/repomd.xml")
-        response = requests.get(repomd_url, timeout=10)
+        response = requests.get(repomd_url, timeout=REQUEST_TIMEOUT)
         if response.ok:
             root = ET.fromstring(response.content)
             namespaces = {"repo": "http://linux.duke.edu/metadata/repo"}
@@ -146,7 +147,7 @@ def find_primary_xml_in_repo(repo_url: str) -> Optional[str]:
                 if href:
                     return urljoin(repo_url, href)
 
-        response = requests.get(repo_url, timeout=10)
+        response = requests.get(repo_url, timeout=REQUEST_TIMEOUT)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, "html.parser")
 
@@ -160,7 +161,7 @@ def find_primary_xml_in_repo(repo_url: str) -> Optional[str]:
             logging.error(f"未在仓库 {repo_url} 中找到 repodata 目录")
             return None
 
-        response = requests.get(repodata_link, timeout=10)
+        response = requests.get(repodata_link, timeout=REQUEST_TIMEOUT)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, "html.parser")
 
@@ -203,7 +204,7 @@ def find_deb_sources_in_repo(repo_url: str) -> Optional[str]:
                 component_url = urljoin(repo_url, f"{component}/")
 
                 # 尝试访问组件目录
-                response = requests.get(component_url, timeout=10)
+                response = requests.get(component_url, timeout=REQUEST_TIMEOUT)
                 response.raise_for_status()
 
                 # 如果组件目录存在，查找其中的source目录
@@ -219,7 +220,7 @@ def find_deb_sources_in_repo(repo_url: str) -> Optional[str]:
 
                 if source_link:
                     # 访问source目录，查找Sources文件
-                    source_response = requests.get(source_link, timeout=10)
+                    source_response = requests.get(source_link, timeout=REQUEST_TIMEOUT)
                     source_response.raise_for_status()
                     source_soup = BeautifulSoup(
                         source_response.text, "html.parser")
@@ -264,40 +265,20 @@ def find_deb_sources_in_repo(repo_url: str) -> Optional[str]:
         return None
 
 
-def _add_header(
-    sbom_data: List[Dict[str, Any]],
-    data_name: str,
-    repo_url: str,
-    created_time: str
-) -> Dict[str, Any]:
+def _fetch_and_extract_metadata(metadata_url: str) -> Optional[bytes]:
     """
-    为 SBOM 数据添加头部信息。
+    下载并解压仓库元数据文件。
 
     Args:
-        sbom_data (list): SBOM 数据列表。
-        data_name (str): 数据类型名称（如 "packages"、"files" 等）。
-        repo_url (str): 更新源的URL。
-        created_time (str): 创建时间的字符串。
+        metadata_url (str): 元数据文件 URL。
 
     Returns:
-        dict: 包含头部信息的 SBOM 字典。
+        bytes | None: 解压后的元数据内容。下载或解压失败时返回 None。
     """
 
-    sbom = {
-        "scan_target": repo_url or "NOASSERTION",
-        "creation_info": {
-            "creators": read_data_from_json(creators_file_path),
-            "created": created_time
-        },
-        data_name: sbom_data
-    }
-    return sbom
-
-
-def _fetch_and_extract_metadata(metadata_url: str) -> Optional[bytes]:
 
     try:
-        response = requests.get(metadata_url)
+        response = requests.get(metadata_url, timeout=REQUEST_TIMEOUT)
         response.raise_for_status()
 
         content = response.content
@@ -431,6 +412,17 @@ def _parse_sources(
     originators: List[Dict[str, Any]],
     disable_tqdm: bool = False
 ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]], List[Dict[str, Any]]]:
+    """
+    解析 Debian Sources 元数据并生成源码包对象。
+
+    Args:
+        sources_data (bytes): Sources 文件内容。
+        originators (list): 发起者辅助数据。
+        disable_tqdm (bool): 是否禁用进度条。
+
+    Returns:
+        tuple: 包对象列表、许可证列表和更新后的发起者列表。
+    """
 
     # 将bytes转换为字符串
     text_data = sources_data.decode('utf-8')
@@ -441,47 +433,9 @@ def _parse_sources(
     package_blocks = text_data.strip().split('\n\n')
 
     for block in tqdm(package_blocks, disable=disable_tqdm):
+        field_data = {}
         try:
-            package_info = {}
-
-            # 解析块中的字段
-            lines = block.split('\n')
-            current_field = None
-            field_data = {}
-
-            for line in lines:
-                # 检查是否是字段开始（不以空格开头）
-                if line and not line.startswith(' '):
-                    # 处理多行字段的累积
-                    if current_field and current_field in field_data:
-                        if isinstance(field_data[current_field], list):
-                            field_data[current_field] = '\n'.join(
-                                field_data[current_field])
-
-                    # 解析新字段
-                    if ':' in line:
-                        field_name, field_value = line.split(':', 1)
-                        field_name = field_name.strip()
-                        field_value = field_value.strip()
-
-                        # 对于多行字段，初始化为列表
-                        if field_name in ['Files', 'Checksums-Sha256', 'Package-List']:
-                            field_data[field_name] = [
-                                field_value] if field_value else []
-                        else:
-                            field_data[field_name] = field_value
-
-                        current_field = field_name
-                elif current_field and line.strip():
-                    # 多行字段的延续
-                    if current_field in field_data and isinstance(field_data[current_field], list):
-                        field_data[current_field].append(line.strip())
-
-            # 处理最后一个字段
-            if current_field and current_field in field_data:
-                if isinstance(field_data[current_field], list):
-                    field_data[current_field] = '\n'.join(
-                        field_data[current_field])
+            field_data = _parse_debian_source_block(block)
 
             # 提取所需信息
             name = field_data.get('Package', '')
@@ -523,3 +477,39 @@ def _parse_sources(
 
     # 返回结果，licenses始终为空列表
     return packages, [], originators
+
+
+def _parse_debian_source_block(block: str) -> Dict[str, str]:
+    """
+    解析 Debian Sources 文件中的单个包块。
+
+    Args:
+        block (str): 单个包块文本。
+
+    Returns:
+        dict: 字段名到字段值的映射。
+    """
+
+    multiline_fields = {'Files', 'Checksums-Sha256', 'Package-List'}
+    field_data = {}
+    current_field = None
+
+    for line in block.split('\n'):
+        if line and not line.startswith(' '):
+            if ':' not in line:
+                continue
+            current_field, field_value = line.split(':', 1)
+            current_field = current_field.strip()
+            field_value = field_value.strip()
+            if current_field in multiline_fields:
+                field_data[current_field] = [field_value] if field_value else []
+            else:
+                field_data[current_field] = field_value
+            continue
+        if current_field and line.strip() and isinstance(field_data.get(current_field), list):
+            field_data[current_field].append(line.strip())
+
+    return {
+        field_name: '\n'.join(value) if isinstance(value, list) else value
+        for field_name, value in field_data.items()
+    }

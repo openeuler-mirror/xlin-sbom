@@ -19,6 +19,7 @@ import sys
 import time
 import logging
 import argparse
+import csv
 from actions import (
     LOG_DIR
 )
@@ -205,22 +206,22 @@ def save_sbom(linx_sbom, package_type, filename, utc_timestamp, spdx_timestamp, 
         os.makedirs(linx_sbom_path, exist_ok=True)
 
         save_data_to_json(linx_sbom.get('packages_sbom'),
-                          f"{linx_sbom_path}/{linx_sbom_packages_filename}")
+                          os.path.join(linx_sbom_path, linx_sbom_packages_filename))
         save_data_to_json(linx_sbom.get('files_sbom'),
-                          f"{linx_sbom_path}/{linx_sbom_files_filename}")
+                          os.path.join(linx_sbom_path, linx_sbom_files_filename))
         save_data_to_json(linx_sbom.get('licenses_sbom'),
-                          f"{linx_sbom_path}/{linx_sbom_licenses_filename}")
+                          os.path.join(linx_sbom_path, linx_sbom_licenses_filename))
         save_data_to_json(linx_sbom.get('package_relationships_sbom'),
-                          f"{linx_sbom_path}/{linx_sbom_package_relationships_filename}")
+                          os.path.join(linx_sbom_path, linx_sbom_package_relationships_filename))
         save_data_to_json(linx_sbom.get('file_relationships_sbom'),
-                          f"{linx_sbom_path}/{linx_sbom_file_relationships_filename}")
+                          os.path.join(linx_sbom_path, linx_sbom_file_relationships_filename))
         logging.info(f"{linx_sbom_dirname} 已被保存至 {output_dir}")
 
     if "spdx" in output_formats:
         spdx_sbom = convert_to_spdx(
             linx_sbom, filename, spdx_timestamp, package_type)
         spdx_sbom_filename = f"spdx-sbom_{filename}_{utc_timestamp}.json"
-        save_data_to_json(spdx_sbom, f"{sbom_path}/{spdx_sbom_filename}")
+        save_data_to_json(spdx_sbom, os.path.join(sbom_path, spdx_sbom_filename))
         logging.info(f"{spdx_sbom_filename} 已被保存至 {output_dir}")
 
 

@@ -14,13 +14,12 @@
 
 
 from typing import List, Dict, Any
+from tqdm import tqdm
+import logging
+import re
 
 
 def get_deb_relationships(packages, disable_tqdm):
-
-    from tqdm import tqdm
-    import logging
-
     relationships = []
 
     # 将软件包名称映射到ID
@@ -81,8 +80,6 @@ def get_rpm_relationships(
         list: 包含 RPM 包之间依赖关系的列表，每个元素是一个字典，包含 "id"、"related_element" 和 "relationship_type" 键。
     """
 
-    from tqdm import tqdm
-
     relationships = []
     # 根据 disable_tqdm 决定是否使用 tqdm
     package_iter = tqdm(packages, desc="处理包依赖关系",
@@ -118,7 +115,6 @@ def _strip_version_specifier(s):
     Returns:
         str: 移除了所有版本指定符及相关的任何版本信息后的纯净字符串。
     """
-    import re
     return re.split(r'[(<>]', s.strip())[0].replace(":any", "").strip()
 
 

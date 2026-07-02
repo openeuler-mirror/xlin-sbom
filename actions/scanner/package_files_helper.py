@@ -13,8 +13,12 @@
 # limitations under the License.
 
 import hashlib
+import os
 import rpmfile
+import debian.debfile
 from typing import List, Dict, Any
+
+from actions.data_helper import calculate_md5
 
 
 def rpm_files_scanner(package_path: str) -> List[Dict[str, Any]]:
@@ -71,37 +75,30 @@ def rpm_files_scanner(package_path: str) -> List[Dict[str, Any]]:
         return file_list
 
 
-def deb_files_scanner(package_path):
+def deb_files_scanner(deb: debian.debfile.DebFile) -> List[Dict[str, Any]]:
     """
     扫描DEB包中的文件信息并构建文件列表。
 
     Args:
-        package_path (str): DEB包的路径。
+        deb (debian.debfile.DebFile): 已打开的 DEB 包对象。
 
     Returns:
-        tuple: 包含两个元素的元组：
-            - `deb` (debian.debfile.DebFile): 打开的DEB文件对象。
-            - `file_list` (list): 包含文件信息的列表，每个元素是一个字典，包含文件ID、名称、路径和校验信息。
+        list: 包含文件信息的列表，每个元素是一个字典，包含文件ID、名称、路径和校验信息。
     """
 
-    import debian.debfile
-    import os
-    from actions.data_helper import calculate_md5
-
     file_list = []
-
-    # 使用debian.debfile库打开DEB文件
-    deb = debian.debfile.DebFile(package_path)
-
-    # 获取DEB包内所有文件成员
-    file_members = deb.data.tgz().getmembers()
+    data_tar = deb.data.tgz()
+    file_members = data_tar.getmembers()
 
     # 筛选文件成员中的文件（非目录），构造文件名和路径信息，并计算SHA1哈希值
     for member in file_members:
         if member.isfile():
             file_path = member.name
-            with deb.data.tgz().extractfile(member) as f:
-                file_md5 = calculate_md5(f)
+            extracted_file = data_tar.extractfile(member)
+            if extracted_file is None:
+                continue
+            with extracted_file:
+                file_md5 = calculate_md5(extracted_file)
 
             # 创建一个MD5哈希对象
             id_md5 = hashlib.md5(file_path.encode()).hexdigest()
@@ -118,5 +115,4 @@ def deb_files_scanner(package_path):
             }
             file_list.append(file_info)
 
-    # 返回DEB文件对象和文件信息列表
-    return deb, file_list
+    return file_list

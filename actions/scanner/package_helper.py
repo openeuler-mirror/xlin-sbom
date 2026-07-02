@@ -14,6 +14,7 @@
 
 from actions import ASSIST_DIR
 from actions.package import Package
+from actions.sbom_helper import build_sbom_header
 from actions.scanner.package_files_helper import (
     rpm_files_scanner,
     deb_files_scanner
@@ -37,10 +38,8 @@ from actions.scanner.src_package_helper import process_src_package
 from actions.scanner.scancode_helper import scan_src_rpm
 import logging
 import rpmfile
+import debian.debfile
 import os
-
-
-creators_file_path = os.path.join(ASSIST_DIR, 'creators.json')
 
 
 def package_scanner(pkg_path, pkg_type, created_time, include, exclude, workers, disable_tqdm, brief_mode):
@@ -80,10 +79,10 @@ def package_scanner(pkg_path, pkg_type, created_time, include, exclude, workers,
     file_relationships_sbom = package.get_file_relationships() if package else []
 
     linx_sbom = {
-        "packages_sbom": _add_header(packages_sbom, "packages", pkg_name, created_time),
-        "files_sbom": _add_header(package_files, "files", pkg_name, created_time),
-        "file_relationships_sbom": _add_header(file_relationships_sbom, "file_relationships", pkg_name, created_time),
-        "licenses_sbom": _add_header(licenses, "licenses", pkg_name, created_time),
+        "packages_sbom": build_sbom_header(packages_sbom, "packages", pkg_name, created_time),
+        "files_sbom": build_sbom_header(package_files, "files", pkg_name, created_time),
+        "file_relationships_sbom": build_sbom_header(file_relationships_sbom, "file_relationships", pkg_name, created_time),
+        "licenses_sbom": build_sbom_header(licenses, "licenses", pkg_name, created_time),
     }
 
     # 保存更新后的发起者信息
@@ -98,11 +97,33 @@ def process_deb_package(pkg_path, originators):
         package_sha1 = calculate_sha1(f)
 
     try:
-        control_info = _get_deb_info(pkg_path)
+        with debian.debfile.DebFile(pkg_path) as deb:
+            control_info = _get_deb_info(deb)
+            package, licenses, originators = _build_deb_package(
+                deb, control_info, package_sha1, originators)
     except OSError as e:
         logging.error(f'跳过 {pkg_path} 由于读取错误: {e}')
         return None, [], originators
+    except Exception as e:
+        logging.error(f'跳过 {pkg_path} 由于读取错误: {e}')
+        return None, [], originators
 
+    return package, licenses, originators
+
+
+def _build_deb_package(deb, control_info, package_sha1, originators):
+    """
+    根据已读取的 DEB 控制信息构建包对象。
+
+    Args:
+        deb (debian.debfile.DebFile): 已打开的 DEB 包对象。
+        control_info (dict): DEB control 字段信息。
+        package_sha1 (str): DEB 文件的 SHA1 校验值。
+        originators (list): 发起者辅助数据。
+
+    Returns:
+        tuple: 包含包对象、许可证列表和更新后的发起者列表。
+    """
     # 提取发起者名称、判断是否为组织及更新发起者列表
     originator_name, is_organization, originators = extract_originator_name(
         control_info.get("Homepage"), originators)
@@ -115,14 +136,14 @@ def process_deb_package(pkg_path, originators):
                         architecture, "deb", "SHA1", package_sha1)
     
     # 获取文件信息
-    deb, files = deb_files_scanner(pkg_path)
-    for file in files:
-        package.add_file(file)
+    files = deb_files_scanner(deb)
+    for file_info in files:
+        package.add_file(file_info)
 
     # 获取许可证信息
     licenses = deb_licenses_scanner(deb, files)
-    for license in licenses:
-        package.add_license(license.get("id"))
+    for license_info in licenses:
+        package.add_license(license_info.get("id"))
 
     # 设置供应商信息
     suppliers = get_suppliers(control_info.get('Maintainer', ''), control_info.get(
@@ -172,8 +193,8 @@ def process_rpm_package(pkg_path, originators):
             # 获取许可证信息
             licenses = rpm_licenses_scanner(
                 _safe_decode(rpm.headers.get('copyright')))
-            for license in licenses:
-                package.add_license(license.get("id"))
+            for license_info in licenses:
+                package.add_license(license_info.get("id"))
 
             # 设置供应商信息
             for supplier in suppliers:
@@ -189,12 +210,12 @@ def process_rpm_package(pkg_path, originators):
 
             # 获取文件信息
             files = rpm_files_scanner(pkg_path)
-            for file in files:
-                package.add_file(file)
+            for file_info in files:
+                package.add_file(file_info)
 
             provides = {
                 "id": package.id,
-                "provides": list(set(_safe_decode(file) for file in rpm.headers.get('provides'))),
+                "provides": list(set(_safe_decode(provide) for provide in rpm.headers.get('provides'))),
             }
 
         return package, licenses, originators, provides
@@ -212,8 +233,8 @@ def process_source_package(pkg_path, originators, include, exclude, workers, dis
         files, file_licenses = scan_src_rpm(
             pkg_path, include, exclude, workers, disable_tqdm)
         licenses.extend(file_licenses)
-        for file in files:
-            package.add_file(file)
+        for file_info in files:
+            package.add_file(file_info)
     elif not brief_mode:
         logging.info("当前版本仅对 .src.rpm 执行源码文件级扫描，其他源码包格式已按独立策略生成包级SBOM")
     return package, licenses, originators
@@ -244,11 +265,7 @@ def _get_deb_info(deb_package):
         dict: 包含 DEB 包控制信息的字典。
     """
 
-    import debian.debfile
-
-    deb = debian.debfile.DebFile(deb_package)
-    control_info = deb.control.debcontrol()
-    return control_info
+    return deb_package.control.debcontrol()
 
 
 def _safe_decode(value):
@@ -263,27 +280,3 @@ def _safe_decode(value):
     """
 
     return value.decode('utf-8') if value is not None else ''
-
-
-def _add_header(sbom_data, data_name, pkg_name, created_time):
-    """
-    为 SBOM 数据添加头部信息。
-
-    Args:
-        sbom_data (list): SBOM 数据列表。
-        data_name (str): 数据类型名称（如 "packages"、"files" 等）。
-        created_time (str): 创建时间的字符串。
-
-    Returns:
-        dict: 包含头部信息的 SBOM 字典。
-    """
-
-    sbom = {
-        "scan_target": pkg_name,
-        "creation_info": {
-            "creators": read_data_from_json(creators_file_path),
-            "created": created_time
-        },
-        data_name: sbom_data
-    }
-    return sbom

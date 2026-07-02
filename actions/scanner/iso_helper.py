@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from actions import ASSIST_DIR
+from actions.sbom_helper import build_sbom_header
 from actions.scanner.relationships_helper import (
     get_rpm_relationships,
     get_deb_relationships
@@ -35,9 +36,8 @@ import re
 import tempfile
 import threading
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
+import pycdlib
 from tqdm import tqdm
-
-creators_file_path = os.path.join(ASSIST_DIR, 'creators.json')
 
 ISO_PATH_TYPES = ("udf", "rockridge", "joliet", "iso9660")
 ISO_PATH_TYPE_CONFIG = {
@@ -80,11 +80,6 @@ class IsoEntry:
 
 class PyCdlibIsoReader:
     def __init__(self, iso_path: str):
-        try:
-            import pycdlib
-        except ImportError as exc:
-            raise RuntimeError("缺少 pycdlib 依赖，无法直接解析 ISO 镜像。") from exc
-
         self._iso = pycdlib.PyCdlib()
         self._iso.open(iso_path)
         self.path_type = _select_iso_path_type(self._iso)
@@ -201,13 +196,9 @@ def _scan_deb_entries(
 
     package_relationships = get_deb_relationships(packages_sbom, disable_tqdm)
 
-    linx_sbom = {
-        "packages_sbom": _add_header(packages_sbom, "packages", iso_filename, os_arch, created_time),
-        "files_sbom": _add_header(files, "files", iso_filename, os_arch, created_time),
-        "file_relationships_sbom": _add_header(file_relationships, "file_relationships", iso_filename, os_arch, created_time),
-        "licenses_sbom": _add_header(licenses, "licenses", iso_filename, os_arch, created_time),
-        "package_relationships_sbom": _add_header(package_relationships, "package_relationships", iso_filename, os_arch, created_time),
-    }
+    linx_sbom = _build_iso_sbom(
+        packages_sbom, files, file_relationships, licenses,
+        package_relationships, iso_filename, os_arch, created_time)
 
     save_data_to_json(originators, originators_file_path)
     return linx_sbom
@@ -281,13 +272,9 @@ def _scan_rpm_entries(
     package_relationships = get_rpm_relationships(
         packages_sbom, provides_relationships, disable_tqdm)
 
-    linx_sbom = {
-        "packages_sbom": _add_header(packages_sbom, "packages", iso_filename, os_arch, created_time),
-        "files_sbom": _add_header(files, "files", iso_filename, os_arch, created_time),
-        "file_relationships_sbom": _add_header(file_relationships, "file_relationships", iso_filename, os_arch, created_time),
-        "licenses_sbom": _add_header(licenses, "licenses", iso_filename, os_arch, created_time),
-        "package_relationships_sbom": _add_header(package_relationships, "package_relationships", iso_filename, os_arch, created_time),
-    }
+    linx_sbom = _build_iso_sbom(
+        packages_sbom, files, file_relationships, licenses,
+        package_relationships, iso_filename, os_arch, created_time)
 
     save_data_to_json(originators, originators_file_path)
     return linx_sbom
@@ -476,25 +463,30 @@ def _strip_iso_version(path: str) -> str:
     return re.sub(r";\d+$", "", path)
 
 
-def _add_header(
-    sbom_data: List[Dict[str, Any]],
-    data_name: str,
+def _build_iso_sbom(
+    packages_sbom: List[Dict[str, Any]],
+    files_sbom: List[Dict[str, Any]],
+    file_relationships_sbom: List[Dict[str, Any]],
+    licenses_sbom: List[Dict[str, Any]],
+    package_relationships_sbom: List[Dict[str, Any]],
     iso_filename: str,
     iso_arch: Optional[str],
     created_time: str
 ) -> Dict[str, Any]:
-    """
-    为 SBOM 数据添加头部信息。
+    """构建 ISO 扫描的 Linx SBOM 输出结构。
 
     Args:
-        sbom_data (list): SBOM 数据列表。
-        data_name (str): 数据类型名称（如 "packages"、"files" 等）。
+        packages_sbom (list): 包清单数据。
+        files_sbom (list): 文件清单数据。
+        file_relationships_sbom (list): 文件关系清单数据。
+        licenses_sbom (list): 许可证清单数据。
+        package_relationships_sbom (list): 包关系清单数据。
         iso_filename (str): ISO 文件名称。
         iso_arch (str): 操作系统架构。
         created_time (str): 创建时间的字符串。
 
     Returns:
-        dict: 包含头部信息的 SBOM 字典。
+        dict: Linx SBOM 输出结构。
     """
 
     os_name = None
@@ -503,20 +495,25 @@ def _add_header(
     parts = iso_filename.split('-')
 
     if len(parts) < 5:
-        logging.warning(f"不规范的ISO镜像文件名，需手动对{data_name}清单的ISO镜像数据进行补充。")
+        logging.warning("不规范的ISO镜像文件名，需手动对ISO镜像数据进行补充。")
     else:
         os_name = parts[0]
         os_version = '-'.join(parts[1:-2])
 
-    sbom = {
-        "scan_target": iso_filename,
-        "os_name": os_name or "NOASSERTION",
-        "os_version": os_version or "NOASSERTION",
-        "os_arch": iso_arch or "NOASSERTION",
-        "creation_info": {
-            "creators": read_data_from_json(creators_file_path),
-            "created": created_time
-        },
-        data_name: sbom_data
+    return {
+        "packages_sbom": build_sbom_header(
+            packages_sbom, "packages", iso_filename, created_time,
+            os_name, os_version, iso_arch),
+        "files_sbom": build_sbom_header(
+            files_sbom, "files", iso_filename, created_time,
+            os_name, os_version, iso_arch),
+        "file_relationships_sbom": build_sbom_header(
+            file_relationships_sbom, "file_relationships", iso_filename,
+            created_time, os_name, os_version, iso_arch),
+        "licenses_sbom": build_sbom_header(
+            licenses_sbom, "licenses", iso_filename, created_time,
+            os_name, os_version, iso_arch),
+        "package_relationships_sbom": build_sbom_header(
+            package_relationships_sbom, "package_relationships", iso_filename,
+            created_time, os_name, os_version, iso_arch),
     }
-    return sbom
