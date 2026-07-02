@@ -11,9 +11,9 @@ The XiLing SBOM Tool is designed to scan ISO images, software packages (`.rpm` /
 | Docker | 18.09.1+ | 20.10+ |
 | Docker Compose | 1.27.0+ | 2.0+ |
 | RAM | 4 GB | 8 GB |
-| Disk Space | 10 GB (Including ISO mounts & output files) | 20 GB |
+| Disk Space | 10 GB (Including temporary ISO parsing files and output files) | 20 GB |
 
-> **Additional Requirements**: When running ISO scans, the container requires file system mount permissions. Please ensure that the Docker host kernel supports FUSE.
+> **Additional Requirements**: ISO scans parse the image file system directly and do not require FUSE, `mount`, or extra container mount privileges.
 
 ## Image Acquisition and Loading
 
