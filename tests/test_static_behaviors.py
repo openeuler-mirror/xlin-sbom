@@ -1,7 +1,7 @@
+import ast
+import gc
 import importlib.util
 import gzip
-import json
-import os
 import tarfile
 import tempfile
 import unittest
@@ -33,6 +33,21 @@ from actions.scanner import (
 
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
+
+
+class CodeQualityTests(unittest.TestCase):
+    def test_imports_stay_at_module_top_level(self):
+        for path in [ROOT_DIR / "linx-xiling.py", *(ROOT_DIR / "actions").rglob("*.py")]:
+            tree = ast.parse(path.read_text(encoding="utf-8"))
+            for node in ast.walk(tree):
+                for child in ast.iter_child_nodes(node):
+                    child.parent = node
+            for node in ast.walk(tree):
+                if isinstance(node, (ast.Import, ast.ImportFrom)):
+                    self.assertIsInstance(
+                        getattr(node, "parent", None),
+                        ast.Module,
+                        f"{path} line {node.lineno} has a local import")
 
 
 def load_cli_module():
@@ -205,6 +220,21 @@ class PackageScannerTests(unittest.TestCase):
         self.assertEqual(originators[0]["homepage"], "https://example.test/demo")
         self.assertIsInstance(licenses, list)
 
+    def test_process_deb_package_closes_deb_file(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            deb_path = Path(tmpdir) / "demo.deb"
+            make_minimal_deb(deb_path)
+            with warnings.catch_warnings(record=True) as caught:
+                warnings.simplefilter("always", ResourceWarning)
+                package_helper.process_deb_package(str(deb_path), [])
+                gc.collect()
+
+        resource_warnings = [
+            warning for warning in caught
+            if issubclass(warning.category, ResourceWarning)
+        ]
+        self.assertEqual(resource_warnings, [])
+
     def test_process_rpm_package_reads_mocked_headers(self):
         class FakeRPM:
             headers = {
@@ -293,6 +323,8 @@ class RepoScannerTests(unittest.TestCase):
             gz.write(b"metadata")
         with mock.patch.object(repo_helper.requests, "get", return_value=Response(gz_buffer.getvalue())):
             self.assertEqual(repo_helper._fetch_and_extract_metadata("https://x/primary.xml.gz"), b"metadata")
+            repo_helper.requests.get.assert_called_with(
+                "https://x/primary.xml.gz", timeout=repo_helper.REQUEST_TIMEOUT)
 
         compressed = zstandard.ZstdCompressor().compress(b"metadata-zst")
         with mock.patch.object(repo_helper.requests, "get", return_value=Response(compressed)):
@@ -311,6 +343,19 @@ Checksums-Sha256:
         self.assertEqual(packages[0].checksum_value, "abcdef")
         self.assertEqual(licenses, [])
         self.assertEqual(originators[0]["homepage"], "https://example.test/demo")
+
+    def test_parse_debian_source_block_keeps_multiline_fields(self):
+        block = """Package: demo
+Checksums-Sha256:
+ abcdef 123 demo_1.2.orig.tar.gz
+ 012345 456 demo_1.2.debian.tar.xz
+Description: demo source
+"""
+        fields = repo_helper._parse_debian_source_block(block)
+
+        self.assertEqual(fields["Package"], "demo")
+        self.assertIn("abcdef 123 demo_1.2.orig.tar.gz", fields["Checksums-Sha256"])
+        self.assertIn("012345 456 demo_1.2.debian.tar.xz", fields["Checksums-Sha256"])
 
 
 class IsoScannerTests(unittest.TestCase):
@@ -629,6 +674,29 @@ class SPDXConversionTests(unittest.TestCase):
         self.assertEqual(spdx["files"][0]["SPDXID"], "SPDXRef-File-demo")
         self.assertEqual(len(spdx["relationships"]), 2)
         self.assertEqual(spdx["hasExtractedLicensingInfos"][0]["licenseId"], "LicenseRef-mit")
+
+    def test_convert_to_spdx_handles_missing_optional_sections(self):
+        linx_sbom = {
+            "packages_sbom": {"packages": [{
+                "id": "Package-demo-abc",
+                "name": "demo",
+                "version": "",
+                "architecture": "",
+                "licenses": [],
+                "suppliers": [],
+                "description": "",
+                "checksum": {},
+            }]},
+            "licenses_sbom": {"licenses": []},
+        }
+
+        spdx = spdx_sbom_helper.convert_to_spdx(
+            linx_sbom, "demo", "2026-06-16T00:00:00Z", "source")
+
+        self.assertEqual(spdx["packages"][0]["versionInfo"], "NOASSERTION")
+        self.assertEqual(spdx["packages"][0]["supplier"], "NOASSERTION")
+        self.assertEqual(spdx["packages"][0]["checksums"][0]["algorithm"], "NOASSERTION")
+        self.assertEqual(spdx["files"], [])
 
 
 class ScanCodeHelperTests(unittest.TestCase):
