@@ -15,10 +15,13 @@
 from actions import ASSIST_DIR
 from actions.data_helper import read_data_from_json
 from typing import List, Dict
+from scancode import api as scancode
+import chardet
 import logging
 import os
 import re
 import hashlib
+import tempfile
 
 
 licenses_file_path = os.path.join(ASSIST_DIR, 'licenses.json')
@@ -44,11 +47,15 @@ def deb_licenses_scanner(deb, files):
                   for file_info in files if file_info["name"].endswith("copyright")]
 
     # 遍历版权文件路径以提取和分析许可证信息
+    data_tar = deb.data.tgz()
     for copyright_path in copyrights:
         try:
             # 提取文件内容
-            with deb.data.tgz().extractfile(copyright_path) as f:
-                content = f.read()
+            extracted_file = data_tar.extractfile(copyright_path)
+            if extracted_file is None:
+                continue
+            with extracted_file:
+                content = extracted_file.read()
         except Exception as e:
             logging.error(f'处理失败: {copyright_path} - {str(e)}')
             continue
@@ -61,10 +68,10 @@ def deb_licenses_scanner(deb, files):
 
         # 处理识别到的许可证
         if license_list:
-            for license in license_list:
+            for license_name in license_list:
                 license_info = {
-                    "id": f"LicenseRef-{(hashlib.md5(license.encode()).hexdigest())[:12]}",
-                    "name": license,
+                    "id": f"LicenseRef-{(hashlib.md5(license_name.encode()).hexdigest())[:12]}",
+                    "name": license_name,
                 }
                 licenses.append(license_info)
 
@@ -103,8 +110,6 @@ def _decode_content(file_content):
     Returns:
         str: 解码后的文件内容。如果解码失败，则使用错误处理模式进行解码。
     """
-    import chardet
-
     try:
         # 首选UTF-8解码
         return file_content.decode('utf-8')
@@ -205,9 +210,6 @@ def _common_licenses_scanner(content):
     
 
 def _scancode_scanner(deb, copyright_path):
-    from scancode import api as scancode
-    import tempfile
-
     license_list = set()
 
     with tempfile.TemporaryDirectory() as tmpdir:

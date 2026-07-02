@@ -19,6 +19,7 @@ import rpmfile
 import hashlib
 import io
 import logging
+import re
 from typing import Dict, Any, Tuple, List, Callable
 from actions.package import Package
 from actions.scanner.suppliers_helper import (
@@ -62,6 +63,15 @@ def process_src_package(pkg_path: str, originators: Dict[str, Any]) -> Tuple[Dic
 
 
 def _detect_source_package_kind(pkg_path: str) -> str:
+    """识别源码包的外层格式。
+
+    Args:
+        pkg_path (str): 源码包路径。
+
+    Returns:
+        str: 源码包格式标识。
+    """
+
     lower_path = pkg_path.lower()
     if lower_path.endswith('.src.rpm'):
         return 'src_rpm'
@@ -230,7 +240,7 @@ def _detect_from_members(
             try:
                 content = extract_file(member).decode('utf-8', errors='ignore')
                 return ('rpm', content)
-            except Exception as e:
+            except Exception:
                 continue
 
     # 然后检测control文件
@@ -240,24 +250,22 @@ def _detect_from_members(
             try:
                 content = extract_file(member).decode('utf-8', errors='ignore')
                 return ('deb', content)
-            except Exception as e:
+            except Exception:
                 continue
 
     # 最后检测嵌套压缩包
     for member in members:
         member_name = member.name if not is_zip else member
-        ext = os.path.splitext(member_name)[1].lower()
-
-        if ext in ('.tar.gz', '.tgz', '.tar.bz2', '.tar.xz', '.tar', '.zip'):
+        lower_name = member_name.lower()
+        if lower_name.endswith(('.tar.gz', '.tgz', '.tar.bz2', '.tbz2', '.tar.xz', '.txz', '.tar', '.zip')):
             try:
                 data = extract_file(member)
-                if ext == '.zip':
+                if lower_name.endswith('.zip'):
                     with zipfile.ZipFile(io.BytesIO(data)) as nested_zip:
                         return _detect_from_zip(nested_zip, current_depth+1)
-                else:
-                    with tarfile.open(fileobj=io.BytesIO(data), mode='r:*') as nested_tar:
-                        return _detect_from_archive(nested_tar, current_depth+1)
-            except Exception as e:
+                with tarfile.open(fileobj=io.BytesIO(data), mode='r:*') as nested_tar:
+                    return _detect_from_archive(nested_tar, current_depth+1)
+            except Exception:
                 continue
 
     return ('other', '')
@@ -298,8 +306,6 @@ def _process_spec(
     version = spec_data.get('version', '')
     release = spec_data.get('release', '')
 
-    build_requires = _process_requires(
-        spec_data.get('buildrequires', []))  # TO-DO
     requires = _process_requires(spec_data.get('requires', []))
 
     homepage = spec_data.get('url', '')
@@ -314,8 +320,8 @@ def _process_spec(
 
     # 获取许可证信息
     licenses = rpm_licenses_scanner(spec_data.get('license', ''))
-    for license in licenses:
-        package.add_license(license.get("id"))
+    for license_info in licenses:
+        package.add_license(license_info.get("id"))
 
     # 设置供应商信息
     for supplier in suppliers:
@@ -433,8 +439,6 @@ def _replace_macros(value: str, macros: Dict[str, str]) -> str:
     Returns:
         str: 替换宏变量后的字符串。
     """
-
-    import re
 
     def replace(match):
         macro_name = match.group(1)

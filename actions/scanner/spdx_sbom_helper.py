@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from actions.data_helper import read_data_from_json
-from typing import Any, Dict
+from typing import Any, Dict, List
 from actions import ASSIST_DIR
 import os
 
@@ -37,103 +37,21 @@ def convert_to_spdx(
         dict: 转换后的 SPDX SBOM 字典。
     """
 
-    spdx_packages = []
-    spdx_files = []
-    spdx_relationships = []
-    spdx_licenses = []
+    spdx_packages = [
+        _build_spdx_package(package, package_type)
+        for package in linx_sbom.get('packages_sbom', {}).get('packages', [])
+    ]
+    spdx_files = [
+        _build_spdx_file(file_info)
+        for file_info in linx_sbom.get('files_sbom', {}).get('files', [])
+    ]
+    spdx_relationships = _build_spdx_relationships(linx_sbom)
+    spdx_licenses = [
+        _build_spdx_license(license_info)
+        for license_info in linx_sbom.get('licenses_sbom', {}).get('licenses', [])
+    ]
 
     creators_file_path = os.path.join(ASSIST_DIR, 'creators.json')
-
-    def replace_none_value(str):
-        if str == None or str == "":
-            return "NOASSERTION"
-        else:
-            return str
-
-    def process_supplier(str):
-        if str == None or str == "":
-            return "NOASSERTION"
-        else:
-            return f"Organization: {str}"
-
-    # 遍历每个软件包并创建 SPDX 包元素
-    for package in linx_sbom.get('packages_sbom').get('packages'):
-        # 处理每个软件包的许可证
-        license = ' AND '.join(package.get('licenses', []))
-        supplier = package['suppliers'][0].get(
-            'name', 'NOASSERTION') if package.get('suppliers') else 'NOASSERTION'
-
-        arch = package.get('architecture', '')
-        purl_arch = f"?arch={package['architecture']}" if arch else ""
-        # 构建 SPDX 包元素
-        spdx_package = {
-            "name": replace_none_value(package['name']),
-            "SPDXID": f"SPDXRef-{package['id']}",
-            "versionInfo": replace_none_value(package['version']),
-            "supplier": process_supplier(supplier),
-            "packageHomePage": replace_none_value(package['suppliers'][-1].get('link', 'NOASSERTION')) if package['suppliers'] else 'NOASSERTION',
-            "packageDescription": replace_none_value(package['description']),
-            "licenseConcluded": "NOASSERTION",
-            "licenseDeclared": replace_none_value(license),
-            "externalRefs": [
-                {
-                    "referenceCategory": "PACKAGE_MANAGER",
-                    "referenceLocator": f"pkg:{package_type}/{package['name']}@{package['version']}{purl_arch}",
-                    "referenceType": "purl",
-                }
-            ],
-            "checksums": [
-                {
-                    "algorithm": replace_none_value(package['checksum']['algorithm']),
-                    "checksumValue": replace_none_value(package['checksum']['value'])
-                }
-            ]
-        }
-        spdx_packages.append(spdx_package)
-
-    # 构建 SPDX 文件元素
-    if linx_sbom.get('files_sbom'):
-        for file in linx_sbom.get('files_sbom').get('files'):
-            spdx_file = {
-                "fileName": file['name'],
-                "SPDXID": f"SPDXRef-{file['id']}",
-                "checksums": [
-                    {
-                        "algorithm": file['checksums']['algorithm'],
-                        "checksumValue": file['checksums']['value']
-                    }
-                ]
-            }
-            spdx_files.append(spdx_file)
-
-    # 创建 SPDX 文件元素和包与文件的关系
-    if linx_sbom.get('file_relationships_sbom'):
-        for file_relationship in linx_sbom.get('file_relationships_sbom').get('file_relationships'):
-            spdx_file_relationship = {
-                "spdxElementId": f"SPDXRef-{file_relationship['id']}",
-                "relatedSpdxElement": f"SPDXRef-{file_relationship['related_element']}",
-                "relationshipType": file_relationship['relationship_type']
-            }
-            spdx_relationships.append(spdx_file_relationship)
-
-    # 创建 SPDX 包依赖关系
-    if linx_sbom.get('package_relationships_sbom'):
-        for package_relationship in linx_sbom.get('package_relationships_sbom').get('package_relationships'):
-            spdx_package_relationship = {
-                "spdxElementId": f"SPDXRef-{package_relationship['id']}",
-                "relatedSpdxElement": f"SPDXRef-{package_relationship['related_element']}",
-                "relationshipType": package_relationship['relationship_type']
-            }
-            spdx_relationships.append(spdx_package_relationship)
-
-    # 创建 SPDX 许可证信息
-    for license in linx_sbom.get('licenses_sbom').get('licenses'):
-        spdx_license = {
-            "licenseId": license['id'],
-            "name": license['name'],
-            "extractedText": f"The license info found in the package meta data is: {license['name']}. See the specific package info in this SPDX document or the package itself for more details."
-        }
-        spdx_licenses.append(spdx_license)
 
     # 构建最终的 SPDX SBOM 字典
     spdx_sbom = {
@@ -155,3 +73,145 @@ def convert_to_spdx(
         spdx_sbom["relationships"] = spdx_relationships
 
     return spdx_sbom
+
+
+def _no_assertion(value: Any) -> Any:
+    """将空值转换为 SPDX 的 NOASSERTION 表达。
+
+    Args:
+        value (Any): 待转换的值。
+
+    Returns:
+        Any: 原值或 NOASSERTION。
+    """
+
+    return "NOASSERTION" if value is None or value == "" else value
+
+
+def _format_supplier(name: str) -> str:
+    """格式化 SPDX supplier 字段。
+
+    Args:
+        name (str): 供应商名称。
+
+    Returns:
+        str: SPDX supplier 字段值。
+    """
+
+    return "NOASSERTION" if not name or name == "NOASSERTION" else f"Organization: {name}"
+
+
+def _build_spdx_package(package: Dict[str, Any], package_type: str) -> Dict[str, Any]:
+    """构建 SPDX package 元素。
+
+    Args:
+        package (dict): Linx 包数据。
+        package_type (str): 包类型。
+
+    Returns:
+        dict: SPDX package 元素。
+    """
+
+    license_expression = ' AND '.join(package.get('licenses', []))
+    suppliers = package.get('suppliers') or []
+    supplier_name = suppliers[0].get('name', 'NOASSERTION') if suppliers else 'NOASSERTION'
+    homepage = suppliers[-1].get('link', 'NOASSERTION') if suppliers else 'NOASSERTION'
+    architecture = package.get('architecture', '')
+    purl_arch = f"?arch={architecture}" if architecture else ""
+    checksum = package.get('checksum', {})
+
+    return {
+        "name": _no_assertion(package.get('name')),
+        "SPDXID": f"SPDXRef-{package.get('id')}",
+        "versionInfo": _no_assertion(package.get('version')),
+        "supplier": _format_supplier(supplier_name),
+        "packageHomePage": _no_assertion(homepage),
+        "packageDescription": _no_assertion(package.get('description')),
+        "licenseConcluded": "NOASSERTION",
+        "licenseDeclared": _no_assertion(license_expression),
+        "externalRefs": [
+            {
+                "referenceCategory": "PACKAGE_MANAGER",
+                "referenceLocator": (
+                    f"pkg:{package_type}/{package.get('name')}@"
+                    f"{package.get('version')}{purl_arch}"
+                ),
+                "referenceType": "purl",
+            }
+        ],
+        "checksums": [
+            {
+                "algorithm": _no_assertion(checksum.get('algorithm')),
+                "checksumValue": _no_assertion(checksum.get('value')),
+            }
+        ],
+    }
+
+
+def _build_spdx_file(file_info: Dict[str, Any]) -> Dict[str, Any]:
+    """构建 SPDX file 元素。
+
+    Args:
+        file_info (dict): Linx 文件数据。
+
+    Returns:
+        dict: SPDX file 元素。
+    """
+
+    checksum = file_info.get('checksums', {})
+    return {
+        "fileName": file_info.get('name'),
+        "SPDXID": f"SPDXRef-{file_info.get('id')}",
+        "checksums": [
+            {
+                "algorithm": checksum.get('algorithm'),
+                "checksumValue": checksum.get('value'),
+            }
+        ],
+    }
+
+
+def _build_spdx_relationships(linx_sbom: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """构建 SPDX relationships 列表。
+
+    Args:
+        linx_sbom (dict): Linx SBOM 数据。
+
+    Returns:
+        list: SPDX relationship 元素列表。
+    """
+
+    relationships = []
+    for group_name, data_name in (
+        ('file_relationships_sbom', 'file_relationships'),
+        ('package_relationships_sbom', 'package_relationships'),
+    ):
+        for relationship in linx_sbom.get(group_name, {}).get(data_name, []):
+            relationships.append({
+                "spdxElementId": f"SPDXRef-{relationship['id']}",
+                "relatedSpdxElement": f"SPDXRef-{relationship['related_element']}",
+                "relationshipType": relationship['relationship_type'],
+            })
+    return relationships
+
+
+def _build_spdx_license(license_info: Dict[str, Any]) -> Dict[str, str]:
+    """构建 SPDX extracted license 元素。
+
+    Args:
+        license_info (dict): Linx 许可证数据。
+
+    Returns:
+        dict: SPDX extracted license 元素。
+    """
+
+    license_name = license_info['name']
+    return {
+        "licenseId": license_info['id'],
+        "name": license_name,
+        "extractedText": (
+            "The license info found in the package meta data is: "
+            f"{license_name}. See the specific package info in this SPDX "
+            "document or the package itself for more details."
+        ),
+    }

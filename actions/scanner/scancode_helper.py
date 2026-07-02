@@ -18,10 +18,12 @@ import os
 import shutil
 import logging
 import hashlib
+import libarchive
 from tqdm import tqdm
 from multiprocessing import Pool
 from fnmatch import fnmatch
 from typing import Any, Dict, List, Tuple, Optional
+from scancode import api as scancode
 from actions.data_helper import (
     calculate_md5,
     remove_duplicates
@@ -42,8 +44,6 @@ def _extract_src_rpm(src_rpm_path: str) -> str:
     Raises:
         ValueError: 如果未在 .src.rpm 文件中找到源代码压缩文件。
     """
-
-    import libarchive
 
     # 创建一个临时目录用于解压 .src.rpm 文件
     temp_dir = tempfile.mkdtemp()
@@ -139,8 +139,6 @@ def _process_member(member_path: str) -> Tuple[Dict[str, Any], List[Dict[str, An
                 - checksums (dict): 文件的校验信息，包含算法（algorithm）和值（value）。
             - license_id_list (list of str): 许可证扫描器返回的许可证ID列表。
     """
-
-    from scancode import api as scancode
 
     licenses = scancode.get_licenses(location=member_path, include_text=True)
     copyright_data = scancode.get_copyrights(location=member_path)
