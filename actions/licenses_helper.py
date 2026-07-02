@@ -49,7 +49,7 @@ def deb_licenses_scanner(deb, files):
             # 提取文件内容
             with deb.data.tgz().extractfile(copyright_path) as f:
                 content = f.read()
-        except AttributeError as e:
+        except Exception as e:
             logging.error(f'处理失败: {copyright_path} - {str(e)}')
             continue
 

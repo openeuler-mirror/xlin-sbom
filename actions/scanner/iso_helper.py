@@ -27,88 +27,178 @@ from actions.scanner.package_helper import (
     process_deb_package
 )
 from concurrent.futures import ThreadPoolExecutor, as_completed
-import os
+from dataclasses import dataclass
+from collections import Counter
 import logging
-from typing import Any, Dict, List, Optional
+import os
+import re
+import tempfile
+import threading
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 from tqdm import tqdm
 
 creators_file_path = os.path.join(ASSIST_DIR, 'creators.json')
 
+ISO_PATH_TYPES = ("udf", "rockridge", "joliet", "iso9660")
+ISO_PATH_TYPE_CONFIG = {
+    "udf": ("has_udf", "udf_path"),
+    "rockridge": ("has_rock_ridge", "rr_path"),
+    "joliet": ("has_joliet", "joliet_path"),
+    "iso9660": (None, "iso_path"),
+}
+NEUTRAL_ARCHES = {"all", "noarch", "src", "source", "nosrc"}
+ARCH_ALIASES = {
+    "amd64": "x86_64",
+    "x64": "x86_64",
+    "x86-64": "x86_64",
+    "x86_64": "x86_64",
+    "i386": "x86",
+    "i486": "x86",
+    "i586": "x86",
+    "i686": "x86",
+    "arm64": "aarch64",
+    "aarch64": "aarch64",
+    "loongarch64": "loongarch64",
+    "ppc64el": "ppc64el",
+    "ppc64le": "ppc64el",
+    "ppc64": "ppc64",
+    "s390x": "s390x",
+    "riscv64": "riscv64",
+    "mips64el": "mips64el",
+    "mips64le": "mips64el",
+    "noarch": "noarch",
+    "all": "all",
+}
 
-def deb_packages_scanner(mnt_dir, iso_filename, created_time, disable_tqdm, workers):
-    """
-    扫描并处理 DEB 包，生成软件物料清单（SBOM）。
 
-    Args:
-        mnt_dir (str): 挂载目录的路径。
-        iso_filename (str): ISO 文件的名称。
-        created_time (str): 创建时间的字符串。
+@dataclass(frozen=True)
+class IsoEntry:
+    archive_path: str
+    display_path: str
+    path_type: str
 
-    Returns:
-        dict: 包含处理后的软件包信息的 SBOM 字典，包括软件包、文件、文件关系、许可证和组件依赖关系。
-    """
 
+class PyCdlibIsoReader:
+    def __init__(self, iso_path: str):
+        try:
+            import pycdlib
+        except ImportError as exc:
+            raise RuntimeError("缺少 pycdlib 依赖，无法直接解析 ISO 镜像。") from exc
+
+        self._iso = pycdlib.PyCdlib()
+        self._iso.open(iso_path)
+        self.path_type = _select_iso_path_type(self._iso)
+
+    def close(self) -> None:
+        self._iso.close()
+
+    def list_entries(self) -> List[IsoEntry]:
+        entries = []
+        for directory_path, _, file_names in self._iso.walk(**{_path_keyword(self.path_type): "/"}):
+            for file_name in file_names:
+                archive_path = _join_iso_path(directory_path, file_name)
+                entries.append(IsoEntry(
+                    archive_path=archive_path,
+                    display_path=_normalize_display_path(archive_path),
+                    path_type=self.path_type,
+                ))
+        return entries
+
+    def extract_file(self, entry: IsoEntry, target_path: str) -> None:
+        self._iso.get_file_from_iso(target_path, **{_path_keyword(entry.path_type): entry.archive_path})
+
+
+def scan_iso(
+    iso_path: str,
+    iso_filename: str,
+    created_time: str,
+    disable_tqdm: bool,
+    workers: Optional[int],
+) -> Tuple[Dict[str, Any], str]:
+    reader = PyCdlibIsoReader(iso_path)
+    try:
+        entries = reader.list_entries()
+        deb_entries = _find_package_entries(entries, ".deb")
+        rpm_entries = _find_package_entries(entries, ".rpm")
+
+        if deb_entries:
+            logging.info("侦测到DEB包系统")
+            return _scan_deb_entries(
+                reader, deb_entries, entries, iso_filename, created_time,
+                disable_tqdm, workers), "deb"
+        if rpm_entries:
+            logging.info("侦测到RPM包系统")
+            return _scan_rpm_entries(
+                reader, rpm_entries, entries, iso_filename, created_time,
+                disable_tqdm, workers), "rpm"
+
+        raise ValueError("未侦测到有效的包系统")
+    finally:
+        reader.close()
+
+
+def _scan_deb_entries(
+    reader: Any,
+    package_entries: List[IsoEntry],
+    all_entries: List[IsoEntry],
+    iso_filename: str,
+    created_time: str,
+    disable_tqdm: bool,
+    workers: Optional[int],
+) -> Dict[str, Any]:
     packages = []
     files = []
     file_relationships = []
     licenses = []
 
-    # 定位必要的目录和文件
     originators_file_path = os.path.join(ASSIST_DIR, 'originators.json')
     originators = read_data_from_json(originators_file_path)
-    pool_path = os.path.join(mnt_dir, 'pool')
 
-    # 收集所有DEB文件的路径
-    deb_files = [os.path.join(root, f) for root, _, files in os.walk(
-        pool_path) for f in files if f.endswith('.deb')]
-
-    os_arch = _get_os_arch(mnt_dir)
-
-    # 并发处理DEB文件以提高效率
     if workers is None:
         logging.info("使用默认的线程数进行扫描")
     else:
         logging.info(f"使用 {workers} 个线程进行扫描")
 
-    with ThreadPoolExecutor(max_workers=workers) as executor:
-        futures = {
-            executor.submit(process_deb_package, full_path, originators): full_path
-            for full_path in deb_files
-        }
+    reader_lock = threading.Lock()
+    with tempfile.TemporaryDirectory(prefix="linx_iso_") as temp_dir:
+        with ThreadPoolExecutor(max_workers=workers) as executor:
+            futures = {
+                executor.submit(
+                    _process_iso_package_entry,
+                    reader, entry, temp_dir, originators, reader_lock,
+                    process_deb_package
+                ): entry
+                for entry in package_entries
+            }
 
-        # 根据 disable_tqdm 决定是否使用 tqdm
-        progress_iter = (
-            tqdm(total=len(futures), desc="扫描 DEB 包",
-                 unit="包") if not disable_tqdm else None
-        )
+            progress_iter = (
+                tqdm(total=len(futures), desc="扫描 DEB 包",
+                     unit="包") if not disable_tqdm else None
+            )
 
-        for future in as_completed(futures):
-            if not future.result():
-                continue
-            package, package_licenses, updated_originators = future.result()
-            if package:
-                packages.append(package)
-                files.extend(package.files)
-                file_relationships.extend(package.get_file_relationships())
-                licenses.extend(package_licenses)
-                originators = updated_originators
+            for future in as_completed(futures):
+                result = future.result()
+                if result:
+                    package, package_licenses, updated_originators = result
+                    if package:
+                        packages.append(package)
+                        files.extend(package.files)
+                        file_relationships.extend(package.get_file_relationships())
+                        licenses.extend(package_licenses)
+                        originators = updated_originators
+                if not disable_tqdm:
+                    progress_iter.update(1)
+
             if not disable_tqdm:
-                progress_iter.update(1)
+                progress_iter.close()
 
-        if not disable_tqdm:
-            progress_iter.close()
-
-    # files去重
     files = remove_duplicates(files)
-
-    # licenses去重
     licenses = remove_duplicates(licenses)
 
-    # 对结果按软件包名称排序
     packages_sbom = [package.get_json() for package in packages]
     packages_sbom.sort(key=lambda x: x.get("name", ""))
+    os_arch = detect_iso_arch(all_entries, packages_sbom, iso_filename)
 
-    # 处理组件依赖关系
     package_relationships = get_deb_relationships(packages_sbom, disable_tqdm)
 
     linx_sbom = {
@@ -119,105 +209,75 @@ def deb_packages_scanner(mnt_dir, iso_filename, created_time, disable_tqdm, work
         "package_relationships_sbom": _add_header(package_relationships, "package_relationships", iso_filename, os_arch, created_time),
     }
 
-
-    # 保存更新后的发起者信息
     save_data_to_json(originators, originators_file_path)
-
     return linx_sbom
 
 
-def rpm_packages_scanner(
-    mnt_dir: str,
+def _scan_rpm_entries(
+    reader: Any,
+    package_entries: List[IsoEntry],
+    all_entries: List[IsoEntry],
     iso_filename: str,
     created_time: str,
     disable_tqdm: bool,
     workers: Optional[int],
 ) -> Dict[str, Any]:
-    """
-    扫描并处理 RPM 包，生成软件物料清单（SBOM）。
-
-    Args:
-        mnt_dir (str): 挂载目录的路径。
-        iso_filename (str): ISO 文件的名称。
-        created_time (str): 创建时间的字符串。
-        disable_tqdm (bool): 是否禁用进度条显示。
-        workers (int or None): 最大并发线程数。如果为 None，则使用默认线程数。
-    Returns:
-        dict: 包含处理后的软件包信息的 SBOM 字典，包括软件包、文件、文件关系、许可证和组件依赖关系。
-    """
-
     packages = []
     files = []
     file_relationships = []
     licenses = []
     provides_relationships = []
 
-    # 定位必要的目录和文件
     originators_file_path = os.path.join(ASSIST_DIR, 'originators.json')
     originators = read_data_from_json(originators_file_path)
-    rpm_dir = None
-    for root, dirs, _ in os.walk(mnt_dir):
-        if 'Packages' in dirs:
-            rpm_dir = os.path.join(root, 'Packages')
-            break
 
-    if rpm_dir is not None:
-        # 收集所有 RPM 文件的路径
-        rpm_files = [os.path.join(root, f) for root, _, files in os.walk(rpm_dir)
-                     for f in files if f.endswith('.rpm')]
-    else:
-        logging.error("未找到 Packages 目录。")
-        rpm_files = []
-
-    os_arch = _get_os_arch(mnt_dir)
-
-    # 并发处理RPM文件以提高效率
     if workers is None:
         logging.info("使用默认的线程数进行扫描")
     else:
         logging.info(f"使用 {workers} 个线程进行扫描")
 
-    with ThreadPoolExecutor(max_workers=workers) as executor:
-        futures = {
-            executor.submit(process_rpm_package, full_path, originators): full_path
-            for full_path in rpm_files
-        }
+    reader_lock = threading.Lock()
+    with tempfile.TemporaryDirectory(prefix="linx_iso_") as temp_dir:
+        with ThreadPoolExecutor(max_workers=workers) as executor:
+            futures = {
+                executor.submit(
+                    _process_iso_package_entry,
+                    reader, entry, temp_dir, originators, reader_lock,
+                    process_rpm_package
+                ): entry
+                for entry in package_entries
+            }
 
-        # 根据 disable_tqdm 决定是否使用 tqdm
-        progress_iter = (
-            tqdm(total=len(futures), desc="扫描 RPM 包",
-                 unit="包") if not disable_tqdm else None
-        )
+            progress_iter = (
+                tqdm(total=len(futures), desc="扫描 RPM 包",
+                     unit="包") if not disable_tqdm else None
+            )
 
-        for future in as_completed(futures):
-            if not future.result():
-                continue
-            package, package_licenses, updated_originators, provides = future.result()
-            if package:
-                packages.append(package)
-                files.extend(package.files)
-                file_relationships.extend(package.get_file_relationships())
-                licenses.extend(package_licenses)
-                originators = updated_originators
-                if provides:
-                    provides_relationships.append(provides)
+            for future in as_completed(futures):
+                result = future.result()
+                if result:
+                    package, package_licenses, updated_originators, provides = result
+                    if package:
+                        packages.append(package)
+                        files.extend(package.files)
+                        file_relationships.extend(package.get_file_relationships())
+                        licenses.extend(package_licenses)
+                        originators = updated_originators
+                        if provides:
+                            provides_relationships.append(provides)
+                if not disable_tqdm:
+                    progress_iter.update(1)
+
             if not disable_tqdm:
-                progress_iter.update(1)
+                progress_iter.close()
 
-        if not disable_tqdm:
-            progress_iter.close()
-
-    # files去重
     files = remove_duplicates(files)
-
-    # licenses去重
     licenses = remove_duplicates(licenses)
 
-    # 对结果按软件包名称排序
     packages_sbom = [package.get_json() for package in packages]
     packages_sbom.sort(key=lambda x: x.get("name", ""))
+    os_arch = detect_iso_arch(all_entries, packages_sbom, iso_filename)
 
-    # 处理组件依赖关系
     package_relationships = get_rpm_relationships(
         packages_sbom, provides_relationships, disable_tqdm)
 
@@ -229,11 +289,191 @@ def rpm_packages_scanner(
         "package_relationships_sbom": _add_header(package_relationships, "package_relationships", iso_filename, os_arch, created_time),
     }
 
-    # 保存更新后的发起者信息
     save_data_to_json(originators, originators_file_path)
-
-    # 返回处理后的软件包信息列表
     return linx_sbom
+
+
+def _process_iso_package_entry(
+    reader: Any,
+    entry: IsoEntry,
+    temp_dir: str,
+    originators: List[Dict[str, Any]],
+    reader_lock: threading.Lock,
+    package_processor: Callable[..., Tuple[Any, ...]],
+) -> Optional[Tuple[Any, ...]]:
+    suffix = _entry_suffix(entry)
+    fd, package_path = tempfile.mkstemp(suffix=suffix, dir=temp_dir)
+    os.close(fd)
+    try:
+        with reader_lock:
+            reader.extract_file(entry, package_path)
+        return package_processor(package_path, originators)
+    except Exception as exc:
+        logging.error(f"跳过 ISO 内软件包 {entry.display_path} 由于读取错误: {exc}")
+        return None
+    finally:
+        try:
+            os.remove(package_path)
+        except FileNotFoundError:
+            pass
+
+
+def _select_iso_path_type(iso: Any) -> str:
+    for path_type in ISO_PATH_TYPES:
+        has_method_name, _ = ISO_PATH_TYPE_CONFIG[path_type]
+        if has_method_name is None:
+            return path_type
+        has_method = getattr(iso, has_method_name, None)
+        if callable(has_method):
+            try:
+                if has_method():
+                    return path_type
+            except Exception:
+                continue
+    return "iso9660"
+
+
+def _path_keyword(path_type: str) -> str:
+    return ISO_PATH_TYPE_CONFIG[path_type][1]
+
+
+def _find_package_entries(entries: Iterable[IsoEntry], suffix: str) -> List[IsoEntry]:
+    return [
+        entry for entry in entries
+        if _strip_iso_version(entry.display_path).lower().endswith(suffix)
+    ]
+
+
+def detect_iso_arch(
+    entries: Iterable[Any],
+    packages_sbom: Optional[List[Dict[str, Any]]] = None,
+    iso_filename: str = "",
+) -> Optional[str]:
+    paths = [_entry_display_path(entry) for entry in entries]
+
+    repo_arch = _detect_arch_from_debian_repo_paths(paths)
+    if repo_arch:
+        return repo_arch
+
+    package_arch = _detect_arch_from_packages(packages_sbom or [])
+    if package_arch:
+        return package_arch
+
+    filename_arch = _detect_arch_from_package_filenames(paths)
+    if filename_arch:
+        return filename_arch
+
+    boot_arch = _detect_arch_from_boot_paths(paths)
+    if boot_arch:
+        return boot_arch
+
+    iso_name_arch = _detect_arch_from_iso_filename(iso_filename)
+    if iso_name_arch:
+        return iso_name_arch
+
+    logging.warning("未找到操作系统架构信息。")
+    return None
+
+
+def _detect_arch_from_debian_repo_paths(paths: List[str]) -> Optional[str]:
+    counter = Counter()
+    for path in paths:
+        match = re.search(r"(?:^|/)binary-([A-Za-z0-9_+-]+)(?:/|$)", path)
+        if match:
+            counter[_normalize_arch(match.group(1))] += 1
+    return _most_common_machine_arch(counter)
+
+
+def _detect_arch_from_packages(packages_sbom: List[Dict[str, Any]]) -> Optional[str]:
+    counter = Counter()
+    for package in packages_sbom:
+        arch = _normalize_arch(package.get("architecture"))
+        if arch:
+            counter[arch] += 1
+    return _most_common_machine_arch(counter)
+
+
+def _detect_arch_from_package_filenames(paths: List[str]) -> Optional[str]:
+    counter = Counter()
+    for path in paths:
+        clean_path = _strip_iso_version(path)
+        deb_match = re.search(r"_([A-Za-z0-9][A-Za-z0-9_+-]*)\.deb$", clean_path, re.IGNORECASE)
+        if deb_match:
+            counter[_normalize_arch(deb_match.group(1))] += 1
+            continue
+
+        rpm_match = re.search(r"\.([A-Za-z0-9_]+)\.rpm$", clean_path, re.IGNORECASE)
+        if rpm_match:
+            counter[_normalize_arch(rpm_match.group(1))] += 1
+    return _most_common_machine_arch(counter)
+
+
+def _detect_arch_from_boot_paths(paths: List[str]) -> Optional[str]:
+    upper_paths = [path.upper() for path in paths]
+    for path in upper_paths:
+        basename = path.rsplit("/", 1)[-1]
+        if basename == "BOOTX64.EFI":
+            return "x86_64"
+        if basename == "BOOTAA64.EFI":
+            return "aarch64"
+        if basename == "BOOTLOONGARCH64.EFI":
+            return "loongarch64"
+    for path in paths:
+        lower_path = path.lower()
+        if "boot/grub/powerpc" in lower_path:
+            return "ppc64el"
+    return None
+
+
+def _detect_arch_from_iso_filename(iso_filename: str) -> Optional[str]:
+    name = os.path.splitext(os.path.basename(iso_filename))[0].lower()
+    for token in re.split(r"[-_.+]", name):
+        arch = _normalize_arch(token)
+        if arch:
+            return arch
+    return None
+
+
+def _most_common_machine_arch(counter: Counter) -> Optional[str]:
+    for arch, _ in counter.most_common():
+        if arch and arch not in NEUTRAL_ARCHES:
+            return arch
+    return counter.most_common(1)[0][0] if counter else None
+
+
+def _normalize_arch(arch: Optional[str]) -> Optional[str]:
+    if not arch:
+        return None
+    normalized = str(arch).strip().lower()
+    return ARCH_ALIASES.get(normalized, normalized)
+
+
+def _entry_display_path(entry: Any) -> str:
+    if isinstance(entry, IsoEntry):
+        return entry.display_path
+    return str(entry).replace("\\", "/").lstrip("/")
+
+
+def _entry_suffix(entry: IsoEntry) -> str:
+    clean_path = _strip_iso_version(entry.display_path)
+    _, suffix = os.path.splitext(clean_path)
+    return suffix or ".pkg"
+
+
+def _join_iso_path(directory_path: str, file_name: str) -> str:
+    directory_path = str(directory_path).replace("\\", "/")
+    file_name = str(file_name).replace("\\", "/")
+    if directory_path in ("", "/"):
+        return f"/{file_name.lstrip('/')}"
+    return f"{directory_path.rstrip('/')}/{file_name.lstrip('/')}"
+
+
+def _normalize_display_path(path: str) -> str:
+    return _strip_iso_version(path.replace("\\", "/").lstrip("/"))
+
+
+def _strip_iso_version(path: str) -> str:
+    return re.sub(r";\d+$", "", path)
 
 
 def _add_header(
@@ -280,31 +520,3 @@ def _add_header(
         data_name: sbom_data
     }
     return sbom
-
-
-def _get_os_arch(mnt_dir: str) -> Optional[str]:
-    """
-    获取操作系统的架构信息。
-
-    Args:
-        mnt_dir (str): 挂载目录的路径。
-
-    Returns:
-        str: 操作系统的架构信息。如果未找到对应的架构文件，则返回 `None`。
-    """
-
-    os_arch = None
-    for root, _, f in os.walk(mnt_dir):
-        if 'BOOTX64.EFI' in [fn.upper() for fn in f]:
-            os_arch = 'x86_64'
-            break
-        elif 'BOOTAA64.EFI' in [fn.upper() for fn in f]:
-            os_arch = 'aarch64'
-            break
-        elif 'BOOTLOONGARCH64.EFI' in [fn.upper() for fn in f]:
-            os_arch = 'loongarch64'
-            break
-    if os_arch is None:
-        logging.warning("未找到操作系统架构信息。")
-
-    return os_arch
