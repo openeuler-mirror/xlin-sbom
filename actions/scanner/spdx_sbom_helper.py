@@ -161,7 +161,7 @@ def _build_spdx_file(file_info: Dict[str, Any]) -> Dict[str, Any]:
 
     checksum = file_info.get('checksums', {})
     return {
-        "fileName": file_info.get('name'),
+        "fileName": file_info.get('path') or file_info.get('name'),
         "SPDXID": f"SPDXRef-{file_info.get('id')}",
         "checksums": [
             {

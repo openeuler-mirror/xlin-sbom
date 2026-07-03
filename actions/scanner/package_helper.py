@@ -26,7 +26,8 @@ from actions.licenses_helper import (
 from actions.data_helper import (
     calculate_sha1,
     save_data_to_json,
-    read_data_from_json
+    read_data_from_json,
+    remove_duplicates
 )
 from actions.scanner.suppliers_helper import (
     get_suppliers,
@@ -35,11 +36,37 @@ from actions.scanner.suppliers_helper import (
 )
 from actions.scanner.originators_helper import extract_originator_name
 from actions.scanner.src_package_helper import process_src_package
-from actions.scanner.scancode_helper import scan_src_rpm
+from actions.scanner.scancode_helper import (
+    _extract_src_rpm,
+    extract_source_archive,
+    scan_src_dir,
+    run_osv_dependency_scan
+)
 import logging
 import rpmfile
 import debian.debfile
 import os
+import shutil
+import hashlib
+import re
+
+
+SOURCE_ARCHIVE_SUFFIXES = (
+    '.tar.gz', '.tgz', '.tar.bz2', '.tbz2', '.tar.xz', '.txz', '.tar', '.zip'
+)
+
+OSV_ECOSYSTEM_PURL_TYPES = {
+    "Go": "golang",
+    "Maven": "maven",
+    "npm": "npm",
+    "NuGet": "nuget",
+    "PyPI": "pypi",
+    "RubyGems": "gem",
+    "crates.io": "cargo",
+    "Packagist": "composer",
+    "Pub": "pub",
+    "Hex": "hex",
+}
 
 
 def package_scanner(pkg_path, pkg_type, created_time, include, exclude, workers, disable_tqdm, brief_mode):
@@ -63,6 +90,9 @@ def package_scanner(pkg_path, pkg_type, created_time, include, exclude, workers,
     originators = read_data_from_json(originators_file_path)
     pkg_name = os.path.basename(pkg_path)
 
+    dependency_packages = []
+    package_relationships = []
+
     if pkg_type == "deb":
         package, licenses, originators = process_deb_package(
             pkg_path, originators)
@@ -71,10 +101,11 @@ def package_scanner(pkg_path, pkg_type, created_time, include, exclude, workers,
             pkg_path, originators)
 
     elif pkg_type == "source":
-        package, licenses, originators = process_source_package(
+        package, licenses, originators, dependency_packages, package_relationships = process_source_package(
             pkg_path, originators, include, exclude, workers, disable_tqdm, brief_mode)
 
     packages_sbom = [package.get_json()] if package else []
+    packages_sbom.extend(dependency.get_json() for dependency in dependency_packages)
     package_files = package.files if package else []
     file_relationships_sbom = package.get_file_relationships() if package else []
 
@@ -83,6 +114,7 @@ def package_scanner(pkg_path, pkg_type, created_time, include, exclude, workers,
         "files_sbom": build_sbom_header(package_files, "files", pkg_name, created_time),
         "file_relationships_sbom": build_sbom_header(file_relationships_sbom, "file_relationships", pkg_name, created_time),
         "licenses_sbom": build_sbom_header(licenses, "licenses", pkg_name, created_time),
+        "package_relationships_sbom": build_sbom_header(package_relationships, "package_relationships", pkg_name, created_time),
     }
 
     # 保存更新后的发起者信息
@@ -226,18 +258,234 @@ def process_rpm_package(pkg_path, originators):
 
 
 def process_source_package(pkg_path, originators, include, exclude, workers, disable_tqdm, brief_mode):
+    """处理源码包并补充文件级许可证和依赖信息。
+
+    Args:
+        pkg_path (str): 源码包路径。
+        originators (list): 来源方辅助数据。
+        include (list[str] | None): 文件级扫描包含模式。
+        exclude (list[str] | None): 文件级扫描排除模式。
+        workers (int | None): 文件级扫描并发数。
+        disable_tqdm (bool): 是否禁用进度条。
+        brief_mode (bool): 是否仅生成包级 SBOM。
+
+    Returns:
+        tuple: 主包对象、许可证列表、来源方数据、依赖包列表和包关系列表。
+    """
+
     package, licenses, originators = process_src_package(
         pkg_path, originators)
-    files = []
-    if not brief_mode and pkg_path.endswith('.src.rpm'):
-        files, file_licenses = scan_src_rpm(
-            pkg_path, include, exclude, workers, disable_tqdm)
-        licenses.extend(file_licenses)
-        for file_info in files:
-            package.add_file(file_info)
-    elif not brief_mode:
-        logging.info("当前版本仅对 .src.rpm 执行源码文件级扫描，其他源码包格式已按独立策略生成包级SBOM")
-    return package, licenses, originators
+    dependency_packages = []
+    package_relationships = []
+    source_dir = None
+
+    if not package:
+        return package, licenses, originators, dependency_packages, package_relationships
+
+    if not brief_mode:
+        try:
+            source_dir = _prepare_source_dir(pkg_path)
+            if source_dir:
+                files, file_licenses = scan_src_dir(
+                    source_dir, include, exclude, workers, disable_tqdm)
+                licenses.extend(file_licenses)
+                for license_info in file_licenses:
+                    _add_package_license(package, license_info.get("id"))
+                for file_info in files:
+                    package.add_file(file_info)
+
+                dependencies_data = run_osv_dependency_scan(source_dir)
+                dependency_packages, dependency_licenses, package_relationships = _build_osv_dependency_packages(
+                    package, dependencies_data)
+                licenses.extend(dependency_licenses)
+        except Exception as e:
+            logging.warning(f"源码包精细扫描失败，将保留包级SBOM: {e}")
+        finally:
+            if source_dir:
+                shutil.rmtree(source_dir, ignore_errors=True)
+
+    licenses = remove_duplicates(licenses)
+    return package, licenses, originators, dependency_packages, package_relationships
+
+
+def _prepare_source_dir(pkg_path):
+    """为源码包准备可扫描的源码目录。
+
+    Args:
+        pkg_path (str): 源码包路径。
+
+    Returns:
+        str | None: 解压后的源码目录。不支持精细扫描时返回 None。
+    """
+
+    lower_path = pkg_path.lower()
+    if lower_path.endswith('.src.rpm'):
+        return _extract_src_rpm(pkg_path)
+    if lower_path.endswith(SOURCE_ARCHIVE_SUFFIXES):
+        return extract_source_archive(pkg_path)
+    logging.info("当前源码包格式不支持文件级扫描，将仅生成包级SBOM")
+    return None
+
+
+def _build_osv_dependency_packages(package, dependencies_data):
+    """将 OSV Scanner 输出转换为 Linx 依赖包和关系。
+
+    Args:
+        package (Package): 源码包本体。
+        dependencies_data (dict): OSV Scanner JSON 输出。
+
+    Returns:
+        tuple: 依赖包列表、依赖许可证列表和包关系列表。
+    """
+
+    dependency_packages = []
+    dependency_licenses = []
+    package_relationships = []
+    seen_packages = set()
+
+    for result in dependencies_data.get("results", []):
+        for dependency in result.get("packages", []):
+            package_data = dependency.get("package", {})
+            name = package_data.get("name")
+            if not name:
+                continue
+            version = package_data.get("version") or ""
+            ecosystem = package_data.get("ecosystem") or "generic"
+            package_key = (ecosystem, name, version)
+            if package_key in seen_packages:
+                continue
+            seen_packages.add(package_key)
+
+            dependency_package = _create_osv_dependency_package(
+                name, version, ecosystem)
+            for license_info in _extract_osv_licenses(dependency):
+                dependency_package.add_license(license_info.get("id"))
+                dependency_licenses.append(license_info)
+
+            dependency_packages.append(dependency_package)
+            _add_declared_dependency(package, name)
+            package_relationships.append({
+                "id": package.id,
+                "related_element": dependency_package.id,
+                "relationship_type": "DEPENDS_ON"
+            })
+
+    return dependency_packages, remove_duplicates(dependency_licenses), package_relationships
+
+
+def _create_osv_dependency_package(name, version, ecosystem):
+    """根据 OSV 依赖信息创建 Linx Package 对象。
+
+    Args:
+        name (str): 依赖包名。
+        version (str): 依赖版本。
+        ecosystem (str): OSV 生态系统名称。
+
+    Returns:
+        Package: 依赖包对象。
+    """
+
+    purl_type = _ecosystem_to_purl_type(ecosystem)
+    dependency = Package(
+        name, version, "", "NOASSERTION", purl_type, "NOASSERTION", "NOASSERTION")
+    id_seed = f"{ecosystem}/{name}/{version}"
+    id_hash = hashlib.sha1(id_seed.encode("utf-8")).hexdigest()[:12]
+    dependency.id = f"Package-{_safe_identifier(purl_type)}-{_safe_identifier(name)}-{id_hash}"
+    dependency.set_description("Dependency detected by OSV Scanner")
+    return dependency
+
+
+def _extract_osv_licenses(dependency):
+    """提取并规范化 OSV 依赖许可证。
+
+    Args:
+        dependency (dict): OSV 依赖条目。
+
+    Returns:
+        list[dict]: Linx 许可证对象列表。
+    """
+
+    licenses = []
+    for license_expression in dependency.get("licenses", []):
+        for license_name in _split_license_expression(license_expression):
+            licenses.extend(rpm_licenses_scanner(license_name))
+    return remove_duplicates(licenses)
+
+
+def _split_license_expression(license_expression):
+    """拆分 OSV 返回的许可证表达式。
+
+    Args:
+        license_expression (str): 许可证表达式。
+
+    Returns:
+        list[str]: 单个许可证名称列表。
+    """
+
+    if not license_expression:
+        return []
+    return [
+        item.strip()
+        for item in re.split(r"\s+(?:AND|OR|WITH)\s+|[,()/]", license_expression)
+        if item.strip()
+    ]
+
+
+def _ecosystem_to_purl_type(ecosystem):
+    """将 OSV 生态系统名称映射为 purl 类型。
+
+    Args:
+        ecosystem (str): OSV 生态系统名称。
+
+    Returns:
+        str: purl 类型。
+    """
+
+    mapped = OSV_ECOSYSTEM_PURL_TYPES.get(ecosystem, ecosystem)
+    return re.sub(r"[^a-z0-9.+-]+", "-", mapped.lower()).strip("-") or "generic"
+
+
+def _safe_identifier(value):
+    """生成适用于 Linx ID 的安全片段。
+
+    Args:
+        value (str): 原始值。
+
+    Returns:
+        str: 清洗后的 ID 片段。
+    """
+
+    return re.sub(r"[^A-Za-z0-9_.-]+", "-", str(value)).strip("-") or "unknown"
+
+
+def _add_declared_dependency(package, dependency):
+    """向包对象添加去重后的声明依赖。
+
+    Args:
+        package (Package): 包对象。
+        dependency (str): 依赖名称。
+
+    Returns:
+        None
+    """
+
+    if dependency and dependency not in package.declared_dependencies:
+        package.add_declared_dep(dependency)
+
+
+def _add_package_license(package, license_id):
+    """向包对象添加去重后的许可证 ID。
+
+    Args:
+        package (Package): 包对象。
+        license_id (str): 许可证 ID。
+
+    Returns:
+        None
+    """
+
+    if license_id and license_id not in package.licenses:
+        package.add_license(license_id)
 
 
 def _convert_to_list(dependencies_str):
