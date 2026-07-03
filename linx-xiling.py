@@ -29,6 +29,7 @@ from actions.data_helper import (
 from actions.scanner.iso_helper import (
     scan_iso
 )
+from actions.scanner.docker_image_helper import scan_docker_image
 from actions.scanner.package_helper import package_scanner
 from actions.scanner.repo_helper import (
     rpm_repo_scanner,
@@ -61,10 +62,14 @@ def parse_arguments():
                                           help="软件包的路径。")
     mutually_exclusive_group.add_argument("--repo", "-r",
                                           help="更新源地址。")
+    mutually_exclusive_group.add_argument("--docker", "-d",
+                                          help="Docker Hub 镜像名或离线 Docker 镜像 tar 文件路径。")
     parser.add_argument("--output", "-o", required=True, help="SBOM清单输出目录。")
     parser.add_argument("--disable-tqdm", action='store_true', help="禁用进度条显示。")
     parser.add_argument("--max-workers", type=int,
                         default=None, help="最大并发线程数。")
+    parser.add_argument("--platform", default="linux/amd64",
+                        help="Docker 多架构镜像平台，默认 linux/amd64。")
     parser.add_argument("--include", action='append',
                         help="要包含的文件模式（仅源码包扫描生效）。")
     parser.add_argument("--exclude", action='append',
@@ -226,6 +231,15 @@ def save_sbom(linx_sbom, package_type, filename, utc_timestamp, spdx_timestamp, 
 
 
 def resolve_output_formats(formats):
+    """解析用户指定的 SBOM 输出格式。
+
+    Args:
+        formats (list[str] | None): 命令行传入的输出格式列表。
+
+    Returns:
+        list[str]: 去重后的输出格式列表。未传入时返回默认格式。
+    """
+
     return list(dict.fromkeys(formats or ["linx", "spdx"]))
 
 
@@ -306,6 +320,15 @@ def main():
                 sources_file_url, repo_url, spdx_utc_time, args.disable_tqdm)
         else:
             logging.error(f"未侦测到有效的更新源地址")
+            sys.exit(1)
+
+    # 处理 Docker 镜像
+    elif args.docker is not None:
+        try:
+            linx_sbom, package_type, filename = scan_docker_image(
+                args.docker, spdx_utc_time, args.platform, args.disable_tqdm)
+        except Exception as e:
+            logging.error(f"异常抛出: {e}")
             sys.exit(1)
 
     # 保存SBOM

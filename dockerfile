@@ -15,6 +15,7 @@ RUN apt-get update && \
     python3-pip \
     python3-venv \
     python3-dev \
+    rpm \
     pkg-config \
     libicu-dev \
     libarchive-dev \

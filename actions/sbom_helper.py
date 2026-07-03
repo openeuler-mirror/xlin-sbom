@@ -30,6 +30,7 @@ def build_sbom_header(
     os_name: Optional[str] = None,
     os_version: Optional[str] = None,
     os_arch: Optional[str] = None,
+    extra_metadata: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """为 SBOM 数据构建统一头部。
 
@@ -41,13 +42,14 @@ def build_sbom_header(
         os_name (str | None): ISO 扫描时识别到的操作系统名称。
         os_version (str | None): ISO 扫描时识别到的操作系统版本。
         os_arch (str | None): ISO 扫描时识别到的操作系统架构。
+        extra_metadata (dict | None): 需要追加到清单头部的额外元数据。
 
     Returns:
         dict: 包含 creation_info 和清单数据的 SBOM 片段。
     """
 
     if os_name is not None or os_version is not None or os_arch is not None:
-        return {
+        header = {
             "scan_target": scan_target or "NOASSERTION",
             "os_name": os_name or "NOASSERTION",
             "os_version": os_version or "NOASSERTION",
@@ -58,8 +60,11 @@ def build_sbom_header(
             },
             data_name: sbom_data,
         }
+        if extra_metadata:
+            header.update(extra_metadata)
+        return header
 
-    return {
+    header = {
         "scan_target": scan_target or "NOASSERTION",
         "creation_info": {
             "creators": read_data_from_json(CREATORS_FILE_PATH),
@@ -67,3 +72,6 @@ def build_sbom_header(
         },
         data_name: sbom_data,
     }
+    if extra_metadata:
+        header.update(extra_metadata)
+    return header

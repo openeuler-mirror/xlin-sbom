@@ -119,6 +119,7 @@ def _build_spdx_package(package: Dict[str, Any], package_type: str) -> Dict[str,
     architecture = package.get('architecture', '')
     purl_arch = f"?arch={architecture}" if architecture else ""
     checksum = package.get('checksum', {})
+    purl_type = package.get('package_type') or package_type
 
     return {
         "name": _no_assertion(package.get('name')),
@@ -133,7 +134,7 @@ def _build_spdx_package(package: Dict[str, Any], package_type: str) -> Dict[str,
             {
                 "referenceCategory": "PACKAGE_MANAGER",
                 "referenceLocator": (
-                    f"pkg:{package_type}/{package.get('name')}@"
+                    f"pkg:{purl_type}/{package.get('name')}@"
                     f"{package.get('version')}{purl_arch}"
                 ),
                 "referenceType": "purl",
@@ -164,8 +165,8 @@ def _build_spdx_file(file_info: Dict[str, Any]) -> Dict[str, Any]:
         "SPDXID": f"SPDXRef-{file_info.get('id')}",
         "checksums": [
             {
-                "algorithm": checksum.get('algorithm'),
-                "checksumValue": checksum.get('value'),
+                "algorithm": _no_assertion(checksum.get('algorithm')),
+                "checksumValue": _no_assertion(checksum.get('value')),
             }
         ],
     }
