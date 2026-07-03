@@ -2,6 +2,8 @@ import ast
 import gc
 import importlib.util
 import gzip
+import hashlib
+import json
 import tarfile
 import tempfile
 import unittest
@@ -21,6 +23,7 @@ from actions.licenses_helper import _extract_deb_license_list, rpm_licenses_scan
 from actions.package import Package
 from actions.scanner import (
     iso_helper,
+    docker_image_helper,
     originators_helper,
     package_helper,
     relationships_helper,
@@ -108,6 +111,118 @@ Depends: libc6 (>= 2.36)
         write_ar_member(deb, "data.tar.gz", data_tar)
 
 
+def add_tar_member(target, name, content):
+    data = content.encode("utf-8") if isinstance(content, str) else content
+    info = tarfile.TarInfo(name)
+    info.size = len(data)
+    target.addfile(info, BytesIO(data))
+
+
+def make_tar_layer(members):
+    buffer = BytesIO()
+    with tarfile.open(fileobj=buffer, mode="w") as layer:
+        for name, content in members.items():
+            add_tar_member(layer, name, content)
+    return buffer.getvalue()
+
+
+def make_minimal_oci_image(path, layers, config=None):
+    config = config or {"os": "linux", "architecture": "amd64"}
+    config_bytes = json.dumps(config).encode("utf-8")
+    config_digest = "sha256:" + hashlib.sha256(config_bytes).hexdigest()
+    layer_descriptors = []
+    layer_blobs = []
+    for layer_bytes in layers:
+        layer_digest = "sha256:" + hashlib.sha256(layer_bytes).hexdigest()
+        layer_descriptors.append({
+            "mediaType": "application/vnd.oci.image.layer.v1.tar",
+            "digest": layer_digest,
+            "size": len(layer_bytes),
+        })
+        layer_blobs.append((layer_digest, layer_bytes))
+    manifest = {
+        "schemaVersion": 2,
+        "mediaType": "application/vnd.oci.image.manifest.v1+json",
+        "config": {
+            "mediaType": "application/vnd.oci.image.config.v1+json",
+            "digest": config_digest,
+            "size": len(config_bytes),
+        },
+        "layers": layer_descriptors,
+    }
+    manifest_bytes = json.dumps(manifest).encode("utf-8")
+    manifest_digest = "sha256:" + hashlib.sha256(manifest_bytes).hexdigest()
+    index = {
+        "schemaVersion": 2,
+        "mediaType": "application/vnd.oci.image.index.v1+json",
+        "manifests": [{
+            "mediaType": "application/vnd.oci.image.manifest.v1+json",
+            "digest": manifest_digest,
+            "size": len(manifest_bytes),
+            "platform": {"os": "linux", "architecture": "amd64"},
+            "annotations": {"io.containerd.image.name": "docker.io/library/demo:latest"},
+        }],
+    }
+    with tarfile.open(path, "w") as archive:
+        add_tar_member(archive, "oci-layout", '{"imageLayoutVersion":"1.0.0"}')
+        add_tar_member(archive, "index.json", json.dumps(index))
+        add_tar_member(
+            archive, docker_image_helper._blob_path_from_digest(manifest_digest), manifest_bytes)
+        add_tar_member(
+            archive, docker_image_helper._blob_path_from_digest(config_digest), config_bytes)
+        for digest, layer_bytes in layer_blobs:
+            add_tar_member(
+                archive, docker_image_helper._blob_path_from_digest(digest), layer_bytes)
+
+
+def make_dpkg_layer():
+    status = """Package: libc6
+Status: install ok installed
+Version: 2.36
+Architecture: amd64
+Maintainer: Debian <debian@example.test>
+Description: libc package
+
+Package: demo
+Status: install ok installed
+Version: 1.0
+Architecture: amd64
+Maintainer: Demo Maintainer <demo@example.test>
+Homepage: https://example.test/demo
+Description: Demo package
+Depends: libc6 (>= 2.36)
+"""
+    return make_tar_layer({
+        "etc/os-release": 'NAME="Debian GNU/Linux"\nVERSION_ID="12"\n',
+        "var/lib/dpkg/status": status,
+        "var/lib/dpkg/info/demo.list": "/usr/bin/demo\n/usr/share/doc/demo/copyright\n",
+        "var/lib/dpkg/info/demo.md5sums": (
+            "d41d8cd98f00b204e9800998ecf8427e usr/bin/demo\n"
+            "0cc175b9c0f1b6a831c399e269772661 usr/share/doc/demo/copyright\n"
+        ),
+        "var/lib/dpkg/info/libc6:amd64.list": "/lib/libc.so.6\n",
+        "var/lib/dpkg/info/libc6:amd64.md5sums": (
+            "900150983cd24fb0d6963f7d28e17f72 lib/libc.so.6\n"
+        ),
+        "usr/share/doc/demo/copyright": "See /usr/share/common-licenses/MIT.\n",
+    })
+
+
+class RegistryResponse:
+    def __init__(self, status_code=200, payload=None, content=b"", headers=None):
+        self.status_code = status_code
+        self._payload = payload
+        self.content = content
+        self.headers = headers or {}
+
+    def json(self):
+        return self._payload if self._payload is not None else json.loads(self.content.decode("utf-8"))
+
+    def iter_content(self, chunk_size=1):
+        for index in range(0, len(self.content), chunk_size):
+            yield self.content[index:index + chunk_size]
+
+
 class OutputFormatTests(unittest.TestCase):
     def setUp(self):
         self.cli = load_cli_module()
@@ -168,6 +283,14 @@ class OutputFormatTests(unittest.TestCase):
             args = self.cli.parse_arguments()
         self.assertEqual(args.format, ["spdx"])
         self.assertFalse(hasattr(args, "sbom"))
+
+    def test_parse_arguments_accepts_docker_image_and_platform(self):
+        with mock.patch("sys.argv", [
+                "linx-xiling.py", "-d", "debian:bookworm-slim",
+                "-o", "out", "--platform", "linux/arm64"]):
+            args = self.cli.parse_arguments()
+        self.assertEqual(args.docker, "debian:bookworm-slim")
+        self.assertEqual(args.platform, "linux/arm64")
 
 
 class PackageScannerTests(unittest.TestCase):
@@ -504,6 +627,96 @@ class IsoScannerTests(unittest.TestCase):
             "loongarch64")
 
 
+class DockerImageScannerTests(unittest.TestCase):
+    def test_missing_tar_path_reports_chinese_error(self):
+        with self.assertRaisesRegex(ValueError, "离线 Docker 镜像文件不存在"):
+            docker_image_helper._is_local_image_archive("missing-image.tar")
+
+    def test_build_docker_output_name_sanitizes_image_reference(self):
+        self.assertEqual(
+            docker_image_helper.build_docker_output_name("library/debian:bookworm-slim"),
+            "library_debian_bookworm-slim")
+
+    def test_scan_local_oci_image_reads_dpkg_database(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            image_path = Path(tmpdir) / "demo-image.tar"
+            make_minimal_oci_image(image_path, [make_dpkg_layer()])
+
+            result, package_type, output_name = docker_image_helper.scan_docker_image(
+                str(image_path), "2026-06-16T00:00:00Z", "linux/amd64", True)
+
+        packages = result["packages_sbom"]["packages"]
+        package_names = {package["name"] for package in packages}
+        relationships = result["package_relationships_sbom"]["package_relationships"]
+        self.assertEqual(package_type, "docker")
+        self.assertEqual(output_name, "demo-image")
+        self.assertEqual(result["packages_sbom"]["os_name"], "Debian GNU/Linux")
+        self.assertIn("demo", package_names)
+        self.assertTrue(result["files_sbom"]["files"])
+        self.assertTrue(result["licenses_sbom"]["licenses"])
+        self.assertIn("image_config_digest", result["packages_sbom"])
+        self.assertTrue(any(rel["relationship_type"] == "DEPENDS_ON" for rel in relationships))
+
+    def test_apply_layer_honors_whiteout(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            rootfs = Path(tmpdir) / "rootfs"
+            rootfs.mkdir()
+            layer_one = Path(tmpdir) / "layer1.tar"
+            layer_two = Path(tmpdir) / "layer2.tar"
+            layer_one.write_bytes(make_tar_layer({"etc/demo.conf": "old"}))
+            layer_two.write_bytes(make_tar_layer({"etc/.wh.demo.conf": ""}))
+
+            docker_image_helper._apply_layer_file(str(layer_one), str(rootfs))
+            docker_image_helper._apply_layer_file(str(layer_two), str(rootfs))
+
+            self.assertFalse((rootfs / "etc/demo.conf").exists())
+
+    def test_scan_dockerhub_image_uses_registry_api(self):
+        layer_bytes = make_dpkg_layer()
+        manifest_list = {
+            "schemaVersion": 2,
+            "mediaType": "application/vnd.oci.image.index.v1+json",
+            "manifests": [{
+                "digest": "sha256:manifest",
+                "mediaType": "application/vnd.oci.image.manifest.v1+json",
+                "platform": {"os": "linux", "architecture": "amd64"},
+            }],
+        }
+        manifest = {
+            "schemaVersion": 2,
+            "mediaType": "application/vnd.oci.image.manifest.v1+json",
+            "config": {"digest": "sha256:config"},
+            "layers": [{"digest": "sha256:layer"}],
+        }
+        config = {"os": "linux", "architecture": "amd64"}
+
+        def fake_get(url, **kwargs):
+            if url == docker_image_helper.DOCKERHUB_AUTH_URL:
+                return RegistryResponse(payload={"token": "token"})
+            if url.endswith("/manifests/bookworm-slim"):
+                return RegistryResponse(
+                    payload=manifest_list,
+                    headers={"Docker-Content-Digest": "sha256:index"})
+            if url.endswith("/manifests/sha256:manifest"):
+                return RegistryResponse(
+                    payload=manifest,
+                    headers={"Docker-Content-Digest": "sha256:manifest"})
+            if url.endswith("/blobs/sha256:config"):
+                return RegistryResponse(payload=config)
+            if url.endswith("/blobs/sha256:layer"):
+                return RegistryResponse(content=layer_bytes)
+            return RegistryResponse(status_code=404, payload={})
+
+        with mock.patch.object(docker_image_helper.requests, "get", side_effect=fake_get):
+            result, package_type, output_name = docker_image_helper.scan_docker_image(
+                "debian:bookworm-slim", "2026-06-16T00:00:00Z", "linux/amd64", True)
+
+        self.assertEqual(package_type, "docker")
+        self.assertEqual(output_name, "debian_bookworm-slim")
+        self.assertEqual(result["packages_sbom"]["image_digest"], "sha256:manifest")
+        self.assertEqual(result["packages_sbom"]["packages"][0]["package_type"], "deb")
+
+
 class SourcePackageStrategyTests(unittest.TestCase):
     def test_dsc_source_package_returns_package_object(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -697,6 +910,28 @@ class SPDXConversionTests(unittest.TestCase):
         self.assertEqual(spdx["packages"][0]["supplier"], "NOASSERTION")
         self.assertEqual(spdx["packages"][0]["checksums"][0]["algorithm"], "NOASSERTION")
         self.assertEqual(spdx["files"], [])
+
+    def test_convert_to_spdx_prefers_package_type_for_docker_scan(self):
+        linx_sbom = {
+            "packages_sbom": {"packages": [{
+                "id": "Package-demo-abc",
+                "name": "demo",
+                "version": "1.0",
+                "architecture": "amd64",
+                "package_type": "deb",
+                "licenses": [],
+                "suppliers": [],
+                "description": "demo",
+                "checksum": {"algorithm": "SHA1", "value": "abc"},
+            }]},
+            "licenses_sbom": {"licenses": []},
+        }
+
+        spdx = spdx_sbom_helper.convert_to_spdx(
+            linx_sbom, "demo", "2026-06-16T00:00:00Z", "docker")
+
+        self.assertTrue(
+            spdx["packages"][0]["externalRefs"][0]["referenceLocator"].startswith("pkg:deb/demo@1.0"))
 
 
 class ScanCodeHelperTests(unittest.TestCase):
