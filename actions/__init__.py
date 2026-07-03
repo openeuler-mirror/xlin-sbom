@@ -25,3 +25,4 @@ else:
     LOG_DIR = os.path.join(PARENT_DIR, 'log')
 
 ASSIST_DIR = os.path.join(PARENT_DIR, 'assist')
+OSV_SCANNER = os.path.join(PARENT_DIR, 'actions/scanner/osv-scanner/osv-scanner_linux_amd64')

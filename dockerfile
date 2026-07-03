@@ -32,7 +32,8 @@ ENV PATH="/opt/venv/bin:$PATH"
 COPY . .
 
 # 授予执行权限
-RUN chmod +x linx-xiling.py
+RUN chmod +x linx-xiling.py && \
+    chmod +x actions/scanner/osv-scanner/osv-scanner_linux_amd64
 
 # 在虚拟环境中安装Python依赖
 RUN pip install --no-cache-dir --upgrade pip && \
