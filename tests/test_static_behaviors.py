@@ -316,16 +316,107 @@ class PackageScannerTests(unittest.TestCase):
         self.assertEqual(licenses, [])
         self.assertEqual(originators, [])
 
-    def test_source_tar_does_not_call_src_rpm_file_scan(self):
+    def test_source_brief_mode_skips_fine_scan(self):
         with mock.patch.object(package_helper, "process_src_package") as process_src, \
-                mock.patch.object(package_helper, "scan_src_rpm") as scan_src:
+                mock.patch.object(package_helper, "extract_source_archive") as extract_archive, \
+                mock.patch.object(package_helper, "scan_src_dir") as scan_dir, \
+                mock.patch.object(package_helper, "run_osv_dependency_scan") as osv_scan:
             package = Package("generic", "", "", "source", "source", "MD5", "abc")
             process_src.return_value = (package, [], [])
             result = package_helper.process_source_package(
-                "generic.tar.gz", [], None, None, None, True, False)
+                "generic.tar.gz", [], None, None, None, True, True)
 
         self.assertIs(result[0], package)
-        scan_src.assert_not_called()
+        self.assertEqual(result[3], [])
+        self.assertEqual(result[4], [])
+        extract_archive.assert_not_called()
+        scan_dir.assert_not_called()
+        osv_scan.assert_not_called()
+
+    def test_source_tar_scan_adds_files_dependencies_and_relationships(self):
+        package = Package("generic", "", "", "source", "source", "MD5", "abc")
+        file_info = {
+            "id": "File-main-py",
+            "name": "main.py",
+            "path": "src/main.py",
+            "licenses": ["LicenseRef-mit"],
+            "holders": ["Example"],
+            "checksums": {"algorithm": "MD5", "value": "def"},
+        }
+        file_license = {"id": "LicenseRef-mit", "name": "MIT"}
+        osv_data = {
+            "results": [{
+                "packages": [
+                    {
+                        "package": {
+                            "name": "requests",
+                            "version": "2.32.3",
+                            "ecosystem": "PyPI",
+                        },
+                        "licenses": ["Apache-2.0"],
+                    },
+                    {
+                        "package": {
+                            "name": "requests",
+                            "version": "2.32.3",
+                            "ecosystem": "PyPI",
+                        },
+                        "licenses": ["Apache-2.0"],
+                    },
+                ]
+            }]
+        }
+        with tempfile.TemporaryDirectory() as tmpdir, \
+                mock.patch.object(package_helper, "process_src_package",
+                                  return_value=(package, [], [])), \
+                mock.patch.object(package_helper, "extract_source_archive",
+                                  return_value=tmpdir), \
+                mock.patch.object(package_helper, "scan_src_dir",
+                                  return_value=([file_info], [file_license])), \
+                mock.patch.object(package_helper, "run_osv_dependency_scan",
+                                  return_value=osv_data):
+            result = package_helper.process_source_package(
+                "generic.tar.gz", [], None, None, None, True, False)
+
+        scanned_package, licenses, _, dependencies, relationships = result
+        self.assertEqual(scanned_package.files, [file_info])
+        self.assertIn("LicenseRef-mit", scanned_package.licenses)
+        self.assertIn("requests", scanned_package.declared_dependencies)
+        self.assertEqual(len(dependencies), 1)
+        self.assertEqual(dependencies[0].package_type, "pypi")
+        self.assertIn("LicenseRef-f2f4f1c7718e", dependencies[0].licenses)
+        self.assertEqual(licenses[0], file_license)
+        self.assertEqual(
+            relationships,
+            [{
+                "id": package.id,
+                "related_element": dependencies[0].id,
+                "relationship_type": "DEPENDS_ON",
+            }])
+
+    def test_package_scanner_includes_source_dependency_relationships(self):
+        package = Package("generic", "", "", "source", "source", "MD5", "abc")
+        dependency = Package(
+            "requests", "2.32.3", "", "NOASSERTION", "pypi",
+            "NOASSERTION", "NOASSERTION")
+        relationship = {
+            "id": package.id,
+            "related_element": dependency.id,
+            "relationship_type": "DEPENDS_ON",
+        }
+        with mock.patch.object(package_helper, "read_data_from_json", return_value=[]), \
+                mock.patch.object(package_helper, "save_data_to_json"), \
+                mock.patch.object(package_helper, "process_source_package",
+                                  return_value=(package, [], [], [dependency], [relationship])):
+            result = package_helper.package_scanner(
+                "generic.tar.gz", "source", "2026-06-16T00:00:00Z",
+                None, None, None, True, False)
+
+        packages = result["packages_sbom"]["packages"]
+        self.assertEqual([item["name"] for item in packages], ["generic", "requests"])
+        self.assertEqual(
+            result["package_relationships_sbom"]["package_relationships"],
+            [relationship])
 
     def test_process_deb_package_reads_minimal_deb(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -864,6 +955,7 @@ class SPDXConversionTests(unittest.TestCase):
             "files_sbom": {"files": [{
                 "id": "File-demo",
                 "name": "demo.py",
+                "path": "src/demo.py",
                 "checksums": {"algorithm": "MD5", "value": "def"},
             }]},
             "file_relationships_sbom": {"file_relationships": [{
@@ -884,6 +976,7 @@ class SPDXConversionTests(unittest.TestCase):
 
         self.assertEqual(spdx["spdxVersion"], "SPDX-2.3")
         self.assertEqual(spdx["packages"][0]["supplier"], "Organization: Example")
+        self.assertEqual(spdx["files"][0]["fileName"], "src/demo.py")
         self.assertEqual(spdx["files"][0]["SPDXID"], "SPDXRef-File-demo")
         self.assertEqual(len(spdx["relationships"]), 2)
         self.assertEqual(spdx["hasExtractedLicensingInfos"][0]["licenseId"], "LicenseRef-mit")
@@ -939,6 +1032,35 @@ class ScanCodeHelperTests(unittest.TestCase):
         self.assertTrue(scancode_helper._should_include("src/main.c", ["*.c"], ["test/*"]))
         self.assertFalse(scancode_helper._should_include("src/main.py", ["*.c"], None))
         self.assertFalse(scancode_helper._should_include("test/main.c", ["*.c"], ["test/*"]))
+
+    def test_include_pattern_does_not_prune_directories(self):
+        self.assertFalse(scancode_helper._should_skip_directory("src", ["*.py"]))
+        self.assertTrue(scancode_helper._should_skip_directory("test", ["test"]))
+
+    def test_extract_source_archive_skips_path_traversal(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tar_path = Path(tmpdir) / "unsafe.tar"
+            with tarfile.open(tar_path, "w") as tar:
+                add_tar_member(tar, "safe/main.py", "print('ok')\n")
+                add_tar_member(tar, "../evil.py", "bad\n")
+
+            source_dir = scancode_helper.extract_source_archive(str(tar_path))
+            try:
+                self.assertTrue((Path(source_dir) / "safe" / "main.py").exists())
+                self.assertFalse((Path(source_dir).parent / "evil.py").exists())
+            finally:
+                for path in Path(source_dir).rglob("*"):
+                    if path.is_file():
+                        path.unlink()
+                for path in sorted(Path(source_dir).rglob("*"), reverse=True):
+                    if path.is_dir():
+                        path.rmdir()
+                Path(source_dir).rmdir()
+
+    def test_run_osv_dependency_scan_missing_binary_returns_empty(self):
+        with tempfile.TemporaryDirectory() as tmpdir, \
+                mock.patch.object(scancode_helper, "OSV_SCANNER", str(Path(tmpdir) / "missing")):
+            self.assertEqual(scancode_helper.run_osv_dependency_scan(tmpdir), {})
 
 
 if __name__ == "__main__":
