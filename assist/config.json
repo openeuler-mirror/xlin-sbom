@@ -1,0 +1,49 @@
+{
+    "scan": {
+        "disable_tqdm": false,
+        "max_workers": null,
+        "platform": "linux/amd64",
+        "output_formats": [
+            "linx",
+            "spdx"
+        ]
+    },
+    "source_scan": {
+        "include_file_patterns": [
+            "*.c",
+            "*.h",
+            "*.cpp",
+            "*.hpp",
+            "*.cc",
+            "*.hh",
+            "*.java",
+            "*.py",
+            "*.pyw",
+            "*.rs",
+            "*.pl",
+            "*.pm",
+            "*.js",
+            "*.ts",
+            "*.jsx",
+            "*.dart",
+            "*.ex",
+            "*.exs",
+            "*.go",
+            "*.hs",
+            "*.cs",
+            "*.vb",
+            "*.php",
+            "*.r",
+            "*.R",
+            "*.rb",
+            "*license*",
+            "*LICENSE*",
+            "*copyright*",
+            "*COPYRIGHT*",
+            "*copying*",
+            "*COPYING*"
+        ],
+        "exclude_file_patterns": [],
+        "brief": false
+    }
+}
