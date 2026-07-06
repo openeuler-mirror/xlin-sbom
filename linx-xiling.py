@@ -20,6 +20,7 @@ import time
 import logging
 import argparse
 import csv
+import copy
 from actions import (
     LOG_DIR,
     ASSIST_DIR
@@ -43,6 +44,8 @@ from actions.scanner.spdx_sbom_helper import convert_to_spdx
 
 
 DEFAULT_CONFIG_PATH = os.path.join(ASSIST_DIR, 'config.json')
+EXTERNAL_CONFIG_PATH = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), 'config', 'config.json')
 DEFAULT_SOURCE_INCLUDE_PATTERNS = [
     "*.c",
     "*.h",
@@ -104,20 +107,6 @@ def parse_arguments():
     mutually_exclusive_group.add_argument("--docker", "-d",
                                           help="Docker Hub 镜像名或离线 Docker 镜像 tar 文件路径。")
     parser.add_argument("--output", "-o", required=True, help="SBOM清单输出目录。")
-    parser.add_argument("--config", help="外部配置文件路径。")
-    parser.add_argument("--disable-tqdm", action='store_true', default=None,
-                        help="禁用进度条显示。")
-    parser.add_argument("--max-workers", type=int,
-                        default=None, help="最大并发线程数。")
-    parser.add_argument("--platform", default=None,
-                        help="Docker 多架构镜像平台，默认 linux/amd64。")
-    parser.add_argument("--include", action='append',
-                        help="要包含的文件模式（仅源码包扫描生效）。")
-    parser.add_argument("--exclude", action='append',
-                        help="要排除的文件模式（仅源码包扫描生效）。")
-    parser.add_argument("--brief", action='store_true', default=None,
-                        help="不进行精细扫描（仅源码包扫描生效）。")
-
     parser.add_argument("--format", "-f", action='append', choices=("linx", "spdx"),
                         help="SBOM output format. Can be repeated. Defaults to both linx and spdx.")
 
@@ -193,18 +182,22 @@ def merge_configs(default_config, external_config, path=""):
         dict: 合并后的配置。
     """
 
-    merged = default_config.copy()
+    if not isinstance(external_config, dict):
+        logging.warning("外部配置不是 JSON 对象，已忽略")
+        return copy.deepcopy(default_config)
+
+    merged = copy.deepcopy(default_config)
     for key, external_value in external_config.items():
         current_path = f"{path}.{key}" if path else key
         if key not in merged:
-            merged[key] = external_value
+            logging.warning(f"未知配置项 '{current_path}'，已忽略")
             continue
 
         default_value = merged[key]
         if isinstance(default_value, dict) and isinstance(external_value, dict):
             merged[key] = merge_configs(
                 default_value, external_value, current_path)
-        elif type(default_value) is not type(external_value):
+        elif isinstance(default_value, dict):
             logging.warning(
                 f"配置项类型冲突 '{current_path}'，已忽略外部配置")
         else:
@@ -212,7 +205,110 @@ def merge_configs(default_config, external_config, path=""):
     return merged
 
 
-def load_scan_config(config_path=None):
+def get_builtin_config():
+    """获取内置默认扫描配置。
+
+    Returns:
+        dict: 内置默认配置。
+    """
+
+    return {
+        "scan": {
+            "disable_tqdm": False,
+            "max_workers": None,
+            "platform": "linux/amd64"
+        },
+        "source_scan": {
+            "include_file_patterns": DEFAULT_SOURCE_INCLUDE_PATTERNS.copy(),
+            "exclude_file_patterns": [],
+            "brief": False
+        }
+    }
+
+
+def _is_string_list(value):
+    """判断配置值是否为字符串列表。
+
+    Args:
+        value (object): 待检查的配置值。
+
+    Returns:
+        bool: 若值为字符串列表则返回 True。
+    """
+
+    return isinstance(value, list) and all(isinstance(item, str) for item in value)
+
+
+def _is_valid_config_value(path, value):
+    """校验单个配置项的值。
+
+    Args:
+        path (str): 配置项路径。
+        value (object): 配置项值。
+
+    Returns:
+        bool: 配置项合法时返回 True。
+    """
+
+    if path in ("scan.disable_tqdm", "source_scan.brief"):
+        return isinstance(value, bool)
+    if path == "scan.max_workers":
+        return value is None or (
+            isinstance(value, int) and not isinstance(value, bool) and value > 0)
+    if path == "scan.platform":
+        return isinstance(value, str) and bool(value.strip())
+    if path in (
+            "source_scan.include_file_patterns",
+            "source_scan.exclude_file_patterns"):
+        return _is_string_list(value)
+    return True
+
+
+def normalize_config(config, default_config, path=""):
+    """按默认配置结构规范化扫描配置。
+
+    Args:
+        config (dict): 待规范化的配置。
+        default_config (dict): 字段回退使用的默认配置。
+        path (str): 当前递归路径。
+
+    Returns:
+        dict: 规范化后的配置。
+    """
+
+    if not isinstance(config, dict):
+        logging.warning("配置文件内容不是 JSON 对象，已使用默认配置")
+        return copy.deepcopy(default_config)
+
+    normalized = {}
+    for key, default_value in default_config.items():
+        current_path = f"{path}.{key}" if path else key
+        if key not in config:
+            normalized[key] = copy.deepcopy(default_value)
+            continue
+
+        value = config[key]
+        if isinstance(default_value, dict):
+            if isinstance(value, dict):
+                normalized[key] = normalize_config(
+                    value, default_value, current_path)
+            else:
+                logging.warning(f"配置项 '{current_path}' 类型错误，已使用默认值")
+                normalized[key] = copy.deepcopy(default_value)
+        elif _is_valid_config_value(current_path, value):
+            normalized[key] = value
+        else:
+            logging.warning(f"配置项 '{current_path}' 值无效，已使用默认值")
+            normalized[key] = copy.deepcopy(default_value)
+
+    for key in config:
+        if key not in default_config:
+            current_path = f"{path}.{key}" if path else key
+            logging.warning(f"未知配置项 '{current_path}'，已忽略")
+    return normalized
+
+
+def load_scan_config(config_path=EXTERNAL_CONFIG_PATH):
     """加载扫描配置。
 
     Args:
@@ -222,41 +318,35 @@ def load_scan_config(config_path=None):
         dict: 合并后的扫描配置。
     """
 
+    builtin_config = get_builtin_config()
     try:
-        config = read_data_from_json(DEFAULT_CONFIG_PATH)
+        default_config = normalize_config(
+            read_data_from_json(DEFAULT_CONFIG_PATH), builtin_config)
     except Exception as e:
         logging.warning(f"默认配置文件加载失败，将使用内置默认值: {e}")
-        config = {
-            "scan": {
-                "disable_tqdm": False,
-                "max_workers": None,
-                "platform": "linux/amd64",
-                "output_formats": ["linx", "spdx"]
-            },
-            "source_scan": {
-                "include_file_patterns": DEFAULT_SOURCE_INCLUDE_PATTERNS,
-                "exclude_file_patterns": [],
-                "brief": False
-            }
-        }
+        default_config = builtin_config
 
-    if config_path:
+    if config_path and os.path.exists(config_path):
         try:
             external_config = read_data_from_json(config_path)
-            config = merge_configs(config, external_config)
+            config = normalize_config(
+                merge_configs(default_config, external_config),
+                default_config)
             logging.info(f"外部配置已加载: {config_path}")
         except Exception as e:
             logging.warning(f"外部配置加载失败，将使用默认配置: {e}")
+            config = default_config
+    else:
+        if config_path:
+            logging.warning(f"外部配置文件不存在，将使用默认配置: {config_path}")
+        config = default_config
     return config
 
 
-def resolve_runtime_options(args, config):
-    """根据配置和命令行参数解析运行选项。
-
-    命令行参数优先级高于配置文件。
+def resolve_runtime_options(config):
+    """根据配置解析运行选项。
 
     Args:
-        args (argparse.Namespace): 命令行参数。
         config (dict): 扫描配置。
 
     Returns:
@@ -265,40 +355,13 @@ def resolve_runtime_options(args, config):
 
     scan_config = config.get("scan", {})
     source_config = config.get("source_scan", {})
-    batch_config = config.get("batch_scan", {})
-    include_patterns = (
-        args.include if args.include is not None
-        else source_config.get(
-            "include_file_patterns",
-            batch_config.get("include_file_patterns"))
-    )
-    exclude_patterns = (
-        args.exclude if args.exclude is not None
-        else source_config.get(
-            "exclude_file_patterns",
-            batch_config.get("exclude_file_patterns"))
-    )
-    output_formats = (
-        args.format if args.format is not None
-        else scan_config.get("output_formats")
-    )
     return {
-        "include": include_patterns,
-        "exclude": exclude_patterns,
-        "brief": args.brief if args.brief is not None else source_config.get("brief", False),
-        "disable_tqdm": (
-            args.disable_tqdm if args.disable_tqdm is not None
-            else scan_config.get("disable_tqdm", False)
-        ),
-        "max_workers": (
-            args.max_workers if args.max_workers is not None
-            else scan_config.get("max_workers")
-        ),
-        "platform": (
-            args.platform if args.platform is not None
-            else scan_config.get("platform", "linux/amd64")
-        ),
-        "output_formats": resolve_output_formats(output_formats),
+        "include": source_config.get("include_file_patterns"),
+        "exclude": source_config.get("exclude_file_patterns"),
+        "brief": source_config.get("brief"),
+        "disable_tqdm": scan_config.get("disable_tqdm"),
+        "max_workers": scan_config.get("max_workers"),
+        "platform": scan_config.get("platform"),
     }
 
 
@@ -427,8 +490,9 @@ def main():
 
     # 设置日志记录系统
     setup_logging(formatted_utc_time)
-    config = load_scan_config(args.config)
-    runtime_options = resolve_runtime_options(args, config)
+    config = load_scan_config()
+    runtime_options = resolve_runtime_options(config)
+    output_formats = resolve_output_formats(args.format)
 
     # 配置输出目录
     output_dir = args.output
@@ -507,7 +571,7 @@ def main():
     # 保存SBOM
     save_sbom(linx_sbom, package_type, filename,
               formatted_utc_time, spdx_utc_time, output_dir,
-              runtime_options["output_formats"])
+              output_formats)
     logging.info("Linx SBOM 生成完成")
 
 
