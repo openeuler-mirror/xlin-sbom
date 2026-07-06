@@ -9,10 +9,10 @@ services:
     volumes:
       - .:/app/data
       - ./output:/app/output
+      - ./config:/app/config:ro
     devices:
       - /dev/fuse:/dev/fuse
     cap_add:
       - SYS_ADMIN
 
     entrypoint: ["python3", "/app/linx-xiling.py"]
-    
