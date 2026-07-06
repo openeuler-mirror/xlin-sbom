@@ -292,6 +292,72 @@ class OutputFormatTests(unittest.TestCase):
         self.assertEqual(args.docker, "debian:bookworm-slim")
         self.assertEqual(args.platform, "linux/arm64")
 
+    def test_default_config_provides_source_include_patterns(self):
+        config = self.cli.load_scan_config()
+        options = self.cli.resolve_runtime_options(
+            mock.Mock(
+                include=None,
+                exclude=None,
+                brief=None,
+                disable_tqdm=None,
+                max_workers=None,
+                platform=None,
+                format=None),
+            config)
+
+        self.assertIn("*.py", options["include"])
+        self.assertIn("*LICENSE*", options["include"])
+        self.assertEqual(options["exclude"], [])
+        self.assertFalse(options["brief"])
+
+    def test_config_load_fallback_keeps_source_include_patterns(self):
+        with mock.patch.object(
+                self.cli, "read_data_from_json", side_effect=OSError("missing")):
+            config = self.cli.load_scan_config()
+
+        self.assertIn("*.py", config["source_scan"]["include_file_patterns"])
+        self.assertIn("*LICENSE*", config["source_scan"]["include_file_patterns"])
+        self.assertEqual(config["source_scan"]["exclude_file_patterns"], [])
+
+    def test_external_config_and_cli_precedence(self):
+        default_config = {
+            "scan": {
+                "disable_tqdm": False,
+                "max_workers": None,
+                "platform": "linux/amd64",
+                "output_formats": ["linx", "spdx"],
+            },
+            "source_scan": {
+                "include_file_patterns": ["*.py"],
+                "exclude_file_patterns": [],
+                "brief": False,
+            },
+        }
+        external_config = {
+            "scan": {"output_formats": ["spdx"]},
+            "source_scan": {
+                "include_file_patterns": ["*.go"],
+                "exclude_file_patterns": ["vendor/*"],
+                "brief": True,
+            },
+        }
+        config = self.cli.merge_configs(default_config, external_config)
+        args = mock.Mock(
+            include=["*.rs"],
+            exclude=None,
+            brief=None,
+            disable_tqdm=None,
+            max_workers=None,
+            platform=None,
+            format=None)
+
+        options = self.cli.resolve_runtime_options(args, config)
+
+        self.assertEqual(options["include"], ["*.rs"])
+        self.assertEqual(options["exclude"], ["vendor/*"])
+        self.assertTrue(options["brief"])
+        self.assertEqual(options["output_formats"], ["spdx"])
+
 
 class PackageScannerTests(unittest.TestCase):
     def test_failed_rpm_scan_returns_empty_sbom(self):
