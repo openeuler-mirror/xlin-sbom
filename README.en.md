@@ -2,7 +2,7 @@
 
 ## Overview
 
-The XiLing SBOM Tool is designed to scan ISO images, Docker images, software packages (`.rpm` / `.deb` / `.src.rpm`), or software repository URLs. It automatically generates Software Bill of Materials (SBOM) manifests that comply with both the Linx format and the international SPDX standard. Delivered as a containerized application, the tool can be run with a single command via Docker Compose, eliminating the need for manual dependency management and environment configuration.
+The XiLing SBOM Tool is designed to scan ISO images, Docker images, software packages (`.rpm` / `.deb` / `.src.rpm` / source archives), or software repository URLs. It automatically generates Software Bill of Materials (SBOM) manifests that comply with both the Linx format and the international SPDX standard. Delivered as a containerized application, the tool can be run with a single command via Docker Compose, eliminating the need for manual dependency management and environment configuration.
 
 ## System Requirements
 
@@ -58,7 +58,7 @@ docker compose run --rm linx-xiling -i /app/data/centos-8-stream.iso -o output/
 
 ### 2. Software Package Scan (`--package` / `-p`)
 
-Scans a single software package file (supports formats like `.rpm`, `.deb`, `.src.rpm`, etc.) and generates its SBOM manifest.
+Scans a single software package file and generates its SBOM manifest. Supported inputs include binary packages (`.rpm`, `.deb`), RPM source packages (`.src.rpm`), source archives (`.tar.gz`, `.tgz`, `.tar.bz2`, `.tar.xz`, `.tar`, `.zip`), and Debian source description files (`.dsc`).
 
 **Command Format**:
 
@@ -73,6 +73,8 @@ docker compose run --rm linx-xiling -p /app/data/<package_file> -o output/ [opti
 docker compose run --rm linx-xiling -p /app/data/zvbi-0.2.35-8.oe2203sp4.src.rpm -o output/
 
 ```
+
+Source archives are unpacked safely for file-level license scanning. The bundled OSV Scanner also detects dependencies from common ecosystem manifest files. If no supported dependency manifest is present, or the runtime cannot reach the online OSV service, dependency results may be empty while package, file, and license SBOM output is still generated. Use `--brief` to skip file-level license scanning and OSV dependency detection.
 
 ### 3. Docker Image Scan (`--docker` / `-d`)
 
@@ -133,7 +135,7 @@ In addition to the required mode parameters mentioned above, you can use the fol
 | `--platform PLATFORM` | Docker image platform for multi-platform images; defaults to `linux/amd64` |
 | `--include PATTERN` | Include file pattern for source package file-level scans; can be repeated |
 | `--exclude PATTERN` | Exclude file pattern for source package file-level scans; can be repeated |
-| `--brief` | Generate package-level source package SBOM only and skip file-level scanning |
+| `--brief` | Generate package-level source package SBOM only and skip file-level license scanning and OSV dependency detection |
 | `--format {linx,spdx}` | Output format; can be repeated and defaults to both Linx and SPDX |
 
 ---
