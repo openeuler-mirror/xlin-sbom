@@ -21,10 +21,12 @@ import logging
 import argparse
 import csv
 from actions import (
-    LOG_DIR
+    LOG_DIR,
+    ASSIST_DIR
 )
 from actions.data_helper import (
-    save_data_to_json
+    save_data_to_json,
+    read_data_from_json
 )
 from actions.scanner.iso_helper import (
     scan_iso
@@ -38,6 +40,43 @@ from actions.scanner.repo_helper import (
     find_deb_sources_in_repo
 )
 from actions.scanner.spdx_sbom_helper import convert_to_spdx
+
+
+DEFAULT_CONFIG_PATH = os.path.join(ASSIST_DIR, 'config.json')
+DEFAULT_SOURCE_INCLUDE_PATTERNS = [
+    "*.c",
+    "*.h",
+    "*.cpp",
+    "*.hpp",
+    "*.cc",
+    "*.hh",
+    "*.java",
+    "*.py",
+    "*.pyw",
+    "*.rs",
+    "*.pl",
+    "*.pm",
+    "*.js",
+    "*.ts",
+    "*.jsx",
+    "*.dart",
+    "*.ex",
+    "*.exs",
+    "*.go",
+    "*.hs",
+    "*.cs",
+    "*.vb",
+    "*.php",
+    "*.r",
+    "*.R",
+    "*.rb",
+    "*license*",
+    "*LICENSE*",
+    "*copyright*",
+    "*COPYRIGHT*",
+    "*copying*",
+    "*COPYING*",
+]
 
 
 def parse_arguments():
@@ -65,16 +104,18 @@ def parse_arguments():
     mutually_exclusive_group.add_argument("--docker", "-d",
                                           help="Docker Hub 镜像名或离线 Docker 镜像 tar 文件路径。")
     parser.add_argument("--output", "-o", required=True, help="SBOM清单输出目录。")
-    parser.add_argument("--disable-tqdm", action='store_true', help="禁用进度条显示。")
+    parser.add_argument("--config", help="外部配置文件路径。")
+    parser.add_argument("--disable-tqdm", action='store_true', default=None,
+                        help="禁用进度条显示。")
     parser.add_argument("--max-workers", type=int,
                         default=None, help="最大并发线程数。")
-    parser.add_argument("--platform", default="linux/amd64",
+    parser.add_argument("--platform", default=None,
                         help="Docker 多架构镜像平台，默认 linux/amd64。")
     parser.add_argument("--include", action='append',
                         help="要包含的文件模式（仅源码包扫描生效）。")
     parser.add_argument("--exclude", action='append',
                         help="要排除的文件模式（仅源码包扫描生效）。")
-    parser.add_argument("--brief", action='store_true',
+    parser.add_argument("--brief", action='store_true', default=None,
                         help="不进行精细扫描（仅源码包扫描生效）。")
 
     parser.add_argument("--format", "-f", action='append', choices=("linx", "spdx"),
@@ -138,6 +179,127 @@ def setup_logging(formatted_utc_time):
         '%(asctime)s [%(levelname)s] %(message)s')
     console_handler.setFormatter(console_formatter)
     logger.addHandler(console_handler)
+
+
+def merge_configs(default_config, external_config, path=""):
+    """递归合并默认配置和外部配置。
+
+    Args:
+        default_config (dict): 默认配置。
+        external_config (dict): 外部覆盖配置。
+        path (str): 当前递归路径，用于日志提示。
+
+    Returns:
+        dict: 合并后的配置。
+    """
+
+    merged = default_config.copy()
+    for key, external_value in external_config.items():
+        current_path = f"{path}.{key}" if path else key
+        if key not in merged:
+            merged[key] = external_value
+            continue
+
+        default_value = merged[key]
+        if isinstance(default_value, dict) and isinstance(external_value, dict):
+            merged[key] = merge_configs(
+                default_value, external_value, current_path)
+        elif type(default_value) is not type(external_value):
+            logging.warning(
+                f"配置项类型冲突 '{current_path}'，已忽略外部配置")
+        else:
+            merged[key] = external_value
+    return merged
+
+
+def load_scan_config(config_path=None):
+    """加载扫描配置。
+
+    Args:
+        config_path (str | None): 外部配置文件路径。
+
+    Returns:
+        dict: 合并后的扫描配置。
+    """
+
+    try:
+        config = read_data_from_json(DEFAULT_CONFIG_PATH)
+    except Exception as e:
+        logging.warning(f"默认配置文件加载失败，将使用内置默认值: {e}")
+        config = {
+            "scan": {
+                "disable_tqdm": False,
+                "max_workers": None,
+                "platform": "linux/amd64",
+                "output_formats": ["linx", "spdx"]
+            },
+            "source_scan": {
+                "include_file_patterns": DEFAULT_SOURCE_INCLUDE_PATTERNS,
+                "exclude_file_patterns": [],
+                "brief": False
+            }
+        }
+
+    if config_path:
+        try:
+            external_config = read_data_from_json(config_path)
+            config = merge_configs(config, external_config)
+            logging.info(f"外部配置已加载: {config_path}")
+        except Exception as e:
+            logging.warning(f"外部配置加载失败，将使用默认配置: {e}")
+    return config
+
+
+def resolve_runtime_options(args, config):
+    """根据配置和命令行参数解析运行选项。
+
+    命令行参数优先级高于配置文件。
+
+    Args:
+        args (argparse.Namespace): 命令行参数。
+        config (dict): 扫描配置。
+
+    Returns:
+        dict: 运行时选项。
+    """
+
+    scan_config = config.get("scan", {})
+    source_config = config.get("source_scan", {})
+    batch_config = config.get("batch_scan", {})
+    include_patterns = (
+        args.include if args.include is not None
+        else source_config.get(
+            "include_file_patterns",
+            batch_config.get("include_file_patterns"))
+    )
+    exclude_patterns = (
+        args.exclude if args.exclude is not None
+        else source_config.get(
+            "exclude_file_patterns",
+            batch_config.get("exclude_file_patterns"))
+    )
+    output_formats = (
+        args.format if args.format is not None
+        else scan_config.get("output_formats")
+    )
+    return {
+        "include": include_patterns,
+        "exclude": exclude_patterns,
+        "brief": args.brief if args.brief is not None else source_config.get("brief", False),
+        "disable_tqdm": (
+            args.disable_tqdm if args.disable_tqdm is not None
+            else scan_config.get("disable_tqdm", False)
+        ),
+        "max_workers": (
+            args.max_workers if args.max_workers is not None
+            else scan_config.get("max_workers")
+        ),
+        "platform": (
+            args.platform if args.platform is not None
+            else scan_config.get("platform", "linux/amd64")
+        ),
+        "output_formats": resolve_output_formats(output_formats),
+    }
 
 
 def load_category_dict(category_csv_path):
@@ -256,7 +418,6 @@ def main():
 
     # 解析命令行参数
     args = parse_arguments()
-    output_formats = resolve_output_formats(args.format)
 
     # 获取 UTC 时间并格式化
     timestamp = time.time()
@@ -266,6 +427,8 @@ def main():
 
     # 设置日志记录系统
     setup_logging(formatted_utc_time)
+    config = load_scan_config(args.config)
+    runtime_options = resolve_runtime_options(args, config)
 
     # 配置输出目录
     output_dir = args.output
@@ -276,7 +439,8 @@ def main():
         try:
             linx_sbom, package_type = scan_iso(
                 args.iso, filename, spdx_utc_time,
-                args.disable_tqdm, args.max_workers)
+                runtime_options["disable_tqdm"],
+                runtime_options["max_workers"])
         except Exception as e:
             logging.error(f"异常抛出: {e}")
             sys.exit(1)
@@ -301,7 +465,12 @@ def main():
             sys.exit(1)
 
         linx_sbom = package_scanner(
-            package_path, package_type, spdx_utc_time, args.include, args.exclude, args.max_workers, args.disable_tqdm, args.brief)
+            package_path, package_type, spdx_utc_time,
+            runtime_options["include"],
+            runtime_options["exclude"],
+            runtime_options["max_workers"],
+            runtime_options["disable_tqdm"],
+            runtime_options["brief"])
 
     # 处理更新源
     elif args.repo is not None:
@@ -314,10 +483,12 @@ def main():
         sources_file_url = find_deb_sources_in_repo(repo_url)
         if primary_xml_url:
             linx_sbom = rpm_repo_scanner(
-                primary_xml_url, repo_url, spdx_utc_time, args.disable_tqdm)
+                primary_xml_url, repo_url, spdx_utc_time,
+                runtime_options["disable_tqdm"])
         elif sources_file_url:
             linx_sbom = deb_repo_scanner(
-                sources_file_url, repo_url, spdx_utc_time, args.disable_tqdm)
+                sources_file_url, repo_url, spdx_utc_time,
+                runtime_options["disable_tqdm"])
         else:
             logging.error(f"未侦测到有效的更新源地址")
             sys.exit(1)
@@ -326,14 +497,17 @@ def main():
     elif args.docker is not None:
         try:
             linx_sbom, package_type, filename = scan_docker_image(
-                args.docker, spdx_utc_time, args.platform, args.disable_tqdm)
+                args.docker, spdx_utc_time,
+                runtime_options["platform"],
+                runtime_options["disable_tqdm"])
         except Exception as e:
             logging.error(f"异常抛出: {e}")
             sys.exit(1)
 
     # 保存SBOM
     save_sbom(linx_sbom, package_type, filename,
-              formatted_utc_time, spdx_utc_time, output_dir, output_formats)
+              formatted_utc_time, spdx_utc_time, output_dir,
+              runtime_options["output_formats"])
     logging.info("Linx SBOM 生成完成")
 
 
