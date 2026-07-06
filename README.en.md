@@ -74,7 +74,7 @@ docker compose run --rm linx-xiling -p /app/data/zvbi-0.2.35-8.oe2203sp4.src.rpm
 
 ```
 
-Source archives are unpacked safely for file-level license scanning. The bundled OSV Scanner also detects dependencies from common ecosystem manifest files. If no supported dependency manifest is present, or the runtime cannot reach the online OSV service, dependency results may be empty while package, file, and license SBOM output is still generated. Use `--brief` to skip file-level license scanning and OSV dependency detection.
+Source archives are unpacked safely for file-level license scanning. The bundled OSV Scanner also detects dependencies from common ecosystem manifest files. If no supported dependency manifest is present, or the runtime cannot reach the online OSV service, dependency results may be empty while package, file, and license SBOM output is still generated. Source file-level scanning reads `source_scan.include_file_patterns` from `assist/config.json` by default, so only common source files and license/copyright notices are scanned unless you override the configuration or pass `--include` / `--exclude`. Use `--brief` to skip file-level license scanning and OSV dependency detection.
 
 ### 3. Docker Image Scan (`--docker` / `-d`)
 
@@ -130,15 +130,38 @@ In addition to the required mode parameters mentioned above, you can use the fol
 | Parameter | Description |
 | --- | --- |
 | `--help`, `-h` | Show help message and exit |
+| `--config CONFIG` | External JSON configuration file path; values override defaults from `assist/config.json` |
 | `--disable-tqdm` | Disable progress bar display (suitable for logging environments) |
 | `--max-workers MAX_WORKERS` | Maximum number of concurrent threads; defaults to the number of CPU cores |
 | `--platform PLATFORM` | Docker image platform for multi-platform images; defaults to `linux/amd64` |
-| `--include PATTERN` | Include file pattern for source package file-level scans; can be repeated |
-| `--exclude PATTERN` | Exclude file pattern for source package file-level scans; can be repeated |
+| `--include PATTERN` | Include file pattern for source package file-level scans; can be repeated; defaults to the configured allowlist |
+| `--exclude PATTERN` | Exclude file pattern for source package file-level scans; can be repeated; defaults to the configured value |
 | `--brief` | Generate package-level source package SBOM only and skip file-level license scanning and OSV dependency detection |
 | `--format {linx,spdx}` | Output format; can be repeated and defaults to both Linx and SPDX |
 
 ---
+
+## Configuration File
+
+The default configuration file is `assist/config.json`. You can pass `--config /path/to/config.json` to load an external JSON file; external values recursively override the defaults, and CLI arguments take precedence over both files.
+
+Common options:
+
+```json
+{
+    "scan": {
+        "disable_tqdm": false,
+        "max_workers": null,
+        "platform": "linux/amd64",
+        "output_formats": ["linx", "spdx"]
+    },
+    "source_scan": {
+        "include_file_patterns": ["*.py", "*.js", "*LICENSE*"],
+        "exclude_file_patterns": [],
+        "brief": false
+    }
+}
+```
 
 ## Troubleshooting
 
