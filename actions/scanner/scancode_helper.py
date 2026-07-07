@@ -389,14 +389,12 @@ def run_osv_dependency_scan(source_dir: str) -> Dict[str, Any]:
         "--output", output_path
     ]
     try:
-        result = subprocess.run(
+        subprocess.run(
             command,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
             check=False
         )
-        if result.returncode != 0:
-            logging.warning(f"OSV Scanner 返回非零状态码: {result.returncode}")
         if not os.path.exists(output_path) or os.path.getsize(output_path) == 0:
             logging.warning("OSV Scanner 未生成依赖扫描结果")
             return {}
