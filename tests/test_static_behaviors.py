@@ -1221,6 +1221,25 @@ class ScanCodeHelperTests(unittest.TestCase):
                 mock.patch.object(scancode_helper, "OSV_SCANNER", str(Path(tmpdir) / "missing")):
             self.assertEqual(scancode_helper.run_osv_dependency_scan(tmpdir), {})
 
+    def test_run_osv_dependency_scan_accepts_nonzero_exit_with_json(self):
+        def fake_run(command, stdout=None, stderr=None, check=False):
+            output_path = command[-1]
+            Path(output_path).write_text(
+                json.dumps({"results": [{"packages": []}]}),
+                encoding="utf-8")
+            return mock.Mock(returncode=1)
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            scanner_path = Path(tmpdir) / "osv-scanner"
+            scanner_path.write_text("#!/bin/sh\n", encoding="utf-8")
+            with mock.patch.object(scancode_helper, "OSV_SCANNER", str(scanner_path)), \
+                    mock.patch.object(scancode_helper.subprocess, "run", side_effect=fake_run), \
+                    mock.patch.object(scancode_helper.logging, "warning") as warning:
+                result = scancode_helper.run_osv_dependency_scan(tmpdir)
+
+        self.assertEqual(result, {"results": [{"packages": []}]})
+        warning.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main()
