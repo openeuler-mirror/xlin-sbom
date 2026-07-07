@@ -41,5 +41,12 @@
         ],
         "exclude_file_patterns": [],
         "brief": false
+    },
+    "elastic_search": {
+        "hosts": [
+            "http://host.docker.internal:9200"
+        ],
+        "index_name": "osv_vulnerability_db",
+        "api_key": "YTgzZE1Kd0JkT1NXNWtDRmxpWmc6cjZLRDBMeW9kZ2YyS1p6cmRUREtXdw=="
     }
 }
