@@ -284,26 +284,39 @@ class OutputFormatTests(unittest.TestCase):
         self.assertEqual(args.format, ["spdx"])
         self.assertFalse(hasattr(args, "sbom"))
 
-    def test_parse_arguments_accepts_docker_image_and_platform(self):
+    def test_parse_arguments_keeps_format_as_runtime_cli_option(self):
         with mock.patch("sys.argv", [
                 "linx-xiling.py", "-d", "debian:bookworm-slim",
-                "-o", "out", "--platform", "linux/arm64"]):
+                "-o", "out", "--format", "spdx"]):
             args = self.cli.parse_arguments()
         self.assertEqual(args.docker, "debian:bookworm-slim")
-        self.assertEqual(args.platform, "linux/arm64")
+        self.assertEqual(args.format, ["spdx"])
+        for removed_arg in (
+                "config", "disable_tqdm", "max_workers", "platform",
+                "include", "exclude", "brief"):
+            self.assertFalse(hasattr(args, removed_arg))
+
+    def test_parse_arguments_rejects_migrated_runtime_options(self):
+        migrated_options = (
+            ["--config", "config.json"],
+            ["--disable-tqdm"],
+            ["--max-workers", "2"],
+            ["--platform", "linux/arm64"],
+            ["--include", "*.py"],
+            ["--exclude", "vendor/*"],
+            ["--brief"],
+        )
+        for option in migrated_options:
+            with self.subTest(option=option), \
+                    mock.patch(
+                        "sys.argv",
+                        ["linx-xiling.py", "-p", "a.tar.gz", "-o", "out", *option]):
+                with self.assertRaises(SystemExit):
+                    self.cli.parse_arguments()
 
     def test_default_config_provides_source_include_patterns(self):
-        config = self.cli.load_scan_config()
-        options = self.cli.resolve_runtime_options(
-            mock.Mock(
-                include=None,
-                exclude=None,
-                brief=None,
-                disable_tqdm=None,
-                max_workers=None,
-                platform=None,
-                format=None),
-            config)
+        config = self.cli.load_scan_config(config_path=None)
+        options = self.cli.resolve_runtime_options(config)
 
         self.assertIn("*.py", options["include"])
         self.assertIn("*LICENSE*", options["include"])
@@ -313,19 +326,111 @@ class OutputFormatTests(unittest.TestCase):
     def test_config_load_fallback_keeps_source_include_patterns(self):
         with mock.patch.object(
                 self.cli, "read_data_from_json", side_effect=OSError("missing")):
-            config = self.cli.load_scan_config()
+            config = self.cli.load_scan_config(config_path=None)
 
         self.assertIn("*.py", config["source_scan"]["include_file_patterns"])
         self.assertIn("*LICENSE*", config["source_scan"]["include_file_patterns"])
         self.assertEqual(config["source_scan"]["exclude_file_patterns"], [])
 
-    def test_external_config_and_cli_precedence(self):
-        default_config = {
+    def test_missing_external_config_uses_default_config(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            missing_config = str(Path(tmpdir) / "missing.json")
+            config = self.cli.load_scan_config(config_path=missing_config)
+
+        self.assertEqual(config["scan"]["platform"], "linux/amd64")
+        self.assertIn("*.py", config["source_scan"]["include_file_patterns"])
+
+    def test_external_config_overrides_default_fields(self):
+        external_config = {
             "scan": {
-                "disable_tqdm": False,
-                "max_workers": None,
+                "disable_tqdm": True,
+                "max_workers": 2,
+                "platform": "linux/arm64",
+            },
+            "source_scan": {
+                "include_file_patterns": ["*.go"],
+                "exclude_file_patterns": ["vendor/*"],
+                "brief": True,
+            },
+        }
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config_path = Path(tmpdir) / "config.json"
+            config_path.write_text(json.dumps(external_config), encoding="utf-8")
+            config = self.cli.load_scan_config(config_path=str(config_path))
+
+        options = self.cli.resolve_runtime_options(config)
+
+        self.assertEqual(options["include"], ["*.go"])
+        self.assertEqual(options["exclude"], ["vendor/*"])
+        self.assertTrue(options["brief"])
+        self.assertTrue(options["disable_tqdm"])
+        self.assertEqual(options["max_workers"], 2)
+        self.assertEqual(options["platform"], "linux/arm64")
+
+    def test_invalid_external_config_fields_fallback_individually(self):
+        external_config = {
+            "scan": {
+                "disable_tqdm": "true",
+                "max_workers": 0,
+                "platform": "",
+                "unknown": "ignored",
+            },
+            "source_scan": {
+                "include_file_patterns": "*.go",
+                "exclude_file_patterns": [1],
+                "brief": "false",
+            },
+            "unknown_root": {},
+        }
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config_path = Path(tmpdir) / "config.json"
+            config_path.write_text(json.dumps(external_config), encoding="utf-8")
+            config = self.cli.load_scan_config(config_path=str(config_path))
+
+        options = self.cli.resolve_runtime_options(config)
+
+        self.assertFalse(options["disable_tqdm"])
+        self.assertIsNone(options["max_workers"])
+        self.assertEqual(options["platform"], "linux/amd64")
+        self.assertIn("*.py", options["include"])
+        self.assertEqual(options["exclude"], [])
+        self.assertFalse(options["brief"])
+        self.assertNotIn("unknown", config["scan"])
+        self.assertNotIn("unknown_root", config)
+
+    def test_main_passes_config_to_package_scanner_and_keeps_format_cli(self):
+        config = {
+            "scan": {
+                "disable_tqdm": True,
+                "max_workers": 3,
                 "platform": "linux/amd64",
-                "output_formats": ["linx", "spdx"],
+            },
+            "source_scan": {
+                "include_file_patterns": ["*.rs"],
+                "exclude_file_patterns": ["target/*"],
+                "brief": True,
+            },
+        }
+        with mock.patch("sys.argv", [
+                "linx-xiling.py", "-p", "demo.tar.gz", "-o", "out",
+                "--format", "spdx"]), \
+                mock.patch.object(self.cli, "setup_logging"), \
+                mock.patch.object(self.cli, "load_scan_config", return_value=config), \
+                mock.patch.object(self.cli, "package_scanner", return_value={}) as scanner, \
+                mock.patch.object(self.cli, "save_sbom") as save_sbom:
+            self.cli.main()
+
+        scanner.assert_called_once_with(
+            "demo.tar.gz", "source", mock.ANY,
+            ["*.rs"], ["target/*"], 3, True, True)
+        self.assertEqual(save_sbom.call_args.args[-1], ["spdx"])
+
+    def test_main_passes_config_platform_to_docker_scanner(self):
+        config = {
+            "scan": {
+                "disable_tqdm": True,
+                "max_workers": None,
+                "platform": "linux/arm64",
             },
             "source_scan": {
                 "include_file_patterns": ["*.py"],
@@ -333,30 +438,18 @@ class OutputFormatTests(unittest.TestCase):
                 "brief": False,
             },
         }
-        external_config = {
-            "scan": {"output_formats": ["spdx"]},
-            "source_scan": {
-                "include_file_patterns": ["*.go"],
-                "exclude_file_patterns": ["vendor/*"],
-                "brief": True,
-            },
-        }
-        config = self.cli.merge_configs(default_config, external_config)
-        args = mock.Mock(
-            include=["*.rs"],
-            exclude=None,
-            brief=None,
-            disable_tqdm=None,
-            max_workers=None,
-            platform=None,
-            format=None)
+        with mock.patch("sys.argv", [
+                "linx-xiling.py", "-d", "debian:bookworm-slim", "-o", "out"]), \
+                mock.patch.object(self.cli, "setup_logging"), \
+                mock.patch.object(self.cli, "load_scan_config", return_value=config), \
+                mock.patch.object(
+                    self.cli, "scan_docker_image",
+                    return_value=({}, "docker", "debian")) as scanner, \
+                mock.patch.object(self.cli, "save_sbom"):
+            self.cli.main()
 
-        options = self.cli.resolve_runtime_options(args, config)
-
-        self.assertEqual(options["include"], ["*.rs"])
-        self.assertEqual(options["exclude"], ["vendor/*"])
-        self.assertTrue(options["brief"])
-        self.assertEqual(options["output_formats"], ["spdx"])
+        scanner.assert_called_once_with(
+            "debian:bookworm-slim", mock.ANY, "linux/arm64", True)
 
 
 class PackageScannerTests(unittest.TestCase):
