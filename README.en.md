@@ -74,7 +74,7 @@ docker compose run --rm linx-xiling -p /app/data/zvbi-0.2.35-8.oe2203sp4.src.rpm
 
 ```
 
-Source archives are unpacked safely for file-level license scanning. The bundled OSV Scanner also detects dependencies from common ecosystem manifest files. If no supported dependency manifest is present, or the runtime cannot reach the online OSV service, dependency results may be empty while package, file, and license SBOM output is still generated. Source file-level scanning reads `source_scan.include_file_patterns` from `assist/config.json` by default, so only common source files and license/copyright notices are scanned unless you override the configuration or pass `--include` / `--exclude`. Use `--brief` to skip file-level license scanning and OSV dependency detection.
+Source archives are unpacked safely for file-level license scanning. The bundled OSV Scanner also detects dependencies from common ecosystem manifest files. If no supported dependency manifest is present, or the runtime cannot reach the online OSV service, dependency results may be empty while package, file, and license SBOM output is still generated. Source file-level scanning reads `source_scan.include_file_patterns` from the configuration file by default, so only common source files and license/copyright notices are scanned unless you adjust `./config/config.json`.
 
 ### 3. Docker Image Scan (`--docker` / `-d`)
 
@@ -87,12 +87,7 @@ docker compose run --rm linx-xiling -d debian:bookworm-slim -o output/
 
 ```
 
-For multi-platform images, the default platform is `linux/amd64`. Use `--platform` to override it:
-
-```bash
-docker compose run --rm linx-xiling -d debian:bookworm-slim -o output/ --platform linux/arm64
-
-```
+For multi-platform images, the platform is controlled by `scan.platform` in the configuration file. The default value is `linux/amd64`.
 
 **Offline image tar**:
 
@@ -125,35 +120,29 @@ docker compose run --rm linx-xiling -r [https://mirrors.example.com/centos/8-str
 
 ## Optional Parameters
 
-In addition to the required mode parameters mentioned above, you can use the following options to adjust the scanning behavior:
+In addition to the required scan mode and output parameters, the CLI keeps the following optional argument:
 
 | Parameter | Description |
 | --- | --- |
 | `--help`, `-h` | Show help message and exit |
-| `--config CONFIG` | External JSON configuration file path; values override defaults from `assist/config.json` |
-| `--disable-tqdm` | Disable progress bar display (suitable for logging environments) |
-| `--max-workers MAX_WORKERS` | Maximum number of concurrent threads; defaults to the number of CPU cores |
-| `--platform PLATFORM` | Docker image platform for multi-platform images; defaults to `linux/amd64` |
-| `--include PATTERN` | Include file pattern for source package file-level scans; can be repeated; defaults to the configured allowlist |
-| `--exclude PATTERN` | Exclude file pattern for source package file-level scans; can be repeated; defaults to the configured value |
-| `--brief` | Generate package-level source package SBOM only and skip file-level license scanning and OSV dependency detection |
 | `--format {linx,spdx}` | Output format; can be repeated and defaults to both Linx and SPDX |
 
 ---
 
 ## Configuration File
 
-The default configuration file is `assist/config.json`. You can pass `--config /path/to/config.json` to load an external JSON file; external values recursively override the defaults, and CLI arguments take precedence over both files.
+The bundled default configuration file is `/app/assist/config.json`. Docker Compose mounts the host `./config` directory to `/app/config`, and the tool automatically reads `/app/config/config.json` as the external configuration file.
 
-Common options:
+Users only need to edit `./config/config.json` on the host. If this file is missing, contains invalid JSON, has unknown options, or contains invalid field types/values, the scanner logs a Chinese warning and falls back to the bundled default value for the affected field.
+
+Configuration options:
 
 ```json
 {
     "scan": {
         "disable_tqdm": false,
         "max_workers": null,
-        "platform": "linux/amd64",
-        "output_formats": ["linx", "spdx"]
+        "platform": "linux/amd64"
     },
     "source_scan": {
         "include_file_patterns": ["*.py", "*.js", "*LICENSE*"],
@@ -162,6 +151,15 @@ Common options:
     }
 }
 ```
+
+| Option | Description |
+| --- | --- |
+| `scan.disable_tqdm` | Disable progress bar display |
+| `scan.max_workers` | Maximum number of concurrent workers; `null` keeps the program default |
+| `scan.platform` | Docker image platform, such as `linux/amd64` or `linux/arm64` |
+| `source_scan.include_file_patterns` | Include patterns for source package file-level scans |
+| `source_scan.exclude_file_patterns` | Exclude patterns for source package file-level scans |
+| `source_scan.brief` | Skip file-level license scanning and OSV dependency detection for source packages |
 
 ## Troubleshooting
 
