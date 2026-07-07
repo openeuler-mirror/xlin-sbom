@@ -41,6 +41,12 @@ from actions.scanner.repo_helper import (
     find_deb_sources_in_repo
 )
 from actions.scanner.spdx_sbom_helper import convert_to_spdx
+from actions.scanner.gbt_sbom_helper import (
+    CERTIFICATE_FILE_NAME,
+    SIGNATURE_FILE_NAME,
+    convert_to_gbt,
+    sign_gbt_sbom
+)
 
 
 DEFAULT_CONFIG_PATH = os.path.join(ASSIST_DIR, 'config.json')
@@ -107,8 +113,10 @@ def parse_arguments():
     mutually_exclusive_group.add_argument("--docker", "-d",
                                           help="Docker Hub 镜像名或离线 Docker 镜像 tar 文件路径。")
     parser.add_argument("--output", "-o", required=True, help="SBOM清单输出目录。")
-    parser.add_argument("--format", "-f", action='append', choices=("linx", "spdx"),
+    parser.add_argument("--format", "-f", action='append', choices=("linx", "spdx", "gbt"),
                         help="SBOM output format. Can be repeated. Defaults to both linx and spdx.")
+    parser.add_argument("--ecosystem",
+                        help="OSV ecosystem used by GBT vulnerability queries. Required when --format gbt is used.")
 
     return parser.parse_args()
 
@@ -222,6 +230,13 @@ def get_builtin_config():
             "include_file_patterns": DEFAULT_SOURCE_INCLUDE_PATTERNS.copy(),
             "exclude_file_patterns": [],
             "brief": False
+        },
+        "elastic_search": {
+            "hosts": [
+                "http://host.docker.internal:9200"
+            ],
+            "index_name": "osv_vulnerability_db",
+            "api_key": "YTgzZE1Kd0JkT1NXNWtDRmxpWmc6cjZLRDBMeW9kZ2YyS1p6cmRUREtXdw=="
         }
     }
 
@@ -259,8 +274,11 @@ def _is_valid_config_value(path, value):
         return isinstance(value, str) and bool(value.strip())
     if path in (
             "source_scan.include_file_patterns",
-            "source_scan.exclude_file_patterns"):
+            "source_scan.exclude_file_patterns",
+            "elastic_search.hosts"):
         return _is_string_list(value)
+    if path in ("elastic_search.index_name", "elastic_search.api_key"):
+        return isinstance(value, str)
     return True
 
 
@@ -406,7 +424,31 @@ def load_category_dict(category_csv_path):
         sys.exit(1)
 
 
-def save_sbom(linx_sbom, package_type, filename, utc_timestamp, spdx_timestamp, output_dir, output_formats):
+def validate_output_request(args, output_formats):
+    """校验输出格式与扫描模式、命令行参数的组合。
+
+    Args:
+        args (argparse.Namespace): 命令行参数。
+        output_formats (list[str]): 解析后的输出格式列表。
+
+    Returns:
+        None
+    """
+
+    if "gbt" not in output_formats:
+        return
+    if args.repo is not None:
+        logging.error("软件源扫描缺少软件信息，不支持生成 GBT 格式 SBOM。")
+        sys.exit(1)
+    if not args.ecosystem:
+        logging.error("生成 GBT 格式 SBOM 必须通过 --ecosystem 指定 OSV 生态系统。")
+        sys.exit(1)
+
+
+def save_sbom(
+        linx_sbom, package_type, filename, utc_timestamp, spdx_timestamp,
+        output_dir, output_formats, ecosystem=None, config=None, scan_mode=None,
+        source_path=None):
     """
     保存给定的 SBOM 数据到指定目录，并生成 Linx 格式和 SPDX 格式的 SBOM 文件。
 
@@ -417,6 +459,11 @@ def save_sbom(linx_sbom, package_type, filename, utc_timestamp, spdx_timestamp, 
         utc_timestamp (str): UTC 时间戳，用于生成文件名。
         spdx_timestamp (str): SPDX 时间戳，用于生成 SPDX SBOM。
         output_dir (str): 保存 SBOM 文件的目标目录。
+        output_formats (list[str]): 需要生成的输出格式列表。
+        ecosystem (str | None): GBT 漏洞查询使用的 OSV 生态系统。
+        config (dict | None): 运行配置。
+        scan_mode (str | None): 扫描模式。
+        source_path (str | None): 原始扫描目标路径。
 
     Returns:
         None: 函数不返回任何内容。
@@ -453,6 +500,22 @@ def save_sbom(linx_sbom, package_type, filename, utc_timestamp, spdx_timestamp, 
         spdx_sbom_filename = f"spdx-sbom_{filename}_{utc_timestamp}.json"
         save_data_to_json(spdx_sbom, os.path.join(sbom_path, spdx_sbom_filename))
         logging.info(f"{spdx_sbom_filename} 已被保存至 {output_dir}")
+
+    if "gbt" in output_formats:
+        gbt_sbom_dirname = f"gbt-sbom_{filename}_{utc_timestamp}"
+        gbt_sbom_filename = f"gbt-sbom_{filename}_{utc_timestamp}.SBOMDF.json"
+        gbt_sbom_path = os.path.join(sbom_path, gbt_sbom_dirname)
+        os.makedirs(gbt_sbom_path, exist_ok=True)
+
+        gbt_sbom = convert_to_gbt(
+            linx_sbom, filename, spdx_timestamp, package_type,
+            scan_mode or "package", ecosystem, config or {}, source_path)
+        gbt_json_path = os.path.join(gbt_sbom_path, gbt_sbom_filename)
+        signature_path = os.path.join(gbt_sbom_path, SIGNATURE_FILE_NAME)
+        certificate_path = os.path.join(gbt_sbom_path, CERTIFICATE_FILE_NAME)
+        save_data_to_json(gbt_sbom, gbt_json_path)
+        sign_gbt_sbom(gbt_json_path, signature_path, certificate_path)
+        logging.info(f"{gbt_sbom_dirname} 已被保存至 {output_dir}")
 
 
 def resolve_output_formats(formats):
@@ -493,12 +556,17 @@ def main():
     config = load_scan_config()
     runtime_options = resolve_runtime_options(config)
     output_formats = resolve_output_formats(args.format)
+    validate_output_request(args, output_formats)
 
     # 配置输出目录
     output_dir = args.output
+    scan_mode = None
+    source_path = None
 
     # 处理ISO镜像
     if args.iso is not None:
+        scan_mode = "iso"
+        source_path = args.iso
         filename = os.path.splitext(os.path.basename(args.iso))[0]
         try:
             linx_sbom, package_type = scan_iso(
@@ -511,7 +579,9 @@ def main():
 
     # 处理软件包
     elif args.package is not None:
+        scan_mode = "package"
         package_path = args.package
+        source_path = package_path
         filename = os.path.splitext(os.path.basename(package_path))[0]
 
         package_type = "unknown"
@@ -538,6 +608,7 @@ def main():
 
     # 处理更新源
     elif args.repo is not None:
+        scan_mode = "repo"
         filename = "repo"
         package_type = "repo"
 
@@ -559,6 +630,8 @@ def main():
 
     # 处理 Docker 镜像
     elif args.docker is not None:
+        scan_mode = "docker"
+        source_path = args.docker
         try:
             linx_sbom, package_type, filename = scan_docker_image(
                 args.docker, spdx_utc_time,
@@ -571,7 +644,7 @@ def main():
     # 保存SBOM
     save_sbom(linx_sbom, package_type, filename,
               formatted_utc_time, spdx_utc_time, output_dir,
-              output_formats)
+              output_formats, args.ecosystem, config, scan_mode, source_path)
     logging.info("Linx SBOM 生成完成")
 
 
