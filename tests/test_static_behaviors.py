@@ -4,6 +4,7 @@ import importlib.util
 import gzip
 import hashlib
 import json
+import subprocess
 import tarfile
 import tempfile
 import unittest
@@ -24,6 +25,7 @@ from actions.package import Package
 from actions.scanner import (
     iso_helper,
     docker_image_helper,
+    gbt_sbom_helper,
     originators_helper,
     package_helper,
     relationships_helper,
@@ -232,8 +234,8 @@ class OutputFormatTests(unittest.TestCase):
 
     def test_resolve_output_formats_deduplicates_user_choices(self):
         self.assertEqual(
-            self.cli.resolve_output_formats(["spdx", "linx", "spdx"]),
-            ["spdx", "linx"])
+            self.cli.resolve_output_formats(["spdx", "gbt", "linx", "spdx"]),
+            ["spdx", "gbt", "linx"])
 
     def test_save_sbom_can_write_only_spdx(self):
         linx_sbom = {
@@ -278,6 +280,26 @@ class OutputFormatTests(unittest.TestCase):
             self.assertTrue(any(output_dir.glob("linx-sbom_*")))
             self.assertFalse((output_dir / "spdx-sbom_demo_20260616000000.json").exists())
 
+    def test_save_sbom_can_write_gbt_directory(self):
+        linx_sbom = {
+            "packages_sbom": {"packages": []},
+            "licenses_sbom": {"licenses": []},
+            "package_relationships_sbom": {"package_relationships": []},
+        }
+        with tempfile.TemporaryDirectory() as tmpdir, \
+                mock.patch.object(self.cli, "convert_to_gbt",
+                                  return_value={"integrity": {}}), \
+                mock.patch.object(self.cli, "sign_gbt_sbom") as sign:
+            self.cli.save_sbom(
+                linx_sbom, "rpm", "demo", "20260616000000",
+                "2026-06-16T00:00:00Z", tmpdir, ["gbt"],
+                "PyPI", {}, "package", None)
+
+            output_dir = Path(tmpdir) / "demo" / "gbt-sbom_demo_20260616000000"
+            self.assertTrue(
+                (output_dir / "gbt-sbom_demo_20260616000000.SBOMDF.json").exists())
+            sign.assert_called_once()
+
     def test_parse_arguments_has_no_deprecated_sbom_option(self):
         with mock.patch("sys.argv", ["linx-xiling.py", "-p", "a.rpm", "-o", "out", "-f", "spdx"]):
             args = self.cli.parse_arguments()
@@ -287,10 +309,11 @@ class OutputFormatTests(unittest.TestCase):
     def test_parse_arguments_keeps_format_as_runtime_cli_option(self):
         with mock.patch("sys.argv", [
                 "linx-xiling.py", "-d", "debian:bookworm-slim",
-                "-o", "out", "--format", "spdx"]):
+                "-o", "out", "--format", "gbt", "--ecosystem", "Debian:12"]):
             args = self.cli.parse_arguments()
         self.assertEqual(args.docker, "debian:bookworm-slim")
-        self.assertEqual(args.format, ["spdx"])
+        self.assertEqual(args.format, ["gbt"])
+        self.assertEqual(args.ecosystem, "Debian:12")
         for removed_arg in (
                 "config", "disable_tqdm", "max_workers", "platform",
                 "include", "exclude", "brief"):
@@ -322,6 +345,9 @@ class OutputFormatTests(unittest.TestCase):
         self.assertIn("*LICENSE*", options["include"])
         self.assertEqual(options["exclude"], [])
         self.assertFalse(options["brief"])
+        self.assertEqual(
+            config["elastic_search"]["index_name"],
+            "osv_vulnerability_db")
 
     def test_config_load_fallback_keeps_source_include_patterns(self):
         with mock.patch.object(
@@ -352,6 +378,11 @@ class OutputFormatTests(unittest.TestCase):
                 "exclude_file_patterns": ["vendor/*"],
                 "brief": True,
             },
+            "elastic_search": {
+                "hosts": ["http://es.example.test:9200"],
+                "index_name": "custom_osv",
+                "api_key": "test-key",
+            },
         }
         with tempfile.TemporaryDirectory() as tmpdir:
             config_path = Path(tmpdir) / "config.json"
@@ -366,6 +397,8 @@ class OutputFormatTests(unittest.TestCase):
         self.assertTrue(options["disable_tqdm"])
         self.assertEqual(options["max_workers"], 2)
         self.assertEqual(options["platform"], "linux/arm64")
+        self.assertEqual(config["elastic_search"]["hosts"], ["http://es.example.test:9200"])
+        self.assertEqual(config["elastic_search"]["index_name"], "custom_osv")
 
     def test_invalid_external_config_fields_fallback_individually(self):
         external_config = {
@@ -379,6 +412,11 @@ class OutputFormatTests(unittest.TestCase):
                 "include_file_patterns": "*.go",
                 "exclude_file_patterns": [1],
                 "brief": "false",
+            },
+            "elastic_search": {
+                "hosts": "http://bad.example.test:9200",
+                "index_name": 1,
+                "api_key": [],
             },
             "unknown_root": {},
         }
@@ -395,6 +433,10 @@ class OutputFormatTests(unittest.TestCase):
         self.assertIn("*.py", options["include"])
         self.assertEqual(options["exclude"], [])
         self.assertFalse(options["brief"])
+        self.assertEqual(
+            config["elastic_search"]["hosts"],
+            ["http://host.docker.internal:9200"])
+        self.assertEqual(config["elastic_search"]["index_name"], "osv_vulnerability_db")
         self.assertNotIn("unknown", config["scan"])
         self.assertNotIn("unknown_root", config)
 
@@ -423,7 +465,19 @@ class OutputFormatTests(unittest.TestCase):
         scanner.assert_called_once_with(
             "demo.tar.gz", "source", mock.ANY,
             ["*.rs"], ["target/*"], 3, True, True)
-        self.assertEqual(save_sbom.call_args.args[-1], ["spdx"])
+        self.assertEqual(save_sbom.call_args.args[6], ["spdx"])
+
+    def test_validate_output_request_rejects_gbt_without_ecosystem(self):
+        args = mock.Mock(repo=None, ecosystem=None)
+
+        with self.assertRaises(SystemExit):
+            self.cli.validate_output_request(args, ["gbt"])
+
+    def test_validate_output_request_rejects_repo_gbt(self):
+        args = mock.Mock(repo="https://example.test/repo", ecosystem="PyPI")
+
+        with self.assertRaises(SystemExit):
+            self.cli.validate_output_request(args, ["gbt"])
 
     def test_main_passes_config_platform_to_docker_scanner(self):
         config = {
@@ -1184,6 +1238,160 @@ class SPDXConversionTests(unittest.TestCase):
 
         self.assertTrue(
             spdx["packages"][0]["externalRefs"][0]["referenceLocator"].startswith("pkg:deb/demo@1.0"))
+
+
+class GBTConversionTests(unittest.TestCase):
+    def test_parse_creators_and_build_create_tools(self):
+        creators = gbt_sbom_helper.parse_creators([
+            "Organization: Linx Software, Inc.",
+            "Tool: XiLing SBOM Tool",
+            "Version: v1.1.0",
+        ])
+
+        self.assertEqual(creators["Organization"], "Linx Software, Inc.")
+        self.assertEqual(
+            gbt_sbom_helper.build_create_tools(creators),
+            "XiLing SBOM Toolv1.1.0")
+
+    def test_convert_to_gbt_maps_package_software_and_components(self):
+        linx_sbom = {
+            "packages_sbom": {"packages": [
+                {
+                    "id": "Package-app-aaa",
+                    "name": "app",
+                    "version": "1.0",
+                    "licenses": ["LicenseRef-mit"],
+                    "suppliers": [{"name": "App Vendor"}],
+                    "checksum": {"algorithm": "SHA1", "value": "aaa"},
+                },
+                {
+                    "id": "Package-lib-bbb",
+                    "name": "lib",
+                    "version": "2.0",
+                    "licenses": ["LicenseRef-apache"],
+                    "suppliers": [{"name": "Lib Vendor"}],
+                    "checksum": {"algorithm": "SHA1", "value": "bbb"},
+                },
+            ]},
+            "licenses_sbom": {"licenses": [
+                {"id": "LicenseRef-mit", "name": "MIT"},
+                {"id": "LicenseRef-apache", "name": "Apache-2.0"},
+            ]},
+            "package_relationships_sbom": {"package_relationships": [{
+                "id": "Package-app-aaa",
+                "related_element": "Package-lib-bbb",
+                "relationship_type": "DEPENDS_ON",
+            }]},
+        }
+        with mock.patch.object(
+                gbt_sbom_helper, "query_gbt_vulnerabilities", return_value=[]):
+            gbt = gbt_sbom_helper.convert_to_gbt(
+                linx_sbom, "app", "2026-06-16T00:00:00Z",
+                "source", "package", "PyPI", {}, None)
+
+        self.assertEqual(gbt["software"]["softwareName"], "app")
+        self.assertEqual(gbt["software"]["licenseName"], "MIT")
+        self.assertEqual(gbt["components"][0]["componentName"], "lib")
+        self.assertEqual(gbt["components"][0]["licenseName"], ["Apache-2.0"])
+        self.assertEqual(gbt["dependencies"][0]["relationship"], "dependsOn")
+        self.assertRegex(
+            gbt["document"]["listID"],
+            r"^urn:uuid:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
+        self.assertEqual(
+            gbt["integrity"],
+            {
+                "signatureFile": "signature.sig",
+                "digitalCertificateFile": "certification.pem",
+            })
+
+    def test_gbt_license_enrichment_uses_rules_category_and_patent(self):
+        apache = gbt_sbom_helper._build_license("Apache-2.0")
+
+        self.assertEqual(apache["scope"], "Global")
+        self.assertTrue(apache["patent"])
+        self.assertIn("包含版权和许可", apache["content"])
+        self.assertIn("宽松许可证", apache["riskDescription"])
+
+    def test_gbt_license_risk_has_non_commercial_description(self):
+        with mock.patch.object(gbt_sbom_helper, "read_data_from_json",
+                               return_value=[{
+                                   "spdx_license_key": "LicenseRef-test",
+                                   "category": "Non-Commercial",
+                               }]):
+            description = gbt_sbom_helper._get_license_risk_description(
+                "LicenseRef-test")
+
+        self.assertIn("非商业许可证", description)
+        self.assertIn("禁止", description)
+
+    def test_gbt_vulnerability_matching_uses_versions_only(self):
+        source = {
+            "id": "GHSA-test",
+            "aliases": ["CVE-2026-0001"],
+            "affected": [{
+                "package": {
+                    "ecosystem": "PyPI",
+                    "name": "demo",
+                    "purl": "pkg:pypi/demo",
+                },
+                "versions": ["1.0"],
+                "ranges": [{"events": [{"introduced": "0"}, {"fixed": "1.1"}]}],
+            }],
+        }
+
+        matched = gbt_sbom_helper._match_vulnerability(
+            {"ecosystem": "PyPI", "name": "demo", "version": "1.0"},
+            source)
+        missed = gbt_sbom_helper._match_vulnerability(
+            {"ecosystem": "PyPI", "name": "demo", "version": "1.0.1"},
+            source)
+
+        self.assertEqual(matched[0]["vulnerabilityId"], "GHSA-test")
+        self.assertEqual(matched[0]["affectedObject"], "pkg:pypi/demo")
+        self.assertEqual(matched[0]["repairMethod"], "更新组件版本")
+        self.assertEqual(missed, [])
+
+    def test_gbt_vulnerability_fallbacks_without_fixed_or_purl(self):
+        source = {
+            "id": "GHSA-test",
+            "affected": [{
+                "package": {"ecosystem": "PyPI", "name": "demo"},
+                "versions": ["1.0"],
+                "ranges": [],
+            }],
+        }
+
+        matched = gbt_sbom_helper._match_vulnerability(
+            {"ecosystem": "PyPI", "name": "demo", "version": "1.0"},
+            source)
+
+        self.assertEqual(matched[0]["affectedObject"], "PyPI:demo@1.0")
+        self.assertEqual(matched[0]["otherID"], [])
+        self.assertEqual(matched[0]["repairMethod"], "暂无")
+
+    def test_sign_gbt_sbom_generates_verifiable_signature(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            sbom_path = Path(tmpdir) / "demo.SBOMDF.json"
+            signature_path = Path(tmpdir) / "signature.sig"
+            certificate_path = Path(tmpdir) / "certification.pem"
+            public_key_path = Path(tmpdir) / "public.pem"
+            sbom_path.write_text('{"software":{"softwareName":"demo"}}',
+                                 encoding="utf-8")
+
+            gbt_sbom_helper.sign_gbt_sbom(
+                str(sbom_path), str(signature_path), str(certificate_path))
+            subprocess.run([
+                "openssl", "x509", "-in", str(certificate_path),
+                "-pubkey", "-noout", "-out", str(public_key_path),
+            ], check=True)
+            result = subprocess.run([
+                "openssl", "dgst", "-sm3",
+                "-verify", str(public_key_path),
+                "-signature", str(signature_path),
+                str(sbom_path),
+            ], check=True, stdout=subprocess.PIPE)
+
+        self.assertIn(b"Verified OK", result.stdout)
 
 
 class ScanCodeHelperTests(unittest.TestCase):
