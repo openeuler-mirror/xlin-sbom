@@ -1284,7 +1284,9 @@ class GBTConversionTests(unittest.TestCase):
             }]},
         }
         with mock.patch.object(
-                gbt_sbom_helper, "query_gbt_vulnerabilities", return_value=[]):
+                gbt_sbom_helper,
+                "query_gbt_vulnerabilities",
+                return_value=[]) as query_vulnerabilities:
             gbt = gbt_sbom_helper.convert_to_gbt(
                 linx_sbom, "app", "2026-06-16T00:00:00Z",
                 "source", "package", "PyPI", {}, None)
@@ -1303,6 +1305,32 @@ class GBTConversionTests(unittest.TestCase):
                 "signatureFile": "signature.sig",
                 "digitalCertificateFile": "certification.pem",
             })
+        subjects = query_vulnerabilities.call_args.args[0]
+        self.assertEqual(
+            subjects,
+            [
+                {"name": "app", "version": "1.0"},
+                {"name": "lib", "version": "2.0"},
+            ])
+
+    def test_gbt_vulnerability_subjects_skip_noassertion(self):
+        subjects = gbt_sbom_helper._build_vulnerability_subjects(
+            {
+                "softwareName": "NOASSERTION",
+                "softwareVersion": "1.0",
+            },
+            [
+                {
+                    "componentName": "lib",
+                    "componentVersion": "NOASSERTION",
+                },
+                {
+                    "componentName": "urllib3",
+                    "componentVersion": "1.25.8",
+                },
+            ])
+
+        self.assertEqual(subjects, [{"name": "urllib3", "version": "1.25.8"}])
 
     def test_gbt_license_enrichment_uses_rules_category_and_patent(self):
         apache = gbt_sbom_helper._build_license("Apache-2.0")
