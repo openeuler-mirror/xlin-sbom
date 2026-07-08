@@ -147,8 +147,10 @@ def convert_to_gbt(
     ]
     dependencies = _build_dependencies(linx_sbom)
     licenses = _build_licenses(linx_sbom, software, components)
+    vulnerability_subjects = _build_vulnerability_subjects(
+        software, components)
     vulnerabilities = query_gbt_vulnerabilities(
-        packages, ecosystem, config)
+        vulnerability_subjects, ecosystem, config)
     creators = parse_creators(read_data_from_json(CREATORS_FILE_PATH))
 
     return {
@@ -510,6 +512,59 @@ def _build_vulnerability_queries(
             "version": version,
         })
     return queries
+
+
+def _build_vulnerability_subjects(
+    software: Dict[str, Any],
+    components: List[Dict[str, Any]],
+) -> List[Dict[str, str]]:
+    """构建国标漏洞查询对象列表。
+
+    Args:
+        software (dict): 国标软件信息。
+        components (list[dict]): 国标组件信息列表。
+
+    Returns:
+        list[dict]: 归一化后的 name/version 查询对象列表。
+    """
+
+    subjects = []
+    _add_vulnerability_subject(
+        subjects,
+        software.get("softwareName"),
+        software.get("softwareVersion"),
+    )
+    for component in components:
+        _add_vulnerability_subject(
+            subjects,
+            component.get("componentName"),
+            component.get("componentVersion"),
+        )
+    return subjects
+
+
+def _add_vulnerability_subject(
+    subjects: List[Dict[str, str]],
+    name: Any,
+    version: Any,
+) -> None:
+    """向漏洞查询对象列表追加有效的软件或组件标识。
+
+    Args:
+        subjects (list[dict]): 待追加的查询对象列表。
+        name (Any): 软件或组件名称。
+        version (Any): 软件或组件版本。
+    """
+
+    if not name or not version:
+        return
+    name = str(name)
+    version = str(version)
+    if name == "NOASSERTION" or version == "NOASSERTION":
+        return
+    subject = {"name": name, "version": version}
+    if subject not in subjects:
+        subjects.append(subject)
 
 
 def _query_es_vulnerabilities(
