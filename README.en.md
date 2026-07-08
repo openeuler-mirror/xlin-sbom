@@ -2,7 +2,7 @@
 
 ## Overview
 
-The XiLing SBOM Tool is designed to scan ISO images, Docker images, software packages (`.rpm` / `.deb` / `.src.rpm` / source archives), or software repository URLs. It automatically generates Software Bill of Materials (SBOM) manifests that comply with both the Linx format and the international SPDX standard. Delivered as a containerized application, the tool can be run with a single command via Docker Compose, eliminating the need for manual dependency management and environment configuration.
+The XiLing SBOM Tool is designed to scan ISO images, Docker images, software packages (`.rpm` / `.deb` / `.src.rpm` / source archives), or software repository URLs. It automatically generates Software Bill of Materials (SBOM) manifests in Linx, SPDX 2.3, and GB/T 47020-2026 formats. Delivered as a containerized application, the tool can be run with a single command via Docker Compose, eliminating the need for manual dependency management and environment configuration.
 
 ## System Requirements
 
@@ -78,7 +78,7 @@ Source archives are unpacked safely for file-level license scanning. The bundled
 
 ### 3. Docker Image Scan (`--docker` / `-d`)
 
-Scans a public Docker Hub image or an offline Docker image tar archive. The scanner analyzes the final image filesystem, reads dpkg or RPM package databases, and generates Linx and SPDX SBOM output.
+Scans a public Docker Hub image or an offline Docker image tar archive. The scanner analyzes the final image filesystem, reads dpkg or RPM package databases, and generates Linx, SPDX, or GBT SBOM output.
 
 **Docker Hub image**:
 
@@ -101,6 +101,8 @@ Docker image scanning depends on installed package databases in the final filesy
 ### 4. Repository Scan (`--repo` / `-r`)
 
 Scans a specified software repository URL (such as a YUM/APT repository), recursively analyzes all software packages within the repository, and generates a comprehensive SBOM.
+
+Repository metadata does not provide reliable software-level information, so repository scans do not support `--format gbt`.
 
 **Command Format**:
 
@@ -125,7 +127,16 @@ In addition to the required scan mode and output parameters, the CLI keeps the f
 | Parameter | Description |
 | --- | --- |
 | `--help`, `-h` | Show help message and exit |
-| `--format {linx,spdx}` | Output format; can be repeated and defaults to both Linx and SPDX |
+| `--format {linx,spdx,gbt}` | Output format; can be repeated and defaults to both Linx and SPDX |
+| `--ecosystem <ecosystem>` | Required for GBT output; used for OSV/Elasticsearch vulnerability queries |
+
+GBT output example:
+
+```bash
+docker compose run --rm linx-xiling -p /app/data/example.rpm -o /app/output --format gbt --ecosystem PyPI
+```
+
+GBT output requires `--ecosystem` so the tool can query vulnerabilities from the local OSV Elasticsearch database. The generated GBT directory contains `*.SBOMDF.json`, `signature.sig`, and `certification.pem`.
 
 ---
 
@@ -148,6 +159,13 @@ Configuration options:
         "include_file_patterns": ["*.py", "*.js", "*LICENSE*"],
         "exclude_file_patterns": [],
         "brief": false
+    },
+    "elastic_search": {
+        "hosts": [
+            "http://host.docker.internal:9200"
+        ],
+        "index_name": "osv_vulnerability_db",
+        "api_key": "..."
     }
 }
 ```
@@ -160,6 +178,9 @@ Configuration options:
 | `source_scan.include_file_patterns` | Include patterns for source package file-level scans |
 | `source_scan.exclude_file_patterns` | Exclude patterns for source package file-level scans |
 | `source_scan.brief` | Skip file-level license scanning and OSV dependency detection for source packages |
+| `elastic_search.hosts` | Local OSV Elasticsearch node URLs |
+| `elastic_search.index_name` | OSV vulnerability index name |
+| `elastic_search.api_key` | Elasticsearch API key |
 
 ## Troubleshooting
 
