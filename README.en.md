@@ -2,7 +2,7 @@
 
 ## Overview
 
-The XiLing SBOM Tool is designed to scan ISO images, Docker images, software packages (`.rpm` / `.deb` / `.src.rpm` / source archives), or software repository URLs. It automatically generates Software Bill of Materials (SBOM) manifests in Linx, SPDX 2.3, and GB/T 47020-2026 formats. Delivered as a containerized application, the tool can be run with a single command via Docker Compose, eliminating the need for manual dependency management and environment configuration.
+The XiLing SBOM Tool is designed to scan ISO images, Docker images, software packages (`.rpm` / `.deb` / `.src.rpm` / source archives), or software repository URLs. It generates Software Bill of Materials (SBOM) manifests in explicitly requested Linx, SPDX 2.3, and GB/T 47020-2026 formats. Delivered as a containerized application, the tool can be run with a single command via Docker Compose, eliminating the need for manual dependency management and environment configuration.
 
 ## System Requirements
 
@@ -45,14 +45,14 @@ Performs a complete scan of a local ISO image file, extracts information for all
 **Command Format**:
 
 ```bash
-docker compose run --rm linx-xiling -i /app/data/<image_file.iso> -o output/ [optional parameters]
+docker compose run --rm linx-xiling -i /app/data/<image_file.iso> -o output/ --format linx --format spdx
 
 ```
 
 **Example**:
 
 ```bash
-docker compose run --rm linx-xiling -i /app/data/centos-8-stream.iso -o output/
+docker compose run --rm linx-xiling -i /app/data/centos-8-stream.iso -o output/ --format linx --format spdx
 
 ```
 
@@ -63,14 +63,14 @@ Scans a single software package file and generates its SBOM manifest. Supported 
 **Command Format**:
 
 ```bash
-docker compose run --rm linx-xiling -p /app/data/<package_file> -o output/ [optional parameters]
+docker compose run --rm linx-xiling -p /app/data/<package_file> -o output/ --format linx --format spdx
 
 ```
 
 **Example**:
 
 ```bash
-docker compose run --rm linx-xiling -p /app/data/zvbi-0.2.35-8.oe2203sp4.src.rpm -o output/
+docker compose run --rm linx-xiling -p /app/data/zvbi-0.2.35-8.oe2203sp4.src.rpm -o output/ --format linx --format spdx
 
 ```
 
@@ -83,7 +83,7 @@ Scans a public Docker Hub image or an offline Docker image tar archive. The scan
 **Docker Hub image**:
 
 ```bash
-docker compose run --rm linx-xiling -d debian:bookworm-slim -o output/
+docker compose run --rm linx-xiling -d debian:bookworm-slim -o output/ --format linx --format spdx
 
 ```
 
@@ -92,7 +92,7 @@ For multi-platform images, the platform is controlled by `scan.platform` in the 
 **Offline image tar**:
 
 ```bash
-docker compose run --rm linx-xiling -d /app/data/linx-xiling_1.0.0.tar -o output/
+docker compose run --rm linx-xiling -d /app/data/linx-xiling_1.0.0.tar -o output/ --format linx --format spdx
 
 ```
 
@@ -107,14 +107,14 @@ Repository metadata does not provide reliable software-level information, so rep
 **Command Format**:
 
 ```bash
-docker compose run --rm linx-xiling -r <repository_URL> -o output/ [optional parameters]
+docker compose run --rm linx-xiling -r <repository_URL> -o output/ --format linx --format spdx
 
 ```
 
 **Example**:
 
 ```bash
-docker compose run --rm linx-xiling -r [https://mirrors.example.com/centos/8-stream/BaseOS/x86_64/os/](https://mirrors.example.com/centos/8-stream/BaseOS/x86_64/os/) -o output/
+docker compose run --rm linx-xiling -r https://mirrors.example.com/centos/8-stream/BaseOS/x86_64/os/ -o output/ --format linx --format spdx
 
 ```
 
@@ -122,12 +122,12 @@ docker compose run --rm linx-xiling -r [https://mirrors.example.com/centos/8-str
 
 ## Optional Parameters
 
-In addition to the required scan mode and output parameters, the CLI keeps the following optional argument:
+In addition to the required scan mode and output parameters, the CLI keeps the following arguments:
 
 | Parameter | Description |
 | --- | --- |
 | `--help`, `-h` | Show help message and exit |
-| `--format {linx,spdx,gbt}` | Output format; can be repeated and defaults to both Linx and SPDX |
+| `--format {linx,spdx,gbt}` | Required output format; can be repeated |
 | `--ecosystem <ecosystem>` | Required for GBT output; used for OSV/Elasticsearch vulnerability queries |
 
 GBT output example:
