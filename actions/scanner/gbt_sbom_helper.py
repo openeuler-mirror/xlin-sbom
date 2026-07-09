@@ -12,14 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Any, Dict, List, Optional, Tuple
 import hashlib
 import json
 import logging
 import os
+import re
 import subprocess
 import tempfile
 import uuid
+from typing import Any, Dict, List, Optional, Tuple
 
 import requests
 
@@ -148,7 +149,7 @@ def convert_to_gbt(
     dependencies = _build_dependencies(linx_sbom)
     licenses = _build_licenses(linx_sbom, software, components)
     vulnerability_subjects = _build_vulnerability_subjects(
-        software, components)
+        software_package, component_packages, software, components)
     vulnerabilities = query_gbt_vulnerabilities(
         vulnerability_subjects, ecosystem, config)
     creators = parse_creators(read_data_from_json(CREATORS_FILE_PATH))
@@ -218,7 +219,7 @@ def query_gbt_vulnerabilities(
     """查询并转换国标安全漏洞信息。
 
     Args:
-        packages (list[dict]): Linx 包列表。
+        packages (list[dict]): 待查询的软件或组件对象列表。
         ecosystem (str): OSV 漏洞查询生态系统。
         config (dict): 运行配置，包含 elastic_search。
 
@@ -369,11 +370,11 @@ def _build_licenses(
 ) -> List[Dict[str, Any]]:
     license_names = []
     for license_info in linx_sbom.get("licenses_sbom", {}).get("licenses", []):
-        _add_license_name(license_names, license_info.get("name"))
-    _add_license_name(license_names, software.get("licenseName"))
+        _add_license_expression_names(license_names, license_info.get("name"))
+    _add_license_expression_names(license_names, software.get("licenseName"))
     for component in components:
         for license_name in component.get("licenseName", []):
-            _add_license_name(license_names, license_name)
+            _add_license_expression_names(license_names, license_name)
 
     return [
         _build_license(license_name)
@@ -502,11 +503,12 @@ def _build_vulnerability_queries(
         version = package.get("version")
         if not name or not version:
             continue
-        key = (ecosystem, name, version)
+        key = (ecosystem, name, version, package.get("id"))
         if key in seen:
             continue
         seen.add(key)
         queries.append({
+            "id": package.get("id") or f"{ecosystem}:{name}@{version}",
             "ecosystem": ecosystem,
             "name": name,
             "version": version,
@@ -515,12 +517,16 @@ def _build_vulnerability_queries(
 
 
 def _build_vulnerability_subjects(
+    software_package: Optional[Dict[str, Any]],
+    component_packages: List[Dict[str, Any]],
     software: Dict[str, Any],
     components: List[Dict[str, Any]],
 ) -> List[Dict[str, str]]:
     """构建国标漏洞查询对象列表。
 
     Args:
+        software_package (dict | None): 软件信息对应的 Linx 包。
+        component_packages (list[dict]): 组件信息对应的 Linx 包列表。
         software (dict): 国标软件信息。
         components (list[dict]): 国标组件信息列表。
 
@@ -529,14 +535,17 @@ def _build_vulnerability_subjects(
     """
 
     subjects = []
-    _add_vulnerability_subject(
-        subjects,
-        software.get("softwareName"),
-        software.get("softwareVersion"),
-    )
-    for component in components:
+    if software_package:
         _add_vulnerability_subject(
             subjects,
+            software_package.get("id"),
+            software.get("softwareName"),
+            software.get("softwareVersion"),
+        )
+    for package, component in zip(component_packages, components):
+        _add_vulnerability_subject(
+            subjects,
+            component.get("componentId") or package.get("id"),
             component.get("componentName"),
             component.get("componentVersion"),
         )
@@ -545,6 +554,7 @@ def _build_vulnerability_subjects(
 
 def _add_vulnerability_subject(
     subjects: List[Dict[str, str]],
+    subject_id: Any,
     name: Any,
     version: Any,
 ) -> None:
@@ -552,17 +562,22 @@ def _add_vulnerability_subject(
 
     Args:
         subjects (list[dict]): 待追加的查询对象列表。
+        subject_id (Any): 受影响对象 ID。
         name (Any): 软件或组件名称。
         version (Any): 软件或组件版本。
     """
 
-    if not name or not version:
+    if not subject_id or not name or not version:
         return
+    subject_id = str(subject_id)
     name = str(name)
     version = str(version)
-    if name == "NOASSERTION" or version == "NOASSERTION":
+    if (
+            subject_id == "NOASSERTION"
+            or name == "NOASSERTION"
+            or version == "NOASSERTION"):
         return
-    subject = {"name": name, "version": version}
+    subject = {"id": subject_id, "name": name, "version": version}
     if subject not in subjects:
         subjects.append(subject)
 
@@ -658,10 +673,8 @@ def _match_vulnerability(
         matched.append({
             "vulnerabilityId": source.get("id"),
             "vulnerabilityName": source.get("id"),
-            "affectedObject": (
-                package.get("purl")
-                or f"{query['ecosystem']}:{query['name']}@{query['version']}"
-            ),
+            "affectedObject": query.get(
+                "id", f"{query['ecosystem']}:{query['name']}@{query['version']}"),
             "otherID": source.get("aliases", []),
             "repairMethod": repair_method,
             "repairMethodDescription": repair_description,
@@ -745,6 +758,24 @@ def _add_license_name(license_names: List[str], value: Any) -> None:
     license_name = str(value)
     if license_name not in license_names:
         license_names.append(license_name)
+
+
+def _add_license_expression_names(license_names: List[str], value: Any) -> None:
+    """拆分许可证表达式并追加到去重列表。
+
+    Args:
+        license_names (list[str]): 待追加的许可证名称列表。
+        value (Any): 许可证名称、组合表达式或列表。
+    """
+
+    if isinstance(value, list):
+        for item in value:
+            _add_license_expression_names(license_names, item)
+        return
+    if not value:
+        return
+    for license_name in re.split(r"\s+AND\s+", str(value), flags=re.IGNORECASE):
+        _add_license_name(license_names, license_name.strip(" ()"))
 
 
 def _no_assertion(value: Any) -> str:
