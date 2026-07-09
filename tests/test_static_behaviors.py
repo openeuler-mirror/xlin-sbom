@@ -1309,12 +1309,17 @@ class GBTConversionTests(unittest.TestCase):
         self.assertEqual(
             subjects,
             [
-                {"name": "app", "version": "1.0"},
-                {"name": "lib", "version": "2.0"},
+                {"id": "Package-app-aaa", "name": "app", "version": "1.0"},
+                {"id": "Package-lib-bbb", "name": "lib", "version": "2.0"},
             ])
 
     def test_gbt_vulnerability_subjects_skip_noassertion(self):
         subjects = gbt_sbom_helper._build_vulnerability_subjects(
+            None,
+            [
+                {"id": "Package-lib"},
+                {"id": "Package-urllib3"},
+            ],
             {
                 "softwareName": "NOASSERTION",
                 "softwareVersion": "1.0",
@@ -1330,7 +1335,23 @@ class GBTConversionTests(unittest.TestCase):
                 },
             ])
 
-        self.assertEqual(subjects, [{"name": "urllib3", "version": "1.25.8"}])
+        self.assertEqual(
+            subjects,
+            [{"id": "Package-urllib3", "name": "urllib3", "version": "1.25.8"}])
+
+    def test_gbt_licenses_split_and_deduplicate_and_expressions(self):
+        licenses = gbt_sbom_helper._build_licenses(
+            {
+                "licenses_sbom": {"licenses": [
+                    {"name": "Apache-2.0 AND MIT"},
+                    {"name": "MIT"},
+                ]},
+            },
+            {"licenseName": "Apache-2.0 AND MIT"},
+            [{"licenseName": ["GPL-3.0 AND Apache-2.0"]}])
+        license_names = [license_info["licenseName"] for license_info in licenses]
+
+        self.assertEqual(license_names, ["Apache-2.0", "MIT", "GPL-3.0"])
 
     def test_gbt_license_enrichment_uses_rules_category_and_patent(self):
         apache = gbt_sbom_helper._build_license("Apache-2.0")
@@ -1368,14 +1389,24 @@ class GBTConversionTests(unittest.TestCase):
         }
 
         matched = gbt_sbom_helper._match_vulnerability(
-            {"ecosystem": "PyPI", "name": "demo", "version": "1.0"},
+            {
+                "id": "Package-demo-abc",
+                "ecosystem": "PyPI",
+                "name": "demo",
+                "version": "1.0",
+            },
             source)
         missed = gbt_sbom_helper._match_vulnerability(
-            {"ecosystem": "PyPI", "name": "demo", "version": "1.0.1"},
+            {
+                "id": "Package-demo-abc",
+                "ecosystem": "PyPI",
+                "name": "demo",
+                "version": "1.0.1",
+            },
             source)
 
         self.assertEqual(matched[0]["vulnerabilityId"], "GHSA-test")
-        self.assertEqual(matched[0]["affectedObject"], "pkg:pypi/demo")
+        self.assertEqual(matched[0]["affectedObject"], "Package-demo-abc")
         self.assertEqual(matched[0]["repairMethod"], "更新组件版本")
         self.assertEqual(missed, [])
 
@@ -1390,10 +1421,15 @@ class GBTConversionTests(unittest.TestCase):
         }
 
         matched = gbt_sbom_helper._match_vulnerability(
-            {"ecosystem": "PyPI", "name": "demo", "version": "1.0"},
+            {
+                "id": "Package-demo-abc",
+                "ecosystem": "PyPI",
+                "name": "demo",
+                "version": "1.0",
+            },
             source)
 
-        self.assertEqual(matched[0]["affectedObject"], "PyPI:demo@1.0")
+        self.assertEqual(matched[0]["affectedObject"], "Package-demo-abc")
         self.assertEqual(matched[0]["otherID"], [])
         self.assertEqual(matched[0]["repairMethod"], "暂无")
 
