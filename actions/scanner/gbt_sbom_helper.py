@@ -34,6 +34,18 @@ LICENSE_INDEX_FILE_PATH = os.path.join(ASSIST_DIR, "index.json")
 REQUEST_TIMEOUT = 30
 SIGNATURE_FILE_NAME = "signature.sig"
 CERTIFICATE_FILE_NAME = "certification.pem"
+PURL_TYPE_OSV_ECOSYSTEMS = {
+    "cargo": "crates.io",
+    "composer": "Packagist",
+    "gem": "RubyGems",
+    "golang": "Go",
+    "hex": "Hex",
+    "maven": "Maven",
+    "npm": "npm",
+    "nuget": "NuGet",
+    "pub": "Pub",
+    "pypi": "PyPI",
+}
 
 LICENSE_CATEGORY_DETAILS = [
     {
@@ -115,7 +127,7 @@ def convert_to_gbt(
     created_time: str,
     package_type: str,
     scan_mode: str,
-    ecosystem: str,
+    ecosystem: Optional[str],
     config: Dict[str, Any],
     source_path: Optional[str] = None,
 ) -> Dict[str, Any]:
@@ -127,7 +139,7 @@ def convert_to_gbt(
         created_time (str): UTC 创建时间，格式为 YYYY-MM-DDTHH:mm:ssZ。
         package_type (str): 当前扫描识别的软件包类型。
         scan_mode (str): 扫描模式，取值为 package、iso 或 docker。
-        ecosystem (str): OSV 漏洞查询生态系统。
+        ecosystem (str | None): OSV 漏洞查询生态系统，组件缺少生态系统时作为兜底值。
         config (dict): 运行配置。
         source_path (str | None): 原始扫描对象路径，用于目标软件完整性计算。
 
@@ -213,14 +225,14 @@ def build_create_tools(creators: Dict[str, str]) -> str:
 
 def query_gbt_vulnerabilities(
     packages: List[Dict[str, Any]],
-    ecosystem: str,
+    ecosystem: Optional[str],
     config: Dict[str, Any],
 ) -> List[Dict[str, Any]]:
     """查询并转换国标安全漏洞信息。
 
     Args:
         packages (list[dict]): 待查询的软件或组件对象列表。
-        ecosystem (str): OSV 漏洞查询生态系统。
+        ecosystem (str | None): OSV 漏洞查询生态系统兜底值。
         config (dict): 运行配置，包含 elastic_search。
 
     Returns:
@@ -494,7 +506,7 @@ def _resolve_target_software_version(
 
 def _build_vulnerability_queries(
     packages: List[Dict[str, Any]],
-    ecosystem: str,
+    ecosystem: Optional[str],
 ) -> List[Dict[str, str]]:
     queries = []
     seen = set()
@@ -503,13 +515,16 @@ def _build_vulnerability_queries(
         version = package.get("version")
         if not name or not version:
             continue
-        key = (ecosystem, name, version, package.get("id"))
+        query_ecosystem = package.get("ecosystem") or ecosystem
+        if not query_ecosystem:
+            continue
+        key = (query_ecosystem, name, version, package.get("id"))
         if key in seen:
             continue
         seen.add(key)
         queries.append({
-            "id": package.get("id") or f"{ecosystem}:{name}@{version}",
-            "ecosystem": ecosystem,
+            "id": package.get("id") or f"{query_ecosystem}:{name}@{version}",
+            "ecosystem": query_ecosystem,
             "name": name,
             "version": version,
         })
@@ -541,6 +556,7 @@ def _build_vulnerability_subjects(
             software_package.get("id"),
             software.get("softwareName"),
             software.get("softwareVersion"),
+            _resolve_package_osv_ecosystem(software_package),
         )
     for package, component in zip(component_packages, components):
         _add_vulnerability_subject(
@@ -548,8 +564,26 @@ def _build_vulnerability_subjects(
             component.get("componentId") or package.get("id"),
             component.get("componentName"),
             component.get("componentVersion"),
+            _resolve_package_osv_ecosystem(package),
         )
     return subjects
+
+
+def _resolve_package_osv_ecosystem(package: Dict[str, Any]) -> Optional[str]:
+    """根据 Linx 包类型推断 OSV 生态系统。
+
+    Args:
+        package (dict): Linx 包对象。
+
+    Returns:
+        str | None: 可用于 OSV 查询的生态系统名称，无法推断时返回 None。
+    """
+
+    ecosystem = package.get("ecosystem")
+    if ecosystem:
+        return str(ecosystem)
+    package_type = str(package.get("package_type") or "").lower()
+    return PURL_TYPE_OSV_ECOSYSTEMS.get(package_type)
 
 
 def _add_vulnerability_subject(
@@ -557,6 +591,7 @@ def _add_vulnerability_subject(
     subject_id: Any,
     name: Any,
     version: Any,
+    ecosystem: Optional[str] = None,
 ) -> None:
     """向漏洞查询对象列表追加有效的软件或组件标识。
 
@@ -565,6 +600,7 @@ def _add_vulnerability_subject(
         subject_id (Any): 受影响对象 ID。
         name (Any): 软件或组件名称。
         version (Any): 软件或组件版本。
+        ecosystem (str | None): 组件自身的 OSV 生态系统。
     """
 
     if not subject_id or not name or not version:
@@ -578,6 +614,8 @@ def _add_vulnerability_subject(
             or version == "NOASSERTION"):
         return
     subject = {"id": subject_id, "name": name, "version": version}
+    if ecosystem:
+        subject["ecosystem"] = ecosystem
     if subject not in subjects:
         subjects.append(subject)
 
