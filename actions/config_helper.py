@@ -26,40 +26,13 @@ EXTERNAL_CONFIG_PATH = os.path.join(
     "config",
     "config.json",
 )
-DEFAULT_SOURCE_INCLUDE_PATTERNS = [
-    "*.c",
-    "*.h",
-    "*.cpp",
-    "*.hpp",
-    "*.cc",
-    "*.hh",
-    "*.java",
-    "*.py",
-    "*.pyw",
-    "*.rs",
-    "*.pl",
-    "*.pm",
-    "*.js",
-    "*.ts",
-    "*.jsx",
-    "*.dart",
-    "*.ex",
-    "*.exs",
-    "*.go",
-    "*.hs",
-    "*.cs",
-    "*.vb",
-    "*.php",
-    "*.r",
-    "*.R",
-    "*.rb",
-    "*license*",
-    "*LICENSE*",
-    "*copyright*",
-    "*COPYRIGHT*",
-    "*copying*",
-    "*COPYING*",
-]
+CONFIG_STRUCTURE = {
+    "": ("scan", "source_scan", "elastic_search"),
+    "scan": ("disable_tqdm", "max_workers", "platform"),
+    "source_scan": (
+        "include_file_patterns", "exclude_file_patterns", "brief"),
+    "elastic_search": ("hosts", "index_name", "api_key"),
+}
 
 
 def merge_configs(default_config, external_config, path=""):
@@ -95,34 +68,6 @@ def merge_configs(default_config, external_config, path=""):
         else:
             merged[key] = external_value
     return merged
-
-
-def get_builtin_config():
-    """获取内置默认扫描配置。
-
-    Returns:
-        dict: 内置默认配置。
-    """
-
-    return {
-        "scan": {
-            "disable_tqdm": False,
-            "max_workers": None,
-            "platform": "linux/amd64",
-        },
-        "source_scan": {
-            "include_file_patterns": DEFAULT_SOURCE_INCLUDE_PATTERNS.copy(),
-            "exclude_file_patterns": [],
-            "brief": False,
-        },
-        "elastic_search": {
-            "hosts": [
-                "http://host.docker.internal:9200",
-            ],
-            "index_name": "osv_vulnerability_db",
-            "api_key": "YTgzZE1Kd0JkT1NXNWtDRmxpWmc6cjZLRDBMeW9kZ2YyS1p6cmRUREtXdw==",
-        },
-    }
 
 
 def _is_string_list(value):
@@ -164,6 +109,52 @@ def _is_valid_config_value(path, value):
     if path in ("elastic_search.index_name", "elastic_search.api_key"):
         return isinstance(value, str)
     return True
+
+
+def validate_default_config(config, path=""):
+    """校验默认配置文件结构和值类型。
+
+    Args:
+        config (dict): 默认配置内容。
+        path (str): 当前递归路径。
+
+    Returns:
+        dict: 校验通过后的默认配置副本。
+
+    Raises:
+        ValueError: 默认配置缺失、结构错误或配置值无效。
+    """
+
+    if not isinstance(config, dict):
+        raise ValueError("默认配置文件内容必须是 JSON 对象")
+
+    required_keys = CONFIG_STRUCTURE.get(path)
+    if required_keys is None:
+        if not _is_valid_config_value(path, config):
+            raise ValueError(f"默认配置项 '{path}' 值无效")
+        return copy.deepcopy(config)
+
+    validated = {}
+    for key in required_keys:
+        current_path = f"{path}.{key}" if path else key
+        if key not in config:
+            raise ValueError(f"默认配置缺少配置项 '{current_path}'")
+
+        value = config[key]
+        if current_path in CONFIG_STRUCTURE:
+            if not isinstance(value, dict):
+                raise ValueError(f"默认配置项 '{current_path}' 必须是 JSON 对象")
+            validated[key] = validate_default_config(value, current_path)
+        elif _is_valid_config_value(current_path, value):
+            validated[key] = copy.deepcopy(value)
+        else:
+            raise ValueError(f"默认配置项 '{current_path}' 值无效")
+
+    for key in config:
+        if key not in required_keys:
+            current_path = f"{path}.{key}" if path else key
+            raise ValueError(f"默认配置包含未知配置项 '{current_path}'")
+    return validated
 
 
 def normalize_config(config, default_config, path=""):
@@ -220,13 +211,11 @@ def load_scan_config(config_path=EXTERNAL_CONFIG_PATH):
         dict: 合并后的扫描配置。
     """
 
-    builtin_config = get_builtin_config()
     try:
-        default_config = normalize_config(
-            read_data_from_json(DEFAULT_CONFIG_PATH), builtin_config)
+        default_config = validate_default_config(
+            read_data_from_json(DEFAULT_CONFIG_PATH))
     except Exception as e:
-        logging.warning(f"默认配置文件加载失败，将使用内置默认值: {e}")
-        default_config = builtin_config
+        raise RuntimeError(f"默认配置文件加载失败: {e}") from e
 
     if config_path and os.path.exists(config_path):
         try:
