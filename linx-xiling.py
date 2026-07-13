@@ -34,7 +34,10 @@ from actions.scanner.iso_helper import (
     scan_iso
 )
 from actions.scanner.docker_image_helper import scan_docker_image
-from actions.scanner.package_helper import package_scanner
+from actions.scanner.package_helper import (
+    SOURCE_ARCHIVE_SUFFIXES,
+    package_scanner
+)
 from actions.scanner.repo_helper import (
     rpm_repo_scanner,
     deb_repo_scanner,
@@ -78,7 +81,7 @@ def parse_arguments():
                         choices=("linx", "spdx", "gbt"),
                         help="SBOM output format. Can be repeated.")
     parser.add_argument("--ecosystem",
-                        help="OSV ecosystem used by GBT vulnerability queries. Required when --format gbt is used.")
+                        help="OSV ecosystem used by GBT vulnerability queries. Required for non-source-archive GBT output; used as a fallback when component ecosystem is unavailable.")
 
     return parser.parse_args()
 
@@ -196,9 +199,27 @@ def validate_output_request(args, output_formats):
     if args.repo is not None:
         logging.error("软件源扫描缺少软件信息，不支持生成 GBT 格式 SBOM。")
         sys.exit(1)
+    if _is_source_archive_request(args):
+        return
     if not args.ecosystem:
-        logging.error("生成 GBT 格式 SBOM 必须通过 --ecosystem 指定 OSV 生态系统。")
+        logging.error("生成 GBT 格式 SBOM 必须通过 --ecosystem 指定 OSV 生态系统；源码归档可省略并使用 OSV Scanner 依赖生态系统。")
         sys.exit(1)
+
+
+def _is_source_archive_request(args):
+    """判断当前请求是否为源码归档扫描。
+
+    Args:
+        args (argparse.Namespace): 命令行参数。
+
+    Returns:
+        bool: 当前请求为 tar 或 zip 等源码归档扫描时返回 True。
+    """
+
+    package_path = getattr(args, "package", None)
+    if not package_path:
+        return False
+    return package_path.lower().endswith(SOURCE_ARCHIVE_SUFFIXES)
 
 
 def save_sbom(
@@ -339,15 +360,16 @@ def main():
         package_path = args.package
         source_path = package_path
         filename = os.path.splitext(os.path.basename(package_path))[0]
+        lower_package_path = package_path.lower()
 
         package_type = "unknown"
-        if package_path.endswith(('.src.rpm', '.tar.gz', '.tgz', '.tar.bz2', '.tar.xz', '.tar', '.zip', '.dsc')):
+        if lower_package_path.endswith(('.src.rpm', '.dsc') + SOURCE_ARCHIVE_SUFFIXES):
             package_type = "source"
             logging.info("侦测到源码包")
-        elif package_path.endswith('.deb'):
+        elif lower_package_path.endswith('.deb'):
             package_type = "deb"
             logging.info("侦测到DEB包")
-        elif package_path.endswith('.rpm'):
+        elif lower_package_path.endswith('.rpm'):
             package_type = "rpm"
             logging.info("侦测到RPM包")
         else:
