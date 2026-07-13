@@ -145,15 +145,37 @@ class OutputFormatTests(unittest.TestCase):
         self.assertEqual(
             config["elastic_search"]["index_name"],
             "osv_vulnerability_db")
+        self.assertEqual(config["elastic_search"]["api_key"], "")
 
-    def test_config_load_fallback_keeps_source_include_patterns(self):
+    def test_default_config_load_failure_raises_error(self):
         with mock.patch.object(
                 config_helper, "read_data_from_json", side_effect=OSError("missing")):
-            config = self.cli.load_scan_config(config_path=None)
+            with self.assertRaisesRegex(RuntimeError, "默认配置文件加载失败"):
+                self.cli.load_scan_config(config_path=None)
 
-        self.assertIn("*.py", config["source_scan"]["include_file_patterns"])
-        self.assertIn("*LICENSE*", config["source_scan"]["include_file_patterns"])
-        self.assertEqual(config["source_scan"]["exclude_file_patterns"], [])
+    def test_invalid_default_config_raises_error(self):
+        invalid_default_config = {
+            "scan": {
+                "disable_tqdm": False,
+                "max_workers": None,
+                "platform": "",
+            },
+            "source_scan": {
+                "include_file_patterns": ["*.py"],
+                "exclude_file_patterns": [],
+                "brief": False,
+            },
+            "elastic_search": {
+                "hosts": ["http://host.docker.internal:9200"],
+                "index_name": "osv_vulnerability_db",
+                "api_key": "",
+            },
+        }
+        with mock.patch.object(
+                config_helper, "read_data_from_json",
+                return_value=invalid_default_config):
+            with self.assertRaisesRegex(RuntimeError, "scan.platform"):
+                self.cli.load_scan_config(config_path=None)
 
     def test_missing_external_config_uses_default_config(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -196,6 +218,7 @@ class OutputFormatTests(unittest.TestCase):
         self.assertEqual(options["platform"], "linux/arm64")
         self.assertEqual(config["elastic_search"]["hosts"], ["http://es.example.test:9200"])
         self.assertEqual(config["elastic_search"]["index_name"], "custom_osv")
+        self.assertEqual(config["elastic_search"]["api_key"], "test-key")
 
     def test_invalid_external_config_fields_fallback_individually(self):
         external_config = {
@@ -234,6 +257,7 @@ class OutputFormatTests(unittest.TestCase):
             config["elastic_search"]["hosts"],
             ["http://host.docker.internal:9200"])
         self.assertEqual(config["elastic_search"]["index_name"], "osv_vulnerability_db")
+        self.assertEqual(config["elastic_search"]["api_key"], "")
         self.assertNotIn("unknown", config["scan"])
         self.assertNotIn("unknown_root", config)
 
