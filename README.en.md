@@ -144,7 +144,7 @@ GBT output requires `--ecosystem` so the tool can query vulnerabilities from the
 
 The bundled default configuration file is `/app/assist/config.json`. Docker Compose mounts the host `./config` directory to `/app/config`, and the tool automatically reads `/app/config/config.json` as the external configuration file.
 
-Users only need to edit `./config/config.json` on the host. If this file is missing, contains invalid JSON, has unknown options, or contains invalid field types/values, the scanner logs a Chinese warning and falls back to the bundled default value for the affected field.
+Users only need to edit `./config/config.json` on the host. If this external configuration file is missing, the scanner uses the bundled default configuration. If the external file contains invalid JSON, unknown options, or invalid field types/values, the scanner logs a Chinese warning and falls back to the bundled default value for the affected field. `/app/assist/config.json` is the required default configuration file; if it is missing or invalid, the image or project files are considered broken and the scanner exits with an error.
 
 Configuration options:
 
@@ -165,7 +165,7 @@ Configuration options:
             "http://host.docker.internal:9200"
         ],
         "index_name": "osv_vulnerability_db",
-        "api_key": "..."
+        "api_key": ""
     }
 }
 ```
@@ -180,7 +180,7 @@ Configuration options:
 | `source_scan.brief` | Skip file-level license scanning and OSV dependency detection for source packages |
 | `elastic_search.hosts` | Local OSV Elasticsearch node URLs |
 | `elastic_search.index_name` | OSV vulnerability index name |
-| `elastic_search.api_key` | Elasticsearch API key |
+| `elastic_search.api_key` | Elasticsearch API key, blank by default; set it in the external configuration when authentication is required |
 
 ## Troubleshooting
 
