@@ -1050,6 +1050,39 @@ class GBTConversionTests(unittest.TestCase):
             subjects,
             [{"id": "Package-urllib3", "name": "urllib3", "version": "1.25.8"}])
 
+    def test_gbt_vulnerability_queries_prefer_component_ecosystem(self):
+        subjects = gbt_sbom_helper._build_vulnerability_subjects(
+            None,
+            [{"id": "Package-requests", "package_type": "pypi"}],
+            {},
+            [{"componentName": "requests", "componentVersion": "2.31.0"}])
+
+        queries = gbt_sbom_helper._build_vulnerability_queries(subjects, "Go")
+
+        self.assertEqual(queries[0]["ecosystem"], "PyPI")
+
+    def test_gbt_vulnerability_queries_fallback_to_cli_ecosystem(self):
+        subjects = gbt_sbom_helper._build_vulnerability_subjects(
+            None,
+            [{"id": "Package-demo", "package_type": "custom"}],
+            {},
+            [{"componentName": "demo", "componentVersion": "1.0"}])
+
+        queries = gbt_sbom_helper._build_vulnerability_queries(subjects, "Go")
+
+        self.assertEqual(queries[0]["ecosystem"], "Go")
+
+    def test_gbt_vulnerability_queries_skip_without_ecosystem(self):
+        subjects = gbt_sbom_helper._build_vulnerability_subjects(
+            None,
+            [{"id": "Package-demo", "package_type": "custom"}],
+            {},
+            [{"componentName": "demo", "componentVersion": "1.0"}])
+
+        self.assertEqual(
+            gbt_sbom_helper._build_vulnerability_queries(subjects, None),
+            [])
+
     def test_gbt_licenses_split_and_deduplicate_and_expressions(self):
         licenses = gbt_sbom_helper._build_licenses(
             {

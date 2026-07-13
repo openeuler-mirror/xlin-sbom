@@ -289,13 +289,36 @@ class OutputFormatTests(unittest.TestCase):
         self.assertEqual(save_sbom.call_args.args[6], ["spdx"])
 
     def test_validate_output_request_rejects_gbt_without_ecosystem(self):
-        args = mock.Mock(repo=None, ecosystem=None)
+        args = mock.Mock(repo=None, package="demo.rpm", ecosystem=None)
 
         with self.assertRaises(SystemExit):
             self.cli.validate_output_request(args, ["gbt"])
 
+    def test_validate_output_request_allows_source_archive_gbt_without_ecosystem(self):
+        args = mock.Mock(repo=None, package="demo.tar.gz", ecosystem=None)
+
+        self.cli.validate_output_request(args, ["gbt"])
+
+    def test_validate_output_request_rejects_non_archive_gbt_without_ecosystem(self):
+        requests = (
+            {"iso": "demo.iso", "docker": None, "package": None},
+            {"iso": None, "docker": "debian:bookworm-slim", "package": None},
+            {"iso": None, "docker": None, "package": "demo.deb"},
+            {"iso": None, "docker": None, "package": "demo.src.rpm"},
+            {"iso": None, "docker": None, "package": "demo.dsc"},
+        )
+
+        for request in requests:
+            with self.subTest(request=request):
+                args = mock.Mock(repo=None, ecosystem=None, **request)
+                with self.assertRaises(SystemExit):
+                    self.cli.validate_output_request(args, ["gbt"])
+
     def test_validate_output_request_rejects_repo_gbt(self):
-        args = mock.Mock(repo="https://example.test/repo", ecosystem="PyPI")
+        args = mock.Mock(
+            repo="https://example.test/repo",
+            package=None,
+            ecosystem="PyPI")
 
         with self.assertRaises(SystemExit):
             self.cli.validate_output_request(args, ["gbt"])
