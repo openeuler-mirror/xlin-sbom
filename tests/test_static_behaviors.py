@@ -1024,6 +1024,105 @@ class GBTConversionTests(unittest.TestCase):
                 {"id": "Package-lib-bbb", "name": "lib", "version": "2.0"},
             ])
 
+    def test_convert_to_gbt_uses_noassertion_for_missing_software_license(self):
+        linx_sbom = {
+            "packages_sbom": {"packages": [{
+                "id": "Package-app-aaa",
+                "name": "app",
+                "version": "1.0",
+                "licenses": [],
+                "suppliers": [],
+                "checksum": {"algorithm": "SHA1", "value": "aaa"},
+            }]},
+            "licenses_sbom": {"licenses": []},
+            "package_relationships_sbom": {"package_relationships": []},
+        }
+        with mock.patch.object(
+                gbt_sbom_helper, "query_gbt_vulnerabilities",
+                return_value=[]):
+            gbt = gbt_sbom_helper.convert_to_gbt(
+                linx_sbom, "app", "2026-06-16T00:00:00Z",
+                "rpm", "package", "Debian", {}, None)
+
+        self.assertEqual(gbt["software"]["licenseName"], "NOASSERTION")
+        self.assertEqual(gbt["licenses"], [])
+
+    def test_convert_to_gbt_adds_target_contains_for_iso_and_docker(self):
+        packages = [
+            {
+                "id": "Package-libc-aaa",
+                "name": "libc",
+                "version": "2.36",
+                "licenses": [],
+                "suppliers": [],
+                "checksum": {"algorithm": "SHA1", "value": "aaa"},
+            },
+            {
+                "id": "Package-app-bbb",
+                "name": "app",
+                "version": "1.0",
+                "licenses": [],
+                "suppliers": [],
+                "checksum": {"algorithm": "SHA1", "value": "bbb"},
+            },
+        ]
+        package_relationships = [{
+            "id": "Package-app-bbb",
+            "related_element": "Package-libc-aaa",
+            "relationship_type": "DEPENDS_ON",
+        }]
+
+        for scan_mode in ("iso", "docker"):
+            with self.subTest(scan_mode=scan_mode):
+                packages_header = {
+                    "scan_target": "target-image",
+                    "os_name": "DemoOS",
+                    "os_version": "1.0",
+                    "packages": packages,
+                }
+                if scan_mode == "docker":
+                    packages_header["image_name"] = "docker.io/library/demo:latest"
+                linx_sbom = {
+                    "packages_sbom": packages_header,
+                    "licenses_sbom": {"licenses": []},
+                    "package_relationships_sbom": {
+                        "package_relationships": package_relationships,
+                    },
+                }
+                with mock.patch.object(
+                        gbt_sbom_helper, "query_gbt_vulnerabilities",
+                        return_value=[]):
+                    gbt = gbt_sbom_helper.convert_to_gbt(
+                        linx_sbom, "target-image", "2026-06-16T00:00:00Z",
+                        "deb", scan_mode, "Debian", {}, None)
+
+                software_id = gbt["software"]["softwareId"]
+                self.assertEqual(gbt["software"]["licenseName"], "NOASSERTION")
+                self.assertEqual(
+                    [
+                        dependency for dependency in gbt["dependencies"]
+                        if dependency["relationship"] == "contain"
+                    ],
+                    [
+                        {
+                            "identityAId": software_id,
+                            "relationship": "contain",
+                            "identityBId": "Package-libc-aaa",
+                        },
+                        {
+                            "identityAId": software_id,
+                            "relationship": "contain",
+                            "identityBId": "Package-app-bbb",
+                        },
+                    ])
+                self.assertIn(
+                    {
+                        "identityAId": "Package-app-bbb",
+                        "relationship": "dependsOn",
+                        "identityBId": "Package-libc-aaa",
+                    },
+                    gbt["dependencies"])
+
     def test_gbt_vulnerability_subjects_skip_noassertion(self):
         subjects = gbt_sbom_helper._build_vulnerability_subjects(
             None,
