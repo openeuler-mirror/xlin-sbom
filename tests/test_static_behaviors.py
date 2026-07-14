@@ -18,6 +18,7 @@ warnings.simplefilter("ignore", DeprecationWarning)
 
 import zstandard
 
+from actions import config_helper
 from actions.data_helper import calculate_md5, calculate_sha1, remove_duplicates
 from actions.licenses_helper import _extract_deb_license_list, rpm_licenses_scanner
 from actions.package import Package
@@ -52,6 +53,44 @@ class CodeQualityTests(unittest.TestCase):
                         getattr(node, "parent", None),
                         ast.Module,
                         f"{path} line {node.lineno} has a local import")
+
+
+class ConfigHelperTests(unittest.TestCase):
+    def test_elasticsearch_tls_config_overrides_defaults(self):
+        default_config = json.loads(
+            (ROOT_DIR / "assist" / "config.json").read_text(encoding="utf-8"))
+        external_config = {
+            "elastic_search": {
+                "verify_certs": False,
+                "ca_certs": "/app/config/es-http-ca.crt",
+            },
+        }
+
+        config = config_helper.normalize_config(
+            config_helper.merge_configs(default_config, external_config),
+            default_config)
+
+        self.assertFalse(config["elastic_search"]["verify_certs"])
+        self.assertEqual(
+            config["elastic_search"]["ca_certs"],
+            "/app/config/es-http-ca.crt")
+
+    def test_elasticsearch_tls_config_invalid_values_use_defaults(self):
+        default_config = json.loads(
+            (ROOT_DIR / "assist" / "config.json").read_text(encoding="utf-8"))
+        external_config = {
+            "elastic_search": {
+                "verify_certs": "false",
+                "ca_certs": 123,
+            },
+        }
+
+        config = config_helper.normalize_config(
+            config_helper.merge_configs(default_config, external_config),
+            default_config)
+
+        self.assertTrue(config["elastic_search"]["verify_certs"])
+        self.assertEqual(config["elastic_search"]["ca_certs"], "")
 
 
 def write_ar_member(target, name, content):
@@ -952,6 +991,41 @@ class SPDXConversionTests(unittest.TestCase):
 
 
 class GBTConversionTests(unittest.TestCase):
+    def test_query_es_vulnerabilities_resolves_certificate_verification(self):
+        response = mock.Mock()
+        response.json.return_value = {"responses": []}
+        query = {
+            "id": "Package-demo-abc",
+            "ecosystem": "PyPI",
+            "name": "demo",
+            "version": "1.0",
+        }
+        cases = (
+            ({}, True),
+            ({"verify_certs": False}, False),
+            ({
+                "verify_certs": True,
+                "ca_certs": "/app/config/es-http-ca.crt",
+            }, "/app/config/es-http-ca.crt"),
+        )
+
+        for tls_config, expected_verify in cases:
+            with self.subTest(tls_config=tls_config):
+                es_config = {
+                    "hosts": ["https://es.example.test:9200"],
+                    "index_name": "osv_vulnerability_db",
+                    **tls_config,
+                }
+                with mock.patch.object(
+                        gbt_sbom_helper.requests,
+                        "post",
+                        return_value=response) as post:
+                    gbt_sbom_helper._query_es_vulnerabilities(
+                        [query], es_config)
+
+                self.assertEqual(
+                    post.call_args.kwargs["verify"], expected_verify)
+
     def test_parse_creators_and_build_create_tools(self):
         creators = gbt_sbom_helper.parse_creators([
             "Organization: Linx Software, Inc.",

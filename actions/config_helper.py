@@ -31,7 +31,8 @@ CONFIG_STRUCTURE = {
     "scan": ("disable_tqdm", "max_workers", "platform"),
     "source_scan": (
         "include_file_patterns", "exclude_file_patterns", "brief"),
-    "elastic_search": ("hosts", "index_name", "api_key"),
+    "elastic_search": (
+        "hosts", "index_name", "api_key", "verify_certs", "ca_certs"),
 }
 
 
@@ -94,7 +95,10 @@ def _is_valid_config_value(path, value):
         bool: 配置项合法时返回 True。
     """
 
-    if path in ("scan.disable_tqdm", "source_scan.brief"):
+    if path in (
+            "scan.disable_tqdm",
+            "source_scan.brief",
+            "elastic_search.verify_certs"):
         return isinstance(value, bool)
     if path == "scan.max_workers":
         return value is None or (
@@ -106,7 +110,10 @@ def _is_valid_config_value(path, value):
             "source_scan.exclude_file_patterns",
             "elastic_search.hosts"):
         return _is_string_list(value)
-    if path in ("elastic_search.index_name", "elastic_search.api_key"):
+    if path in (
+            "elastic_search.index_name",
+            "elastic_search.api_key",
+            "elastic_search.ca_certs"):
         return isinstance(value, str)
     return True
 
