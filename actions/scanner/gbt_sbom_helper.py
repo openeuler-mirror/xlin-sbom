@@ -158,7 +158,7 @@ def convert_to_gbt(
         _build_component(package, license_by_id)
         for package in component_packages
     ]
-    dependencies = _build_dependencies(linx_sbom)
+    dependencies = _build_dependencies(linx_sbom, software, components, scan_mode)
     licenses = _build_licenses(linx_sbom, software, components)
     vulnerability_subjects = _build_vulnerability_subjects(
         software_package, component_packages, software, components)
@@ -329,6 +329,7 @@ def _build_software(
     packages_header = linx_sbom.get("packages_sbom", {})
     if software_package:
         return {
+            "softwareId": _no_assertion(software_package.get("id")),
             "softwareName": _no_assertion(software_package.get("name")),
             "softwareVersion": _no_assertion(software_package.get("version")),
             "integrity": _build_integrity(software_package.get("checksum", {})),
@@ -338,13 +339,15 @@ def _build_software(
         }
 
     return {
+        "softwareId": _build_target_software_id(
+            packages_header, filename, scan_mode),
         "softwareName": _resolve_target_software_name(
             packages_header, filename, scan_mode),
         "softwareVersion": _resolve_target_software_version(
             packages_header, package_type),
         "integrity": _build_target_integrity(packages_header, source_path),
         "supplier": {"supplierName": "NOASSERTION"},
-        "licenseName": None,
+        "licenseName": "NOASSERTION",
     }
 
 
@@ -362,17 +365,58 @@ def _build_component(
     }
 
 
-def _build_dependencies(linx_sbom: Dict[str, Any]) -> List[Dict[str, str]]:
+def _build_dependencies(
+    linx_sbom: Dict[str, Any],
+    software: Dict[str, Any],
+    components: List[Dict[str, Any]],
+    scan_mode: str,
+) -> List[Dict[str, str]]:
+    """构建国标 dependencies 列表。
+
+    Args:
+        linx_sbom (dict): Linx SBOM 数据。
+        software (dict): 国标 software 对象。
+        components (list[dict]): 国标 components 列表。
+        scan_mode (str): 当前扫描模式。
+
+    Returns:
+        list[dict]: 国标 dependencies 关系列表。
+    """
+
     relationships = []
+    if scan_mode in ("iso", "docker"):
+        software_id = _no_assertion(software.get("softwareId"))
+        for component in components:
+            _add_dependency(relationships, {
+                "identityAId": software_id,
+                "relationship": "contain",
+                "identityBId": _no_assertion(component.get("componentId")),
+            })
+
     for relationship in linx_sbom.get(
             "package_relationships_sbom", {}).get("package_relationships", []):
-        relationships.append({
+        _add_dependency(relationships, {
             "identityAId": _no_assertion(relationship.get("id")),
             "relationship": _map_relationship_type(
                 relationship.get("relationship_type")),
             "identityBId": _no_assertion(relationship.get("related_element")),
         })
     return relationships
+
+
+def _add_dependency(
+    relationships: List[Dict[str, str]],
+    relationship: Dict[str, str],
+) -> None:
+    """向关系列表追加去重后的国标 dependency。
+
+    Args:
+        relationships (list[dict]): 已构建的关系列表。
+        relationship (dict): 待追加的关系。
+    """
+
+    if relationship not in relationships:
+        relationships.append(relationship)
 
 
 def _build_licenses(
@@ -437,9 +481,19 @@ def _resolve_package_license_names(
 def _build_software_license_name(
     package: Dict[str, Any],
     license_by_id: Dict[str, str],
-) -> Optional[str]:
+) -> str:
+    """构建国标 software.licenseName 字段。
+
+    Args:
+        package (dict): Linx 包对象。
+        license_by_id (dict): Linx 许可证 ID 到名称的映射。
+
+    Returns:
+        str: 软件许可证表达式，缺失时返回 NOASSERTION。
+    """
+
     license_names = _resolve_package_license_names(package, license_by_id)
-    return " AND ".join(license_names) if license_names else None
+    return " AND ".join(license_names) if license_names else "NOASSERTION"
 
 
 def _build_supplier(package: Dict[str, Any]) -> Dict[str, str]:
@@ -492,6 +546,32 @@ def _resolve_target_software_name(
     if os_name and os_name != "NOASSERTION":
         return os_name
     return packages_header.get("scan_target") or filename
+
+
+def _build_target_software_id(
+    packages_header: Dict[str, Any],
+    filename: str,
+    scan_mode: str,
+) -> str:
+    """为 ISO 或 Docker 扫描目标生成可被 dependencies 引用的软件 ID。
+
+    Args:
+        packages_header (dict): Linx packages 清单头部。
+        filename (str): 输出文件名基础值。
+        scan_mode (str): 当前扫描模式。
+
+    Returns:
+        str: 稳定的软件标识。
+    """
+
+    target = (
+        packages_header.get("image_name")
+        or packages_header.get("scan_target")
+        or filename
+    )
+    digest_source = f"{scan_mode}:{target}"
+    digest = hashlib.sha1(digest_source.encode("utf-8")).hexdigest()[:12]
+    return f"Software-{digest}"
 
 
 def _resolve_target_software_version(
@@ -794,6 +874,8 @@ def _add_license_name(license_names: List[str], value: Any) -> None:
     if not value:
         return
     license_name = str(value)
+    if license_name == "NOASSERTION":
+        return
     if license_name not in license_names:
         license_names.append(license_name)
 
