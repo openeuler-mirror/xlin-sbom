@@ -165,7 +165,9 @@ Configuration options:
             "http://host.docker.internal:9200"
         ],
         "index_name": "osv_vulnerability_db",
-        "api_key": ""
+        "api_key": "",
+        "verify_certs": true,
+        "ca_certs": ""
     }
 }
 ```
@@ -181,6 +183,10 @@ Configuration options:
 | `elastic_search.hosts` | Local OSV Elasticsearch node URLs |
 | `elastic_search.index_name` | OSV vulnerability index name |
 | `elastic_search.api_key` | Elasticsearch API key, blank by default; set it in the external configuration when authentication is required |
+| `elastic_search.verify_certs` | Verify the Elasticsearch HTTPS certificate; defaults to `true`. A controlled intranet without an available trusted CA may explicitly set it to `false` |
+| `elastic_search.ca_certs` | CA certificate path inside the container; used only when certificate verification is enabled and the value is non-empty |
+
+When `verify_certs` is `true` and `ca_certs` is empty, the tool uses the runtime's default CA bundle. When `ca_certs` is set, that file is used. Setting `verify_certs` to `false` skips certificate verification and should only be used in a controlled intranet because the Elasticsearch server identity is no longer authenticated.
 
 ## Troubleshooting
 

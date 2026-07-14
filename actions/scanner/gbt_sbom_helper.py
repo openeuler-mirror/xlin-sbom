@@ -720,9 +720,29 @@ def _query_es_vulnerabilities(
         data=body.encode("utf-8"),
         headers=headers,
         timeout=REQUEST_TIMEOUT,
+        verify=_resolve_es_verify(es_config),
     )
     response.raise_for_status()
     return _parse_msearch_response(queries, response.json())
+
+
+def _resolve_es_verify(es_config: Dict[str, Any]) -> Any:
+    """解析 Elasticsearch HTTPS 证书校验参数。
+
+    Args:
+        es_config (dict): Elasticsearch 连接配置。
+
+    Returns:
+        bool | str: 关闭校验时返回 False，指定 CA 时返回证书路径，
+            其他情况返回 True。
+    """
+
+    if not es_config.get("verify_certs", True):
+        return False
+    ca_certs = es_config.get("ca_certs", "")
+    if isinstance(ca_certs, str) and ca_certs.strip():
+        return ca_certs.strip()
+    return True
 
 
 def _build_msearch_body(

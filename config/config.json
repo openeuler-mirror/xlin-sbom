@@ -47,6 +47,8 @@
             "http://host.docker.internal:9200"
         ],
         "index_name": "osv_vulnerability_db",
-        "api_key": ""
+        "api_key": "",
+        "verify_certs": true,
+        "ca_certs": ""
     }
 }
