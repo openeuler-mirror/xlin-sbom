@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from actions import ASSIST_DIR
+from actions import ASSIST_ORIGINATORS_SEED
 from actions.package import Package, merge_packages
 from actions.sbom_helper import build_sbom_header
-from actions.data_helper import read_data_from_json, save_data_to_json, remove_duplicates
+from actions.data_helper import read_data_from_json, save_originators, load_originators, remove_duplicates
 from actions.scanner.suppliers_helper import get_suppliers, RPM_SUPPLIERS, DEB_SUPPLIERS
 from actions.scanner.originators_helper import extract_originator_name
 from actions.licenses_helper import rpm_licenses_scanner
@@ -25,13 +25,54 @@ from urllib.parse import urljoin
 import xml.etree.ElementTree as ET
 from tqdm import tqdm
 import gzip
+import importlib
+import subprocess
 from io import BytesIO
 import requests
-import zstandard
 import os
 import logging
 
 REQUEST_TIMEOUT = 10
+
+
+def _decompress_zstd(content: bytes) -> Optional[bytes]:
+    """解压 zstd 数据。
+
+    优先使用发行版提供的 python3-zstandard；该模块缺失或与系统 libzstd
+    不兼容时，回退到系统 zstd 命令，避免扩展模块 ABI 问题导致整条扫描失败。
+    """
+
+    try:
+        zstandard = importlib.import_module('zstandard')
+    except Exception:
+        zstandard = None
+
+    if zstandard is not None:
+        try:
+            decompressed = bytearray()
+            dctx = zstandard.ZstdDecompressor()
+            with dctx.stream_reader(BytesIO(content)) as reader:
+                while True:
+                    chunk = reader.read(16384)
+                    if not chunk:
+                        break
+                    decompressed.extend(chunk)
+            return bytes(decompressed)
+        except Exception as exc:
+            logging.warning("python3-zstandard 解压失败，改用系统 zstd: %s", exc)
+
+    try:
+        completed = subprocess.run(
+            ['zstd', '-d', '-q', '-c'],
+            input=content,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=True,
+        )
+        return completed.stdout
+    except (OSError, subprocess.CalledProcessError) as exc:
+        logging.error("解压zst失败: %s", exc)
+        return None
 
 
 def rpm_repo_scanner(
@@ -54,8 +95,7 @@ def rpm_repo_scanner(
 
     packages = []
     licenses = []
-    originators_file_path = os.path.join(ASSIST_DIR, 'originators.json')
-    originators = read_data_from_json(originators_file_path)
+    originators = load_originators(ASSIST_ORIGINATORS_SEED)
 
     metadata = _fetch_and_extract_metadata(primary_xml_url)
     if metadata:
@@ -71,7 +111,7 @@ def rpm_repo_scanner(
     }
 
     # 保存更新后的发起者信息
-    save_data_to_json(originators, originators_file_path)
+    save_originators(originators, ASSIST_ORIGINATORS_SEED)
 
     # 返回处理后的软件包信息列表
     return linx_sbom
@@ -96,8 +136,7 @@ def deb_repo_scanner(
     """
     packages = []
     licenses = []
-    originators_file_path = os.path.join(ASSIST_DIR, 'originators.json')
-    originators = read_data_from_json(originators_file_path)
+    originators = load_originators(ASSIST_ORIGINATORS_SEED)
 
     for sources_url in sources_url_list:
         metadata = _fetch_and_extract_metadata(sources_url)
@@ -116,7 +155,7 @@ def deb_repo_scanner(
     }
 
     # 保存更新后的发起者信息
-    save_data_to_json(originators, originators_file_path)
+    save_originators(originators, ASSIST_ORIGINATORS_SEED)
 
     return linx_sbom
 
@@ -294,20 +333,7 @@ def _fetch_and_extract_metadata(metadata_url: str) -> Optional[bytes]:
                 return None
 
         elif metadata_url.endswith('.zst'):
-            try:
-                # 流式解压
-                dctx = zstandard.ZstdDecompressor()
-                decompressed = bytearray()
-                with dctx.stream_reader(BytesIO(content)) as reader:
-                    while True:
-                        chunk = reader.read(16384)
-                        if not chunk:
-                            break
-                        decompressed.extend(chunk)
-                return bytes(decompressed)
-            except zstandard.ZstdError as e:
-                logging.error(f"解压zst失败: {e}")
-                return None
+            return _decompress_zstd(content)
 
         else:
             logging.error(f"不支持的格式: {metadata_url}")

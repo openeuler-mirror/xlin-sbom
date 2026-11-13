@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2023 spdx contributors
 #
 # SPDX-License-Identifier: Apache-2.0
-from beartype.typing import List
+from typing import List
 
 from actions.spdx.document_utils import create_document_without_duplicates
 from actions.spdx.jsonschema.document_converter import DocumentConverter

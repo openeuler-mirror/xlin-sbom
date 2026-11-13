@@ -4,7 +4,7 @@
 from datetime import datetime
 from enum import Enum
 
-from beartype.typing import Any, List
+from typing import Any, List
 from semantic_version import Version
 
 from actions.spdx3.model.creation_info import CreationInfo

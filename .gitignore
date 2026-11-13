@@ -4,3 +4,14 @@ data/
 output/
 .venv/
 .cache/
+
+# 打包构建中间产物
+debian/.build-venv/
+debian/vendor/
+debian/.debhelper/
+debian/debhelper-build-stamp
+debian/files
+debian/*.substvars
+debian/xlin-sbom/
+debian/output/
+rpm/output/

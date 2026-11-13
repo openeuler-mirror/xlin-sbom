@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from beartype.typing import List
+from typing import List
 
 from actions.spdx.constants import DOCUMENT_SPDX_ID
 from actions.spdx.model import CreationInfo

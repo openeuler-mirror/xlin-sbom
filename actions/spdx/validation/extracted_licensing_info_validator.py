@@ -4,7 +4,7 @@
 
 import re
 
-from beartype.typing import List, Optional
+from typing import List, Optional
 
 from actions.spdx.model import ExtractedLicensingInfo
 from actions.spdx.validation.uri_validators import validate_url

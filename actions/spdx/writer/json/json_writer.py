@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 import json
 
-from beartype.typing import IO
+from typing import IO
 
 from actions.spdx.jsonschema.document_converter import DocumentConverter
 from actions.spdx.model import Document

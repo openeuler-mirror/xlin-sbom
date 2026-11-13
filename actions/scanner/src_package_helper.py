@@ -15,7 +15,7 @@
 import os
 import tarfile
 import zipfile
-import rpmfile
+from actions.scanner.rpm_reader import RpmReader, open_rpm
 import hashlib
 import io
 import logging
@@ -130,7 +130,7 @@ def _detect_package_type(pkg_path: str) -> Tuple[str, str]:
             try:
                 # 根据类型调用对应处理逻辑
                 if ext == '.src.rpm':
-                    with rpmfile.open(pkg_path) as rpm:
+                    with open_rpm(pkg_path) as rpm:
                         return _detect_from_src_rpm(rpm)
                 if ext in ('.tar.gz', '.tgz', '.tar.bz2', '.tbz2', '.tar.xz', '.txz', '.tar'):
                     with tarfile.open(pkg_path, 'r:*') as tar:
@@ -145,12 +145,12 @@ def _detect_package_type(pkg_path: str) -> Tuple[str, str]:
     return ('other', '')
 
 
-def _detect_from_src_rpm(rpm: rpmfile.RPMFile) -> Tuple[str, str]:
+def _detect_from_src_rpm(rpm: RpmReader) -> Tuple[str, str]:
     """
     从 RPM 源码包中检测 spec 文件并返回其内容。
 
     Args:
-        rpm (rpmfile.RPMFile): 已打开的 RPM 源码包文件对象，用于读取文件内容。
+        rpm (RpmReader): 已打开的 RPM 源码包文件对象，用于读取文件内容。
 
     Returns:
         Tuple[str, str]: 返回一个元组，包含两个元素：

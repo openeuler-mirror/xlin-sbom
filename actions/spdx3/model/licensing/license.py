@@ -4,7 +4,7 @@
 from abc import abstractmethod
 from dataclasses import field
 
-from beartype.typing import List, Optional
+from typing import List, Optional
 
 from actions.common.typing.dataclass_with_properties import dataclass_with_properties
 from actions.spdx3.model.licensing.any_license_info import AnyLicenseInfo

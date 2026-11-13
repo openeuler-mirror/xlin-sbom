@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from beartype.typing import List, Optional
+from typing import List, Optional
 
 from actions.spdx.model import ChecksumAlgorithm, Document, File
 from actions.spdx.validation.checksum_validator import validate_checksums

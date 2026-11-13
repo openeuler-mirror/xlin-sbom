@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from abc import abstractmethod
 
-from beartype.typing import Optional
+from typing import Optional
 
 from actions.common.typing.dataclass_with_properties import dataclass_with_properties
 from actions.spdx3.model.security.vuln_assessment_relationship import VulnAssessmentRelationship

@@ -22,7 +22,7 @@ from pathlib import Path
 def _reexec_with_project_venv_if_needed():
     """若存在项目 .venv 且当前解释器不是它，则切换到 .venv 再执行。
 
-    避免使用系统 python3 时因未安装 tqdm/beartype 等依赖而在 import 阶段失败。
+    避免使用系统 python3 时因未安装 tqdm 等依赖而在 import 阶段失败。
     """
     venv_python = Path(__file__).resolve().parent / ".venv" / "bin" / "python"
     if not venv_python.is_file():
@@ -95,8 +95,9 @@ def parse_arguments():
     # 添加互斥组，用户必须指定 --iso 或者 --package 之一
     mutually_exclusive_group = parser.add_mutually_exclusive_group(
         required=True)
-    mutually_exclusive_group.add_argument("--iso", "-i",
-                                          help="ISO镜像文件的路径。")
+    mutually_exclusive_group.add_argument(
+        "--iso", "-i",
+        help="ISO镜像文件的路径，支持 filesystem.module 声明的多 squashfs live 镜像。")
     mutually_exclusive_group.add_argument("--package", "-p",
                                           help="软件包的路径。")
     mutually_exclusive_group.add_argument("--repo", "-r",
@@ -104,6 +105,11 @@ def parse_arguments():
     mutually_exclusive_group.add_argument("--docker", "-d",
                                           help="Docker Hub 镜像名或离线 Docker 镜像 tar 文件路径。")
     parser.add_argument("--output", "-o", required=True, help="SBOM清单输出目录。")
+    parser.add_argument(
+        "--work-dir",
+        help="ISO 扫描时展开 squashfs 层的工作目录，需有不小于 rootfs 解压后大小的"
+             "空闲空间。默认依次尝试系统临时目录（TMPDIR）与 ISO 所在目录；"
+             "多层 live 镜像的 rootfs 可达数十 GB，/tmp 常为 tmpfs 无法容纳。")
     parser.add_argument("--format", "-f", action='append', required=True,
                         choices=("linx", "spdx", "spdx22", "spdx23", "spdx3", "sbomdf"),
                         help="SBOM output format. Can be repeated. "
@@ -418,7 +424,8 @@ def main():
             linx_sbom, package_type = scan_iso(
                 args.iso, filename, spdx_utc_time,
                 runtime_options["disable_tqdm"],
-                runtime_options["max_workers"])
+                runtime_options["max_workers"],
+                work_dir=args.work_dir or runtime_options["work_dir"])
         except Exception as e:
             logging.error(f"异常抛出: {e}")
             sys.exit(1)

@@ -28,8 +28,14 @@ import tempfile
 
 import requests
 
-from actions import ASSIST_DIR
-from actions.data_helper import calculate_file_checksums, read_data_from_json, remove_duplicate_files, remove_duplicates
+from actions import ASSIST_ORIGINATORS_SEED
+from actions.data_helper import (
+    calculate_file_checksums,
+    load_originators,
+    read_data_from_json,
+    remove_duplicate_files,
+    remove_duplicates
+)
 from actions.licenses_helper import _extract_deb_license_list, rpm_licenses_scanner
 from actions.package import Package, merge_packages
 from actions.sbom_helper import build_sbom_header
@@ -101,13 +107,13 @@ def scan_docker_image(
         if not image_info.os_arch:
             image_info.os_arch = selected_platform[1]
 
-        if _has_dpkg_database(rootfs_dir):
+        if has_dpkg_database(rootfs_dir):
             logging.info("Docker 镜像中侦测到 DEB 包系统")
             linx_sbom = _scan_dpkg_rootfs(
                 rootfs_dir, image_info, created_time, disable_tqdm)
             return linx_sbom, "docker", output_name
 
-        if _has_rpm_database(rootfs_dir):
+        if has_rpm_database(rootfs_dir):
             logging.info("Docker 镜像中侦测到 RPM 包系统")
             linx_sbom = _scan_rpm_rootfs(
                 rootfs_dir, image_info, created_time, disable_tqdm)
@@ -625,13 +631,13 @@ def _remove_path(path: str) -> None:
         shutil.rmtree(path)
 
 
-def _has_dpkg_database(rootfs_dir: str) -> bool:
+def has_dpkg_database(rootfs_dir: str) -> bool:
     """判断 rootfs 是否包含 dpkg 状态数据库。"""
 
     return os.path.isfile(os.path.join(rootfs_dir, "var/lib/dpkg/status"))
 
 
-def _has_rpm_database(rootfs_dir: str) -> bool:
+def has_rpm_database(rootfs_dir: str) -> bool:
     """判断 rootfs 是否包含 RPM 数据库。"""
 
     return _find_rpm_database(rootfs_dir) is not None
@@ -647,15 +653,25 @@ def _find_rpm_database(rootfs_dir: str) -> Optional[Tuple[str, str]]:
     return None
 
 
-def _scan_dpkg_rootfs(
+def scan_dpkg_rootfs_components(
     rootfs_dir: str,
-    image_info: DockerImageInfo,
-    created_time: str,
     disable_tqdm: bool,
 ) -> Dict[str, Any]:
-    """扫描 Debian/Ubuntu 系镜像 rootfs 中的 dpkg 数据库。"""
+    """扫描 rootfs 中的 dpkg 数据库，返回 Linx SBOM 的组件数据。
 
-    originators = read_data_from_json(os.path.join(ASSIST_DIR, "originators.json"))
+    Args:
+        rootfs_dir (str): 已展开的根文件系统目录。
+        disable_tqdm (bool): 是否禁用依赖关系计算的进度条。
+
+    Returns:
+        dict: packages_sbom、files_sbom、file_relationships_sbom、
+        licenses_sbom 和 package_relationships_sbom 五个组件列表。
+
+    Raises:
+        ValueError: dpkg 数据库中没有已安装软件包时抛出。
+    """
+
+    originators = load_originators(ASSIST_ORIGINATORS_SEED)
     status_path = os.path.join(rootfs_dir, "var/lib/dpkg/status")
     info_dir = os.path.join(rootfs_dir, "var/lib/dpkg/info")
     package_file_paths, package_md5sums = _read_dpkg_info_files(info_dir)
@@ -702,7 +718,7 @@ def _scan_dpkg_rootfs(
         licenses.extend(package_licenses)
 
     if not packages:
-        raise ValueError("Docker 镜像内的 dpkg 数据库未包含已安装软件包。")
+        raise ValueError("rootfs 内的 dpkg 数据库未包含已安装软件包。")
 
     packages = merge_packages(packages)
     files = [file for package in packages for file in package.files]
@@ -710,21 +726,49 @@ def _scan_dpkg_rootfs(
     packages_sbom = [package.get_json() for package in packages]
     packages_sbom.sort(key=lambda item: item.get("name", ""))
     package_relationships = get_deb_relationships(packages_sbom, disable_tqdm)
-    return _build_docker_sbom(
-        packages_sbom, remove_duplicate_files(files), file_relationships,
-        remove_duplicates(licenses), package_relationships, image_info,
-        created_time)
+    return {
+        "packages_sbom": packages_sbom,
+        "files_sbom": remove_duplicate_files(files),
+        "file_relationships_sbom": file_relationships,
+        "licenses_sbom": remove_duplicates(licenses),
+        "package_relationships_sbom": package_relationships,
+    }
 
 
-def _scan_rpm_rootfs(
+def _scan_dpkg_rootfs(
     rootfs_dir: str,
     image_info: DockerImageInfo,
     created_time: str,
     disable_tqdm: bool,
 ) -> Dict[str, Any]:
-    """扫描 RPM 系镜像 rootfs 中的 RPM 数据库。"""
+    """扫描 Debian/Ubuntu 系镜像 rootfs 中的 dpkg 数据库。"""
 
-    originators = read_data_from_json(os.path.join(ASSIST_DIR, "originators.json"))
+    components = scan_dpkg_rootfs_components(rootfs_dir, disable_tqdm)
+    return _build_docker_sbom(
+        components["packages_sbom"], components["files_sbom"],
+        components["file_relationships_sbom"], components["licenses_sbom"],
+        components["package_relationships_sbom"], image_info, created_time)
+
+
+def scan_rpm_rootfs_components(
+    rootfs_dir: str,
+    disable_tqdm: bool,
+) -> Dict[str, Any]:
+    """扫描 rootfs 中的 RPM 数据库，返回 Linx SBOM 的组件数据。
+
+    Args:
+        rootfs_dir (str): 已展开的根文件系统目录。
+        disable_tqdm (bool): 是否禁用依赖关系计算的进度条。
+
+    Returns:
+        dict: packages_sbom、files_sbom、file_relationships_sbom、
+        licenses_sbom 和 package_relationships_sbom 五个组件列表。
+
+    Raises:
+        ValueError: RPM 数据库中没有已安装软件包时抛出。
+    """
+
+    originators = load_originators(ASSIST_ORIGINATORS_SEED)
     db_args = _detect_rpm_db_args(rootfs_dir)
     package_rows = _run_rpm_query(
         rootfs_dir, db_args,
@@ -772,7 +816,7 @@ def _scan_rpm_rootfs(
         licenses.extend(package_licenses)
 
     if not packages:
-        raise ValueError("Docker 镜像内的 RPM 数据库未包含已安装软件包。")
+        raise ValueError("rootfs 内的 RPM 数据库未包含已安装软件包。")
 
     packages = merge_packages(packages)
     files = [file for package in packages for file in package.files]
@@ -781,10 +825,28 @@ def _scan_rpm_rootfs(
     packages_sbom.sort(key=lambda item: item.get("name", ""))
     package_relationships = get_rpm_relationships(
         packages_sbom, provides_relationships, disable_tqdm)
+    return {
+        "packages_sbom": packages_sbom,
+        "files_sbom": remove_duplicate_files(files),
+        "file_relationships_sbom": file_relationships,
+        "licenses_sbom": remove_duplicates(licenses),
+        "package_relationships_sbom": package_relationships,
+    }
+
+
+def _scan_rpm_rootfs(
+    rootfs_dir: str,
+    image_info: DockerImageInfo,
+    created_time: str,
+    disable_tqdm: bool,
+) -> Dict[str, Any]:
+    """扫描 RPM 系镜像 rootfs 中的 RPM 数据库。"""
+
+    components = scan_rpm_rootfs_components(rootfs_dir, disable_tqdm)
     return _build_docker_sbom(
-        packages_sbom, remove_duplicate_files(files), file_relationships,
-        remove_duplicates(licenses), package_relationships, image_info,
-        created_time)
+        components["packages_sbom"], components["files_sbom"],
+        components["file_relationships_sbom"], components["licenses_sbom"],
+        components["package_relationships_sbom"], image_info, created_time)
 
 
 def _parse_dpkg_status(status_path: str) -> List[Dict[str, str]]:
@@ -917,7 +979,7 @@ def _detect_rpm_db_args(rootfs_dir: str) -> List[str]:
 
     database = _find_rpm_database(rootfs_dir)
     if database is None:
-        raise ValueError("Docker 镜像内未发现 RPM 包数据库。")
+        raise ValueError("rootfs 内未发现 RPM 包数据库。")
     directory, filename = database
     if filename == "Packages.db":
         logging.info("侦测到 RPM NDB 数据库，将在临时目录转换为 SQLite 后查询")
@@ -935,7 +997,7 @@ def _run_rpm_query(rootfs_dir: str, db_args: List[str], args: List[str]) -> str:
         result = subprocess.run(
             command, check=False, capture_output=True, text=True)
     except FileNotFoundError as exc:
-        raise ValueError("当前运行环境缺少 rpm 命令，无法扫描 RPM 系 Docker 镜像。") from exc
+        raise ValueError("当前运行环境缺少 rpm 命令，无法扫描 RPM 系 rootfs。") from exc
     if result.returncode != 0:
         logging.warning("RPM 查询失败: %s", result.stderr.strip())
         return ""

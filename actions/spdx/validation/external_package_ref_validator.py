@@ -3,12 +3,11 @@
 # SPDX-License-Identifier: Apache-2.0
 import re
 
-import uritools
-from beartype.typing import Dict, List
+from typing import Dict, List
 
 from actions.spdx.model import ExternalPackageRef, ExternalPackageRefCategory
 from actions.spdx.model.package import CATEGORY_TO_EXTERNAL_PACKAGE_REF_TYPES
-from actions.spdx.validation.uri_validators import validate_url
+from actions.spdx.validation.uri_validators import isuri, validate_url
 from actions.spdx.validation.validation_message import SpdxElementType, ValidationContext, ValidationMessage
 
 CPE22TYPE_REGEX = r"^c[pP][eE]:/[AHOaho]?(:[A-Za-z0-9._\-~%]*){0,6}$"
@@ -90,7 +89,7 @@ def validate_external_package_ref(
             )
 
     elif reference_type == "swid":
-        if not uritools.isuri(locator) or not locator.startswith("swid"):
+        if not isuri(locator) or not locator.startswith("swid"):
             validation_messages.append(
                 ValidationMessage(
                     f'externalPackageRef locator of type "swid" must be a valid URI with scheme swid, '

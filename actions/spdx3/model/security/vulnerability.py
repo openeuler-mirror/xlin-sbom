@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from datetime import datetime
 
-from beartype.typing import List, Optional
+from typing import List, Optional
 
 from actions.common.typing.dataclass_with_properties import dataclass_with_properties
 from actions.common.typing.type_checks import check_types_and_set_values

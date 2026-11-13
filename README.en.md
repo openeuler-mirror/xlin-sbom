@@ -11,9 +11,9 @@ The XiLing SBOM Tool is designed to scan ISO images, Docker images, software pac
 | Docker | 18.09.1+ | 20.10+ |
 | Docker Compose | 1.27.0+ | 2.0+ |
 | RAM | 4 GB | 8 GB |
-| Disk Space | 10 GB (Including temporary ISO parsing files and output files) | 20 GB |
+| Disk Space | 20 GB (Including temporary ISO parsing files and output files) | 40 GB (multi-squashfs live ISO) |
 
-> **Additional Requirements**: ISO scans parse the image file system directly and do not require FUSE, `mount`, or extra container mount privileges.
+> **Additional Requirements**: ISO scans parse the image file system directly and do not require FUSE, `mount`, or extra container mount privileges, nor root or fakeroot: when `unsquashfs` runs as a normal user it only skips device nodes and file ownership, which does not affect package and file inventory. Multi-squashfs live ISOs require `unsquashfs` (`squashfs-tools`), and the work directory must hold all extracted layers.
 
 ## Image Acquisition and Loading
 
@@ -41,6 +41,21 @@ The tool provides four scanning modes. You must select one, and only one, mode p
 ### 1. ISO Image Scan (`--iso` / `-i`)
 
 Performs a complete scan of a local ISO image file, extracts information for all software packages within it, and generates an SBOM.
+
+For live images such as UOS and Deepin, the image content may be split across multiple squashfs files. The ISO's `filesystem.module` file (usually under `/live` or `/casper`) lists those squashfs files from the bottom layer to the top layer, and the boot process unions them with overlayfs into the final rootfs. The tool reads that file and extracts every layer into the same temporary directory in the same order (later layers overwrite earlier ones), then enumerates installed packages from the merged rootfs's dpkg or RPM database. When `filesystem.module` is absent, squashfs files under `live`/`casper` are layered in default filename order.
+
+This mode requires `unsquashfs` (`squashfs-tools`). The extracted layers can be much larger than the ISO itself (the UOS Desktop 25 rootfs is about 25 GB uncompressed), so the work directory must live on real disk: `/tmp` is often a tmpfs limited by RAM, and when it fills up `unsquashfs` only reports `FATAL ERROR: writer: failed to write file ...`.
+
+The work directory is selected as follows:
+
+1. the directory given with `--work-dir` (or `scan.work_dir` in the configuration file);
+2. otherwise the first of the system temporary directory (`TMPDIR`), the ISO's directory and the current directory that has enough free space; the chosen path is logged;
+3. when the ISO contains `live/filesystem.size` (the uncompressed rootfs size recorded by live-boot), free space is validated against it before extraction starts, so an undersized directory fails in seconds with the required size instead of after a full extraction.
+
+```bash
+xlin-sbom -i ~/Public/ISO/uos-desktop-25-professional-2500-amd64-202607.iso \
+          -o ~/sbom --format spdx23 --work-dir /data/tmp
+```
 
 **Command Format**:
 
@@ -123,6 +138,7 @@ In addition to the required scan mode and output parameters, the CLI keeps the f
 | `--help`, `-h` | Show help message and exit |
 | `--format {linx,spdx,spdx22,spdx23,spdx3,sbomdf}` | Required output format; can be repeated. `spdx` and `spdx23` are SPDX 2.3 aliases |
 | `--ecosystem <ecosystem>` | OSV ecosystem for SBOMDF vulnerability queries; required for inputs other than source archives, and optional as a fallback for source archives |
+| `--work-dir <dir>` | Work directory for expanding squashfs layers during ISO scans; it needs free space at least the size of the extracted rootfs. Defaults to the first of `TMPDIR`, the ISO's directory and the current directory that has enough space; can be pinned with `scan.work_dir` in the configuration file |
 
 Supported formats: `linx`, `spdx22` (SPDX 2.2), `spdx`/`spdx23` (SPDX 2.3), `spdx3` (SPDX 3.0 JSON-LD), `sbomdf` (GB/T 47020-2026).
 
@@ -151,7 +167,8 @@ Configuration options:
     "scan": {
         "disable_tqdm": false,
         "max_workers": null,
-        "platform": "linux/amd64"
+        "platform": "linux/amd64",
+        "work_dir": null
     },
     "source_scan": {
         "include_file_patterns": ["*.py", "*.js", "*LICENSE*"],
@@ -175,6 +192,7 @@ Configuration options:
 | `scan.disable_tqdm` | Disable progress bar display |
 | `scan.max_workers` | Maximum number of concurrent workers; `null` keeps the program default |
 | `scan.platform` | Docker image platform, such as `linux/amd64` or `linux/arm64` |
+| `scan.work_dir` | Work directory for expanding squashfs layers during ISO scans; `null` auto-selects the first of `TMPDIR`, the ISO's directory and the current directory with enough space, while `--work-dir` on the command line takes precedence |
 | `source_scan.include_file_patterns` | Include patterns for source package file-level scans |
 | `source_scan.exclude_file_patterns` | Exclude patterns for source package file-level scans |
 | `source_scan.brief` | Skip file-level license scanning and OSV dependency detection for source packages |
@@ -185,6 +203,10 @@ Configuration options:
 | `elastic_search.ca_certs` | CA certificate path inside the container; used only when certificate verification is enabled and the value is non-empty |
 
 When `verify_certs` is `true` and `ca_certs` is empty, the tool uses the runtime's default CA bundle. When `ca_certs` is set, that file is used. Setting `verify_certs` to `false` skips certificate verification and should only be used in a controlled intranet because the Elasticsearch server identity is no longer authenticated.
+
+## Runtime Data Locations (installed packages)
+
+When installed from the deb/rpm package, the program directory `/usr/share/xlin-sbom` is treated as read-only data. Logs are written to `${XDG_STATE_HOME:-$HOME/.local/state}/xlin-sbom/log` (override with `XLIN_SBOM_LOG_DIR`), and the accumulated originators cache is written to `${XDG_CACHE_HOME:-$HOME/.cache}/xlin-sbom/originators.json` (override with `XLIN_SBOM_CACHE_DIR`). The bundled `/usr/share/xlin-sbom/assist/originators.json` is only used as the read-only seed for the first scan; the tool never writes into the installation directory.
 
 ## Troubleshooting
 

@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2023 spdx contributors
 #
 # SPDX-License-Identifier: Apache-2.0
-from beartype.typing import Dict
+from typing import Dict
 
 from actions.spdx3.model import Element
 

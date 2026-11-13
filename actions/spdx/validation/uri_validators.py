@@ -3,9 +3,31 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import re
+from typing import List
+from urllib.parse import urlsplit
 
-from beartype.typing import List
-from uritools import isabsuri, urisplit
+# RFC 3986 的 URI 基本形式：scheme ":" 之后允许任意非空白字符。
+_URI_PATTERN = re.compile(r"^[A-Za-z][A-Za-z0-9+.\-]*:[^\s]*$")
+
+
+def isuri(value: str) -> bool:
+    """判断字符串是否符合 RFC 3986 的 URI 语法。"""
+
+    return isinstance(value, str) and bool(_URI_PATTERN.match(value))
+
+
+def urisplit(value: str):
+    """按 RFC 3986 拆分 URI，保留 uritools.urisplit 的 scheme 属性用法。"""
+
+    return urlsplit(value)
+
+
+def isabsuri(value: str) -> bool:
+    """判断是否为不含 fragment 的绝对 URI。"""
+
+    if not isuri(value) or "#" in value:
+        return False
+    return urisplit(value).scheme is not None
 
 url_pattern = (
     "(http:\\/\\/www\\.|https:\\/\\/www\\.|http:\\/\\/|https:\\/\\/|ssh:\\/\\/|git:\\/\\/|svn:\\/\\/|sftp:"

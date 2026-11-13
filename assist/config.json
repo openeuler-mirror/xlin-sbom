@@ -2,7 +2,8 @@
     "scan": {
         "disable_tqdm": false,
         "max_workers": null,
-        "platform": "linux/amd64"
+        "platform": "linux/amd64",
+        "work_dir": null
     },
     "source_scan": {
         "include_file_patterns": [

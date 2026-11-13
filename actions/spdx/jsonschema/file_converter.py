@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2022 spdx contributors
 #
 # SPDX-License-Identifier: Apache-2.0
-from beartype.typing import Any, Type
+from typing import Any, Type
 
 from actions.spdx.jsonschema.annotation_converter import AnnotationConverter
 from actions.spdx.jsonschema.checksum_converter import ChecksumConverter

@@ -4,7 +4,7 @@
 
 import re
 
-from beartype.typing import Dict, List
+from typing import Dict, List
 
 from actions.spdx.model import Checksum, ChecksumAlgorithm
 from actions.spdx.validation.validation_message import SpdxElementType, ValidationContext, ValidationMessage

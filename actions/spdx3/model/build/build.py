@@ -4,7 +4,7 @@
 from dataclasses import field
 from datetime import datetime
 
-from beartype.typing import Dict, List, Optional
+from typing import Dict, List, Optional
 
 from actions.common.typing.dataclass_with_properties import dataclass_with_properties
 from actions.common.typing.type_checks import check_types_and_set_values

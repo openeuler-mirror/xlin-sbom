@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from actions import ASSIST_DIR
+from actions import ASSIST_ORIGINATORS_SEED
 from actions.package import merge_packages
 from actions.sbom_helper import build_sbom_header
 from actions.scanner.relationships_helper import (
@@ -20,7 +20,8 @@ from actions.scanner.relationships_helper import (
     get_deb_relationships
 )
 from actions.data_helper import (
-    save_data_to_json,
+    save_originators,
+    load_originators,
     read_data_from_json,
     remove_duplicates,
     remove_duplicate_files
@@ -29,16 +30,28 @@ from actions.scanner.package_helper import (
     process_rpm_package,
     process_deb_package
 )
+from actions.scanner import squashfs_helper
+from actions.scanner.docker_image_helper import (
+    has_dpkg_database,
+    has_rpm_database,
+    scan_dpkg_rootfs_components,
+    scan_rpm_rootfs_components,
+)
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from collections import Counter
+import importlib
 import logging
 import os
 import re
 import tempfile
 import threading
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
-import pycdlib
+# 发行版未提供 python3-pycdlib 时，仅 ISO 扫描不可用，其余功能不受影响。
+try:
+    pycdlib = importlib.import_module('pycdlib')
+except Exception:
+    pycdlib = None
 from tqdm import tqdm
 
 ISO_PATH_TYPES = ("udf", "rockridge", "joliet", "iso9660")
@@ -82,6 +95,9 @@ class IsoEntry:
 
 class PyCdlibIsoReader:
     def __init__(self, iso_path: str):
+        if pycdlib is None:
+            raise RuntimeError(
+                "ISO 扫描需要系统提供 python3-pycdlib（PyCdlib）")
         self._iso = pycdlib.PyCdlib()
         self._iso.open(iso_path)
         self.path_type = _select_iso_path_type(self._iso)
@@ -111,10 +127,32 @@ def scan_iso(
     created_time: str,
     disable_tqdm: bool,
     workers: Optional[int],
+    work_dir: Optional[str] = None,
 ) -> Tuple[Dict[str, Any], str]:
     reader = PyCdlibIsoReader(iso_path)
     try:
         entries = reader.list_entries()
+
+        with tempfile.TemporaryDirectory(prefix="linx_iso_stage_") as stage_dir:
+            layers = squashfs_helper.discover_layers(reader, entries, stage_dir)
+            if layers:
+                expected_size = squashfs_helper.read_expected_size(
+                    reader, entries, stage_dir)
+                candidates = (
+                    os.path.dirname(os.path.abspath(iso_path)),
+                    os.getcwd(),
+                )
+                with squashfs_helper.work_directory(
+                        work_dir,
+                        squashfs_helper.required_work_space(expected_size),
+                        candidates) as rootfs_work_dir:
+                    rootfs_result = _scan_squashfs_rootfs(
+                        reader, layers, entries, rootfs_work_dir,
+                        iso_filename, created_time, disable_tqdm,
+                        expected_size)
+                    if rootfs_result is not None:
+                        return rootfs_result
+
         deb_entries = _find_package_entries(entries, ".deb")
         rpm_entries = _find_package_entries(entries, ".rpm")
 
@@ -134,6 +172,62 @@ def scan_iso(
         reader.close()
 
 
+def _scan_squashfs_rootfs(
+    reader: Any,
+    layers: List[Any],
+    entries: List[IsoEntry],
+    work_dir: str,
+    iso_filename: str,
+    created_time: str,
+    disable_tqdm: bool,
+    expected_size: Optional[int] = None,
+) -> Optional[Tuple[Dict[str, Any], str]]:
+    """展开 squashfs 层并为合并后的 rootfs 生成 SBOM。
+
+    Args:
+        reader: ISO 读取器。
+        layers: 按叠加顺序排列的 squashfs 层。
+        entries: ISO 内的文件条目，用于架构推断。
+        work_dir: 临时工作目录。
+        iso_filename (str): ISO 文件名称。
+        created_time (str): 创建时间字符串。
+        disable_tqdm (bool): 是否禁用进度条。
+        expected_size: rootfs 解压后的字节数，用于空间提示。
+
+    Returns:
+        tuple | None: (Linx SBOM, 包类型)；rootfs 中无包数据库时返回 None，
+        由调用方回退到 ISO 内软件包扫描。
+    """
+
+    rootfs_dir = squashfs_helper.build_rootfs(
+        reader, layers, work_dir, expected_size)
+    rootfs_os_name, rootfs_os_version = squashfs_helper.read_os_release(
+        rootfs_dir)
+
+    if has_dpkg_database(rootfs_dir):
+        logging.info("在 squashfs 合并 rootfs 中侦测到 DEB 包系统")
+        components = scan_dpkg_rootfs_components(rootfs_dir, disable_tqdm)
+        package_type = "deb"
+    elif has_rpm_database(rootfs_dir):
+        logging.info("在 squashfs 合并 rootfs 中侦测到 RPM 包系统")
+        components = scan_rpm_rootfs_components(rootfs_dir, disable_tqdm)
+        package_type = "rpm"
+    else:
+        logging.warning(
+            "squashfs 合并 rootfs 中未发现 dpkg 或 RPM 包数据库，"
+            "回退到 ISO 内软件包扫描")
+        return None
+
+    os_arch = detect_iso_arch(
+        entries, components["packages_sbom"], iso_filename)
+    linx_sbom = _build_iso_sbom(
+        components["packages_sbom"], components["files_sbom"],
+        components["file_relationships_sbom"], components["licenses_sbom"],
+        components["package_relationships_sbom"], iso_filename, os_arch,
+        created_time, rootfs_os_name, rootfs_os_version)
+    return linx_sbom, package_type
+
+
 def _scan_deb_entries(
     reader: Any,
     package_entries: List[IsoEntry],
@@ -148,8 +242,7 @@ def _scan_deb_entries(
     file_relationships = []
     licenses = []
 
-    originators_file_path = os.path.join(ASSIST_DIR, 'originators.json')
-    originators = read_data_from_json(originators_file_path)
+    originators = load_originators(ASSIST_ORIGINATORS_SEED)
 
     if workers is None:
         logging.info("使用默认的线程数进行扫描")
@@ -202,7 +295,7 @@ def _scan_deb_entries(
         packages_sbom, files, file_relationships, licenses,
         package_relationships, iso_filename, os_arch, created_time)
 
-    save_data_to_json(originators, originators_file_path)
+    save_originators(originators, ASSIST_ORIGINATORS_SEED)
     return linx_sbom
 
 
@@ -221,8 +314,7 @@ def _scan_rpm_entries(
     licenses = []
     provides_relationships = []
 
-    originators_file_path = os.path.join(ASSIST_DIR, 'originators.json')
-    originators = read_data_from_json(originators_file_path)
+    originators = load_originators(ASSIST_ORIGINATORS_SEED)
 
     if workers is None:
         logging.info("使用默认的线程数进行扫描")
@@ -278,7 +370,7 @@ def _scan_rpm_entries(
         packages_sbom, files, file_relationships, licenses,
         package_relationships, iso_filename, os_arch, created_time)
 
-    save_data_to_json(originators, originators_file_path)
+    save_originators(originators, ASSIST_ORIGINATORS_SEED)
     return linx_sbom
 
 
@@ -465,6 +557,16 @@ def _strip_iso_version(path: str) -> str:
     return re.sub(r";\d+$", "", path)
 
 
+def _parse_iso_identity(iso_filename: str) -> Tuple[Optional[str], Optional[str]]:
+    """从 ISO 文件名解析操作系统名称和版本。"""
+
+    parts = iso_filename.split('-')
+    if len(parts) < 5:
+        logging.warning("不规范的ISO镜像文件名，需手动对ISO镜像数据进行补充。")
+        return None, None
+    return parts[0], '-'.join(parts[1:-2])
+
+
 def _build_iso_sbom(
     packages_sbom: List[Dict[str, Any]],
     files_sbom: List[Dict[str, Any]],
@@ -473,7 +575,9 @@ def _build_iso_sbom(
     package_relationships_sbom: List[Dict[str, Any]],
     iso_filename: str,
     iso_arch: Optional[str],
-    created_time: str
+    created_time: str,
+    rootfs_os_name: Optional[str] = None,
+    rootfs_os_version: Optional[str] = None,
 ) -> Dict[str, Any]:
     """构建 ISO 扫描的 Linx SBOM 输出结构。
 
@@ -486,21 +590,17 @@ def _build_iso_sbom(
         iso_filename (str): ISO 文件名称。
         iso_arch (str): 操作系统架构。
         created_time (str): 创建时间的字符串。
+        rootfs_os_name (str | None): rootfs 中 /etc/os-release 的名称。
+        rootfs_os_version (str | None): rootfs 中 /etc/os-release 的版本。
 
     Returns:
         dict: Linx SBOM 输出结构。
     """
 
-    os_name = None
-    os_version = None
-
-    parts = iso_filename.split('-')
-
-    if len(parts) < 5:
-        logging.warning("不规范的ISO镜像文件名，需手动对ISO镜像数据进行补充。")
-    else:
-        os_name = parts[0]
-        os_version = '-'.join(parts[1:-2])
+    os_name, os_version = _parse_iso_identity(iso_filename)
+    if not os_name or not os_version:
+        os_name = os_name or rootfs_os_name
+        os_version = os_version or rootfs_os_version
 
     return {
         "packages_sbom": build_sbom_header(

@@ -15,8 +15,7 @@
 import hashlib
 import logging
 import os
-import rpmfile
-import debian.debfile
+from actions.scanner.rpm_reader import open_rpm
 from typing import List, Dict, Any
 
 from actions.data_helper import calculate_file_checksums
@@ -63,7 +62,7 @@ def rpm_files_scanner(package_path: str) -> List[Dict[str, Any]]:
     """
 
     # 打开RPM文件并读取头部信息
-    with rpmfile.open(package_path) as rpm:
+    with open_rpm(package_path) as rpm:
         header = rpm.headers
 
         # 使用get()方法检查必要的键是否存在，并且不为空
@@ -102,26 +101,22 @@ def rpm_files_scanner(package_path: str) -> List[Dict[str, Any]]:
 
         # 按 payload 顺序读取。CPIO 硬链接只有一个成员存储实际内容，不能
         # 将其他 size=0 的占位成员误当空文件来计算摘要。
-        try:
-            for member in rpm.getmembers():
-                path = "/" + os.path.normpath(member.name).lstrip("/")
-                indexed = file_indexes.get(path)
-                if indexed is None:
-                    continue
-                file_info, index = indexed
-                expected_size = filesizes[index] if index < len(filesizes) else None
-                if expected_size is not None and member.size != expected_size:
-                    continue
-                with rpm.extractfile(member) as source:
-                    sha1 = calculate_file_checksums(source)["SHA1"]
-                group = [file_info]
-                if index < len(inodes) and index < len(devices):
-                    group = hardlink_groups[(devices[index], inodes[index])]
-                for linked_file in group:
-                    linked_file["additional_checksums"] = [{"algorithm": "SHA1", "value": sha1}]
-        finally:
-            if rpm._data_file is not None:
-                rpm.data_file.close()
+        for member in rpm.getmembers():
+            path = "/" + os.path.normpath(member.name).lstrip("/")
+            indexed = file_indexes.get(path)
+            if indexed is None:
+                continue
+            file_info, index = indexed
+            expected_size = filesizes[index] if index < len(filesizes) else None
+            if expected_size is not None and member.size != expected_size:
+                continue
+            with rpm.extractfile(member) as source:
+                sha1 = calculate_file_checksums(source)["SHA1"]
+            group = [file_info]
+            if index < len(inodes) and index < len(devices):
+                group = hardlink_groups[(devices[index], inodes[index])]
+            for linked_file in group:
+                linked_file["additional_checksums"] = [{"algorithm": "SHA1", "value": sha1}]
 
         for file_info in file_list:
             if "additional_checksums" not in file_info:
@@ -130,7 +125,7 @@ def rpm_files_scanner(package_path: str) -> List[Dict[str, Any]]:
         return file_list
 
 
-def deb_files_scanner(deb: debian.debfile.DebFile) -> List[Dict[str, Any]]:
+def deb_files_scanner(deb) -> List[Dict[str, Any]]:
     """
     扫描DEB包中的文件信息并构建文件列表。
 

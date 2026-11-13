@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from abc import ABC, abstractmethod
 
-from beartype.typing import Any, Dict, Generic, Type, TypeVar
+from typing import Any, Dict, Generic, Type, TypeVar
 
 from actions.spdx.casing_tools import snake_case_to_camel_case
 from actions.spdx.jsonschema.json_property import JsonProperty

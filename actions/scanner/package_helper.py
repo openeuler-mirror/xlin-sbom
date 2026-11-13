@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from actions import ASSIST_DIR
+from actions import ASSIST_ORIGINATORS_SEED
 from actions.package import Package, merge_packages
 from actions.sbom_helper import build_sbom_header
 from actions.scanner.package_files_helper import (
@@ -25,7 +25,8 @@ from actions.licenses_helper import (
 )
 from actions.data_helper import (
     calculate_sha1,
-    save_data_to_json,
+    save_originators,
+    load_originators,
     read_data_from_json,
     remove_duplicates,
     remove_duplicate_files,
@@ -44,9 +45,9 @@ from actions.scanner.scancode_helper import (
     scan_src_dir,
     run_osv_dependency_scan
 )
+import importlib
 import logging
-import rpmfile
-import debian.debfile
+from actions.scanner.rpm_reader import open_rpm
 import os
 import shutil
 import hashlib
@@ -88,8 +89,7 @@ def package_scanner(pkg_path, pkg_type, created_time, include, exclude, workers,
         dict: 包含处理后的软件包信息列表，包括 `packages_sbom`, `files_sbom`, `file_relationships_sbom`, `licenses_sbom`。
     """
 
-    originators_file_path = os.path.join(ASSIST_DIR, 'originators.json')
-    originators = read_data_from_json(originators_file_path)
+    originators = load_originators(ASSIST_ORIGINATORS_SEED)
     pkg_name = os.path.basename(pkg_path)
 
     dependency_packages = []
@@ -121,7 +121,7 @@ def package_scanner(pkg_path, pkg_type, created_time, include, exclude, workers,
     }
 
     # 保存更新后的发起者信息
-    save_data_to_json(originators, originators_file_path)
+    save_originators(originators, ASSIST_ORIGINATORS_SEED)
 
     # 返回处理后的软件包信息列表
     return linx_sbom
@@ -132,7 +132,8 @@ def process_deb_package(pkg_path, originators):
         package_sha1 = calculate_sha1(f)
 
     try:
-        with debian.debfile.DebFile(pkg_path) as deb:
+        debian_debfile = importlib.import_module('debian.debfile')
+        with debian_debfile.DebFile(pkg_path) as deb:
             control_info = _get_deb_info(deb)
             package, licenses, originators = _build_deb_package(
                 deb, control_info, package_sha1, originators)
@@ -203,7 +204,7 @@ def process_rpm_package(pkg_path, originators):
     with open(pkg_path, 'rb') as f:
         package_sha1 = calculate_sha1(f)
     try:
-        with rpmfile.open(pkg_path) as rpm:
+        with open_rpm(pkg_path) as rpm:
             name = _safe_decode(rpm.headers.get('name'))
             version = _safe_decode(rpm.headers.get('version'))
             release = _safe_decode(rpm.headers.get('release'))
@@ -530,4 +531,8 @@ def _safe_decode(value):
         str: 解码后的字符串。如果输入值为 `None`，则返回空字符串。
     """
 
-    return value.decode('utf-8') if value is not None else ''
+    if value is None:
+        return ''
+    if isinstance(value, bytes):
+        return value.decode('utf-8', 'replace')
+    return str(value)

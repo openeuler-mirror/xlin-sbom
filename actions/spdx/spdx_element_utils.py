@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 import hashlib
 
-from beartype.typing import List, Optional, Type, Union
+from typing import List, Optional, Type, Union
 
 from actions.spdx.model import (
     ChecksumAlgorithm,

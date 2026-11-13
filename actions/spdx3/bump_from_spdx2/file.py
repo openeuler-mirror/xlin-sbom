@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2023 spdx contributors
 #
 # SPDX-License-Identifier: Apache-2.0
-from beartype.typing import List
+from typing import List
 
 from actions.spdx3.bump_from_spdx2.checksum import bump_checksum
 from actions.spdx3.bump_from_spdx2.message import print_missing_conversion

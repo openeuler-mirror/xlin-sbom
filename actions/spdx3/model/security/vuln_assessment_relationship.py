@@ -4,7 +4,7 @@
 from abc import abstractmethod
 from datetime import datetime
 
-from beartype.typing import Optional
+from typing import Optional
 
 from actions.common.typing.dataclass_with_properties import dataclass_with_properties
 from actions.spdx3.model import Relationship

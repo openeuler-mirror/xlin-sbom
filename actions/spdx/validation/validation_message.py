@@ -5,7 +5,7 @@
 from dataclasses import dataclass
 from enum import Enum, auto
 
-from beartype.typing import Any, Optional
+from typing import Any, Optional
 
 
 class SpdxElementType(Enum):

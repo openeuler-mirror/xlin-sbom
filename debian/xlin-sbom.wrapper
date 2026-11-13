@@ -1,0 +1,22 @@
+#!/bin/sh
+set -e
+
+APP_DIR=/usr/share/xlin-sbom
+PYTHON_BIN=${PYTHON:-/usr/bin/python3}
+
+# 只使用系统 python3 及其 python3-* 模块，不加载用户 site-packages，
+# 避免运行环境与打包环境出现 ABI 或版本差异。
+export PYTHONNOUSERSITE=1
+
+if [ -z "${XLIN_SBOM_LOG_DIR:-}" ]; then
+    XLIN_SBOM_LOG_DIR="${XDG_STATE_HOME:-${HOME:-/tmp}/.local/state}/xlin-sbom/log"
+    export XLIN_SBOM_LOG_DIR
+fi
+
+# /usr/share/xlin-sbom 是只读安装目录，运行期缓存必须写到用户可写目录。
+if [ -z "${XLIN_SBOM_CACHE_DIR:-}" ]; then
+    XLIN_SBOM_CACHE_DIR="${XDG_CACHE_HOME:-${HOME:-/tmp}/.cache}/xlin-sbom"
+    export XLIN_SBOM_CACHE_DIR
+fi
+
+exec "${PYTHON_BIN}" "${APP_DIR}/linx-xiling.py" "$@"

@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2023 spdx contributors
 #
 # SPDX-License-Identifier: Apache-2.0
-from beartype.typing import Optional, Union
+from typing import Optional, Union
 
 from actions.spdx.model.spdx_no_assertion import SpdxNoAssertion
 from actions.spdx.model.spdx_none import SpdxNone

@@ -4,7 +4,7 @@
 from abc import abstractmethod
 from dataclasses import field
 
-from beartype.typing import List
+from typing import List
 
 from actions.common.typing.dataclass_with_properties import dataclass_with_properties
 from actions.spdx3.model import Element, ExternalMap, NamespaceMap

@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from enum import Enum, auto
 
-from beartype.typing import Optional, Union
+from typing import Optional, Union
 
 from actions.common.typing.dataclass_with_properties import dataclass_with_properties
 from actions.common.typing.type_checks import check_types_and_set_values

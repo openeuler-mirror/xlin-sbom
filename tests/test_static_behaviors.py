@@ -1,8 +1,11 @@
 import ast
+import builtins
 import gc
 import gzip
 import hashlib
+import inspect
 import json
+import os
 import subprocess
 import tarfile
 import tempfile
@@ -19,6 +22,7 @@ warnings.simplefilter("ignore", DeprecationWarning)
 import zstandard
 
 from actions import config_helper
+from actions import data_helper
 from actions.data_helper import calculate_md5, calculate_sha1, remove_duplicates
 from actions.licenses_helper import _extract_deb_license_list, rpm_licenses_scanner
 from actions.package import Package
@@ -258,8 +262,8 @@ class RegistryResponse:
 
 class PackageScannerTests(unittest.TestCase):
     def test_failed_rpm_scan_returns_empty_sbom(self):
-        with mock.patch.object(package_helper, "read_data_from_json", return_value=[]), \
-                mock.patch.object(package_helper, "save_data_to_json"), \
+        with mock.patch.object(package_helper, "load_originators", return_value=[]), \
+                mock.patch.object(package_helper, "save_originators"), \
                 mock.patch.object(package_helper, "process_rpm_package",
                                   return_value=(None, [], [], None)):
             result = package_helper.package_scanner(
@@ -367,8 +371,8 @@ class PackageScannerTests(unittest.TestCase):
             "related_element": dependency.id,
             "relationship_type": "DEPENDS_ON",
         }
-        with mock.patch.object(package_helper, "read_data_from_json", return_value=[]), \
-                mock.patch.object(package_helper, "save_data_to_json"), \
+        with mock.patch.object(package_helper, "load_originators", return_value=[]), \
+                mock.patch.object(package_helper, "save_originators"), \
                 mock.patch.object(package_helper, "process_source_package",
                                   return_value=(package, [], [], [dependency], [relationship])):
             result = package_helper.package_scanner(
@@ -434,7 +438,7 @@ class PackageScannerTests(unittest.TestCase):
                 return False
 
         with tempfile.NamedTemporaryFile() as pkg, \
-                mock.patch.object(package_helper.rpmfile, "open", return_value=FakeRPM()), \
+                mock.patch.object(package_helper, "open_rpm", return_value=FakeRPM()), \
                 mock.patch.object(package_helper, "rpm_files_scanner", return_value=[]):
             pkg.write(b"fake rpm")
             pkg.flush()
@@ -578,8 +582,8 @@ class IsoScannerTests(unittest.TestCase):
             return package, [], originators
 
         with mock.patch.object(iso_helper, "PyCdlibIsoReader", return_value=reader), \
-                mock.patch.object(iso_helper, "read_data_from_json", return_value=[]), \
-                mock.patch.object(iso_helper, "save_data_to_json"), \
+                mock.patch.object(iso_helper, "load_originators", return_value=[]), \
+                mock.patch.object(iso_helper, "save_originators"), \
                 mock.patch.object(iso_helper, "process_deb_package", side_effect=fake_process):
             result, package_type = iso_helper.scan_iso(
                 "demo.iso", "demo-1.0-amd64.iso", "2026-06-16T00:00:00Z",
@@ -601,8 +605,8 @@ class IsoScannerTests(unittest.TestCase):
         package = Package("demo", "1.0", None, "amd64", "deb", "SHA1", "abcdef123456")
 
         with mock.patch.object(iso_helper, "PyCdlibIsoReader", return_value=reader), \
-                mock.patch.object(iso_helper, "read_data_from_json", return_value=[]), \
-                mock.patch.object(iso_helper, "save_data_to_json"), \
+                mock.patch.object(iso_helper, "load_originators", return_value=[]), \
+                mock.patch.object(iso_helper, "save_originators"), \
                 mock.patch.object(iso_helper, "process_deb_package", return_value=(package, [], [])), \
                 mock.patch.object(iso_helper, "process_rpm_package") as process_rpm:
             _, package_type = iso_helper.scan_iso(
@@ -620,8 +624,8 @@ class IsoScannerTests(unittest.TestCase):
         package = Package("demo", "1.0", "1", "x86_64", "rpm", "SHA1", "abcdef123456")
 
         with mock.patch.object(iso_helper, "PyCdlibIsoReader", return_value=reader), \
-                mock.patch.object(iso_helper, "read_data_from_json", return_value=[]), \
-                mock.patch.object(iso_helper, "save_data_to_json"), \
+                mock.patch.object(iso_helper, "load_originators", return_value=[]), \
+                mock.patch.object(iso_helper, "save_originators"), \
                 mock.patch.object(iso_helper, "process_rpm_package",
                                   return_value=(package, [], [], {"id": package.id, "provides": ["demo"]})):
             result, package_type = iso_helper.scan_iso(
@@ -888,6 +892,73 @@ class RelationshipAndMetadataTests(unittest.TestCase):
             "demo.el9", "https://upstream.test", "Upstream", suppliers_helper.RPM_SUPPLIERS)
         self.assertEqual(suppliers[0]["name"], "Red Hat Enterprise Linux")
         self.assertEqual(suppliers[-1]["name"], "Upstream")
+
+
+    def test_save_originators_writes_cache_not_readonly_seed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            seed_path = os.path.join(tmp, "assist", "originators.json")
+            os.makedirs(os.path.dirname(seed_path), exist_ok=True)
+            seed_data = [{"homepage": "https://seed.test", "name": "Seed"}]
+            with open(seed_path, "w", encoding="utf-8") as f:
+                json.dump(seed_data, f)
+            cache_path = os.path.join(tmp, "cache", "originators.json")
+            data = [{"homepage": "https://example.test", "name": None,
+                     "is_organization": False, "file_analyzed": False}]
+            with mock.patch.object(data_helper, "ORIGINATORS_CACHE_FILE", cache_path):
+                data_helper.save_originators(data, seed_path)
+                self.assertTrue(os.path.isfile(cache_path))
+                with open(cache_path, encoding="utf-8") as f:
+                    self.assertEqual(json.load(f), data)
+                self.assertEqual(data_helper.load_originators(seed_path), data)
+            with open(seed_path, encoding="utf-8") as f:
+                self.assertEqual(json.load(f), seed_data)
+
+    def test_save_originators_skips_persistence_when_cache_unwritable(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            seed_path = os.path.join(tmp, "originators.json")
+            cache_path = os.path.join(tmp, "blocked", "originators.json")
+            data = [{"homepage": "https://example.test"}]
+            with mock.patch.object(data_helper, "ORIGINATORS_CACHE_FILE", cache_path), \
+                    mock.patch.object(data_helper.os, "makedirs",
+                                      side_effect=OSError(30, "Read-only file system")), \
+                    mock.patch.object(data_helper.logging, "warning") as warn:
+                data_helper.save_originators(data, seed_path)
+            warn.assert_called()
+            self.assertFalse(os.path.exists(cache_path))
+
+    def test_load_originators_prefers_cache_and_recovers_from_corruption(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            seed_path = os.path.join(tmp, "seed.json")
+            cache_path = os.path.join(tmp, "cache.json")
+            seed_data = [{"homepage": "https://seed.test"}]
+            cache_data = [{"homepage": "https://cache.test"}]
+            with open(seed_path, "w", encoding="utf-8") as f:
+                json.dump(seed_data, f)
+            with open(cache_path, "w", encoding="utf-8") as f:
+                json.dump(cache_data, f)
+            with mock.patch.object(
+                    data_helper, "ORIGINATORS_CACHE_FILE", cache_path):
+                self.assertEqual(data_helper.load_originators(seed_path), cache_data)
+                with open(cache_path, "w", encoding="utf-8") as f:
+                    f.write("{broken")
+                self.assertEqual(
+                    data_helper.load_originators(seed_path), seed_data)
+            os.remove(seed_path)
+            os.remove(cache_path)
+            with mock.patch.object(
+                    data_helper, "ORIGINATORS_CACHE_FILE", cache_path), \
+                    mock.patch.object(data_helper.logging, "warning") as warn:
+                self.assertEqual(data_helper.load_originators(seed_path), [])
+                warn.assert_called()
+
+    def test_scanners_write_originators_via_fallback_helper(self):
+        for module in (package_helper, repo_helper, iso_helper):
+            self.assertIn(
+                "save_originators",
+                inspect.getsource(module),
+                f"{module.__name__} should use save_originators")
+            self.assertIn(
+                "load_originators", inspect.getsource(module))
 
     def test_data_helpers_and_license_extraction(self):
         with tempfile.NamedTemporaryFile() as f:
@@ -1348,6 +1419,35 @@ class ScanCodeHelperTests(unittest.TestCase):
 
         self.assertEqual(result, {"results": [{"packages": []}]})
         warning.assert_not_called()
+
+
+class RpmReaderTests(unittest.TestCase):
+    @staticmethod
+    def _cpio_entry(name, data, mode=0o100644, inode=1):
+        name_bytes = name.encode("utf-8") + b"\0"
+        fields = [
+            inode, mode, 0, 0, 1, 0, len(data),
+            0, 0, 0, 0, len(name_bytes), 0,
+        ]
+        header = b"070701" + b"".join(b"%08X" % value for value in fields)
+        name_padding = (-(110 + len(name_bytes))) % 4
+        data_padding = (-len(data)) % 4
+        return (header + name_bytes + b"\0" * name_padding
+                + data + b"\0" * data_padding)
+
+    def test_cpio_newc_parser_reads_regular_file_and_stops_at_trailer(self):
+        from actions.scanner.rpm_reader import _iter_cpio_members
+
+        stream = BytesIO(
+            self._cpio_entry("usr/share/demo/hello.txt", b"hello\n")
+            + self._cpio_entry("TRAILER!!!", b"")
+            + b"\0" * 512)
+        members = list(_iter_cpio_members(stream))
+
+        self.assertEqual(len(members), 1)
+        self.assertEqual(members[0].name, "usr/share/demo/hello.txt")
+        self.assertEqual(members[0].size, 6)
+        self.assertEqual(members[0].read(), b"hello\n")
 
 
 if __name__ == "__main__":

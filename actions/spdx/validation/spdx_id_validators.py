@@ -4,7 +4,7 @@
 
 import re
 
-from beartype.typing import List, Optional, Set
+from typing import List, Optional, Set
 
 from actions.spdx.document_utils import get_contained_spdx_element_ids
 from actions.spdx.model import Document, File

@@ -14,6 +14,9 @@
 
 import hashlib
 import json
+import logging
+import os
+from actions import ORIGINATORS_CACHE_FILE
 from typing import Any, Dict, Iterable, List, Union
 
 
@@ -101,6 +104,61 @@ def save_data_to_json(data: Union[Dict[str, Any], List[Any]], json_file_path: st
     if data is not None:
         with open(json_file_path, 'w', encoding='utf-8') as json_file:
             json.dump(data, json_file, ensure_ascii=False, indent=4)
+
+
+def save_originators(data: Union[Dict[str, Any], List[Any]],
+                     seed_file_path: str = None) -> None:
+    """
+    将发起者缓存保存到用户可写目录。
+
+    安装后的程序目录（如 /usr/share/xlin-sbom/assist）通常只读，
+    originators.json 是运行期累积的缓存，不能写回安装目录。缓存写入
+    失败时只记录告警，不影响本次 SBOM 生成。
+
+    Args:
+        data (dict or list): 要保存的发起者数据。
+        seed_file_path (str): 兼容旧调用保留的参数，仅用于日志提示。
+
+    Returns:
+        None
+    """
+    if data is None:
+        return
+    cache_dir = os.path.dirname(ORIGINATORS_CACHE_FILE)
+    try:
+        if cache_dir:
+            os.makedirs(cache_dir, exist_ok=True)
+        save_data_to_json(data, ORIGINATORS_CACHE_FILE)
+    except OSError as exc:
+        logging.warning(
+            "发起者缓存 %s 写入失败（%s），本次扫描继续，缓存不持久化",
+            ORIGINATORS_CACHE_FILE, exc)
+
+
+def load_originators(seed_file_path: str) -> Union[Dict[str, Any], List[Any]]:
+    """
+    读取发起者缓存：用户缓存文件存在时优先读取，以延续上次扫描累积的
+    数据；否则读取安装目录内的原始 originators.json。缓存文件损坏时
+    记录日志并回退到原始文件。
+
+    Args:
+        seed_file_path (str): 安装目录内的原始 originators.json 路径。
+
+    Returns:
+        dict or list: 发起者数据；两者都不可用时返回空列表。
+    """
+    if os.path.isfile(ORIGINATORS_CACHE_FILE):
+        try:
+            return read_data_from_json(ORIGINATORS_CACHE_FILE)
+        except (OSError, ValueError) as exc:
+            logging.warning(
+                "发起者缓存 %s 读取失败（%s），回退到 %s",
+                ORIGINATORS_CACHE_FILE, exc, seed_file_path)
+    try:
+        return read_data_from_json(seed_file_path)
+    except OSError as exc:
+        logging.warning("读取发起者数据 %s 失败: %s", seed_file_path, exc)
+        return []
 
 
 def remove_duplicates(list_of_dicts: List[Dict[str, Any]]) -> List[Dict[str, Any]]:

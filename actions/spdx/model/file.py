@@ -4,7 +4,7 @@
 from dataclasses import field
 from enum import Enum, auto
 
-from beartype.typing import List, Optional, Union
+from typing import List, Optional, Union
 from license_expression import LicenseExpression
 
 from actions.common.typing.dataclass_with_properties import dataclass_with_properties

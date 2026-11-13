@@ -4,7 +4,7 @@
 
 import re
 
-from beartype.typing import List
+from typing import List
 
 from actions.spdx.model import PackageVerificationCode
 from actions.spdx.validation.validation_message import SpdxElementType, ValidationContext, ValidationMessage

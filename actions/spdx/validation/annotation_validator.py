@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from beartype.typing import List
+from typing import List
 
 from actions.spdx.model import Annotation, Document
 from actions.spdx.validation.actor_validator import validate_actor

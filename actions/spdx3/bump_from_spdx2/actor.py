@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from typing import Optional
 
-from beartype.typing import List
+from typing import List
 
 from actions.spdx3.model import CreationInfo, ExternalIdentifier, ExternalIdentifierType, Organization, Person, Tool
 from actions.spdx3.payload import Payload

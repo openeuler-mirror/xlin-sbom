@@ -1,0 +1,35 @@
+Source: xlin-sbom
+Section: utils
+Priority: optional
+Maintainer: yanbowen <yanbowen@uniontech.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.6.2
+Rules-Requires-Root: no
+
+Package: xlin-sbom
+Architecture: all
+Depends: ${misc:Depends},
+         python3 (>= 3.11),
+         python3-debian,
+         python3-license-expression,
+         python3-tqdm,
+         python3-requests,
+         python3-bs4,
+         python3-chardet,
+         python3-semantic-version,
+         python3-rpm,
+         squashfs-tools,
+         openssl,
+         rpm,
+         zstd
+Recommends: python3-pycdlib,
+            python3-zstandard
+Suggests: scancode-toolkit
+Description: XiLing SBOM generation tool
+ 析灵 SBOM 生成工具用于扫描 ISO 镜像、Docker 镜像、RPM/DEB 软件包、
+ 源码归档和软件源，并生成 Linx、SPDX 2.2/2.3/3.0 以及
+ GB/T 47020-2026（SBOMDF）格式的软件物料清单。
+ .
+ 软件包不内置 Python 第三方依赖，统一使用发行版提供的 python3 与
+ python3-* 模块；ISO 扫描需要 python3-pycdlib，多 squashfs live ISO
+ 还需要 squashfs-tools，源码许可证识别需要 scancode-toolkit。

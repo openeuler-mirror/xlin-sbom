@@ -15,12 +15,12 @@
 from actions import ASSIST_DIR
 from actions.data_helper import read_data_from_json
 from typing import List, Dict
-from scancode import api as scancode
 import chardet
 import logging
 import os
 import re
 import hashlib
+import importlib
 import tempfile
 
 
@@ -209,8 +209,22 @@ def _common_licenses_scanner(content):
     return license_list
     
 
+def _load_scancode():
+    """按需加载 scancode-toolkit；发行版未提供该包时降级。"""
+
+    try:
+        return importlib.import_module('scancode.api')
+    except Exception as exc:  # 依赖缺失或版本不兼容
+        logging.warning("scancode-toolkit 不可用，跳过许可证文本识别: %s", exc)
+        return None
+
+
 def _scancode_scanner(deb, copyright_path):
     license_list = set()
+
+    scancode = _load_scancode()
+    if scancode is None:
+        return []
 
     with tempfile.TemporaryDirectory() as tmpdir:
         tar = deb.data.tgz()  # 获取 tarfile 对象

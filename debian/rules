@@ -1,0 +1,30 @@
+#!/usr/bin/make -f
+
+export DH_VERBOSE = 1
+
+%:
+	dh $@
+
+override_dh_auto_configure:
+
+override_dh_auto_build:
+
+override_dh_auto_test:
+
+override_dh_auto_install:
+	install -d debian/xlin-sbom/usr/share/xlin-sbom
+	cp -a actions assist debian/xlin-sbom/usr/share/xlin-sbom/
+	install -Dpm755 linx-xiling.py debian/xlin-sbom/usr/share/xlin-sbom/linx-xiling.py
+	install -Dpm755 debian/xlin-sbom.wrapper debian/xlin-sbom/usr/bin/xlin-sbom
+	ln -sf xlin-sbom debian/xlin-sbom/usr/bin/linx-xiling
+	install -Dpm644 config/config.json debian/xlin-sbom/etc/xlin-sbom/config.json
+	install -d debian/xlin-sbom/usr/share/xlin-sbom/config
+	ln -sf ../../../../etc/xlin-sbom/config.json \
+		debian/xlin-sbom/usr/share/xlin-sbom/config/config.json
+	find debian/xlin-sbom/usr/share/xlin-sbom -type d -name __pycache__ -prune -exec rm -rf {} +
+
+override_dh_clean:
+	dh_clean
+
+.PHONY: override_dh_auto_configure override_dh_auto_build override_dh_auto_test \
+	override_dh_auto_install override_dh_clean

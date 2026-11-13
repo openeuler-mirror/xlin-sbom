@@ -28,7 +28,7 @@ EXTERNAL_CONFIG_PATH = os.path.join(
 )
 CONFIG_STRUCTURE = {
     "": ("scan", "source_scan", "elastic_search"),
-    "scan": ("disable_tqdm", "max_workers", "platform"),
+    "scan": ("disable_tqdm", "max_workers", "platform", "work_dir"),
     "source_scan": (
         "include_file_patterns", "exclude_file_patterns", "brief"),
     "elastic_search": (
@@ -105,6 +105,8 @@ def _is_valid_config_value(path, value):
             isinstance(value, int) and not isinstance(value, bool) and value > 0)
     if path == "scan.platform":
         return isinstance(value, str) and bool(value.strip())
+    if path == "scan.work_dir":
+        return value is None or isinstance(value, str)
     if path in (
             "source_scan.include_file_patterns",
             "source_scan.exclude_file_patterns",
@@ -260,4 +262,5 @@ def resolve_runtime_options(config):
         "disable_tqdm": scan_config.get("disable_tqdm"),
         "max_workers": scan_config.get("max_workers"),
         "platform": scan_config.get("platform"),
+        "work_dir": scan_config.get("work_dir") or None,
     }

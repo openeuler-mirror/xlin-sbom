@@ -15,6 +15,7 @@
 
 import tempfile
 import os
+import importlib
 import shutil
 import logging
 import hashlib
@@ -22,18 +23,27 @@ import tarfile
 import zipfile
 import json
 import subprocess
-import libarchive
 from tqdm import tqdm
 from multiprocessing import Pool
 from fnmatch import fnmatch
 from typing import Any, Dict, List, Tuple, Optional
-from scancode import api as scancode
 from actions import OSV_SCANNER
 from actions.data_helper import (
     calculate_file_checksums,
     remove_duplicates
 )
 from actions.licenses_helper import rpm_licenses_scanner
+from actions.scanner.rpm_reader import open_rpm
+
+
+def _load_scancode():
+    """按需加载 scancode-toolkit；发行版未提供该包时降级为不做源码许可证识别。"""
+
+    try:
+        return importlib.import_module('scancode.api')
+    except Exception as exc:  # 依赖缺失或版本不兼容
+        logging.warning("scancode-toolkit 不可用，跳过源码许可证识别: %s", exc)
+        return None
 
 
 def _safe_join(base_dir: str, member_name: str) -> Optional[str]:
@@ -77,24 +87,21 @@ def _extract_src_rpm(src_rpm_path: str) -> str:
         ValueError: 如果未在 .src.rpm 文件中找到源代码压缩文件。
     """
 
-    # 创建一个临时目录用于解压 .src.rpm 文件
     temp_dir = tempfile.mkdtemp()
 
     try:
-        # 解压 .src.rpm 文件
-        with libarchive.file_reader(src_rpm_path) as archive:
-            for entry in archive:
-                pathname = _safe_join(temp_dir, entry.pathname)
+        # 使用系统 rpm 组件解出 payload，再按 cpio 格式落地文件。
+        with open_rpm(src_rpm_path) as rpm:
+            for member in rpm.getmembers():
+                if member.mode & 0o170000 != 0o100000:
+                    continue
+                pathname = _safe_join(temp_dir, member.name)
                 if pathname is None:
                     continue
-                if entry.isdir:
-                    os.makedirs(pathname, exist_ok=True)
-                elif entry.isfile:
-                    parent_dir = os.path.dirname(pathname)
-                    os.makedirs(parent_dir, exist_ok=True)
-                    with open(pathname, 'wb') as f:
-                        for block in entry.get_blocks():
-                            f.write(block)
+                parent_dir = os.path.dirname(pathname)
+                os.makedirs(parent_dir, exist_ok=True)
+                with rpm.extractfile(member) as source, open(pathname, 'wb') as target:
+                    shutil.copyfileobj(source, target)
 
         # 在解压后的文件中查找源代码压缩文件
         source_archive = None
@@ -109,30 +116,11 @@ def _extract_src_rpm(src_rpm_path: str) -> str:
         if not source_archive:
             raise ValueError("未在 .src.rpm 文件中找到源代码压缩文件")
 
-        # 创建一个临时目录用于解压源代码压缩文件
-        source_dir = tempfile.mkdtemp()
-
-        # 解压源代码压缩文件
-        with libarchive.file_reader(source_archive) as archive:
-            for entry in archive:
-                pathname = _safe_join(source_dir, entry.pathname)
-                if pathname is None:
-                    continue
-                if entry.isdir:
-                    os.makedirs(pathname, exist_ok=True)
-                elif entry.isfile:
-                    parent_dir = os.path.dirname(pathname)
-                    os.makedirs(parent_dir, exist_ok=True)
-                    with open(pathname, 'wb') as f:
-                        for block in entry.get_blocks():
-                            f.write(block)
-
-        # 返回解压后的源代码目录路径
-        return source_dir
+        return extract_source_archive(source_archive)
 
     finally:
         # 清理 .src.rpm 的临时目录
-        shutil.rmtree(temp_dir)
+        shutil.rmtree(temp_dir, ignore_errors=True)
 
 
 def _should_include(member_name: str, include_patterns: Optional[List[str]], exclude_patterns: Optional[List[str]]) -> bool:
@@ -205,6 +193,9 @@ def _process_member(member: Tuple[str, str]) -> Tuple[Optional[Dict[str, Any]], 
     """
 
     source_dir, member_path = member
+    scancode = _load_scancode()
+    if scancode is None:
+        return None, []
     try:
         licenses = scancode.get_licenses(location=member_path, include_text=True)
         copyright_data = scancode.get_copyrights(location=member_path)
@@ -269,6 +260,9 @@ def scan_src_dir(
     members = []
     file_list = []
     license_list = []
+
+    if _load_scancode() is None:
+        return file_list, license_list
 
     for root, dirs, files in os.walk(source_dir):
         dirs[:] = [

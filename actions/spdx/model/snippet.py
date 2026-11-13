@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from dataclasses import field
 
-from beartype.typing import List, Optional, Tuple, Union
+from typing import List, Optional, Tuple, Union
 from license_expression import LicenseExpression
 
 from actions.common.typing.dataclass_with_properties import dataclass_with_properties

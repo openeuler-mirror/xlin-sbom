@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from beartype.typing import List, Optional, Set
+from typing import List, Optional, Set
 
 from actions.spdx.model import Document, Relationship, RelationshipType, SpdxNoAssertion, SpdxNone
 from actions.spdx.validation.spdx_id_validators import get_list_of_all_spdx_ids, validate_spdx_id
